@@ -41,5 +41,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    gladLoadGLLoader(SDL_GL_GetProcAddress);
+    cout << "vendor: " << glGetString(GL_VENDOR) << endl;
+    cout << "renderer: " << glGetString(GL_RENDERER) << endl;
+    cout << "version: " << glGetString(GL_VERSION) << endl;
+
     return 0;
 }

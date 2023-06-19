@@ -31,5 +31,5 @@ target_include_directories(${PROJECT_NAME}
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
   ADD_CUSTOM_TARGET(link_compile_commands_json ALL
-                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${3dgraph_SOURCE_DIR}/../build/compile_commands.json)
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${3dgraph_SOURCE_DIR}/compile_commands.json)
 endif()
