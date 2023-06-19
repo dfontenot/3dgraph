@@ -18,7 +18,7 @@ FetchContent_Declare(glm
 
 FetchContent_MakeAvailable(glm)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/glad.c)
 
 #target_link_libraries(3dgraph PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
