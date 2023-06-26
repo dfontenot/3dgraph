@@ -1,14 +1,25 @@
+#include <array>
 #include <iostream>
 #include "glad/glad.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
-#define WINDOW_H 600
-#define WINDOW_W 800
+#define WINDOW_H 800
+#define WINDOW_W 1200
+#define TESSELATION_AMOUNT 20
 
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::array;
+
+// auto make_lattice() {
+//     constexpr std::size_t total_size = TESSELATION_AMOUNT * TESSELATION_AMOUNT * 2;
+//     array<GLfloat, total_size> lattice;
+//
+//     const auto tesselation = std::views::iota(0, TESSELATION_AMOUNT);
+//     const auto product = std::views::cartesian_product(tesselation, tesselation);
+// }
 
 int main(int argc, char *argv[]) {
 
@@ -45,6 +56,29 @@ int main(int argc, char *argv[]) {
     cout << "vendor: " << glGetString(GL_VENDOR) << endl;
     cout << "renderer: " << glGetString(GL_RENDERER) << endl;
     cout << "version: " << glGetString(GL_VERSION) << endl;
+
+    SDL_GL_SetSwapInterval(1); // vsync
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glViewport(0, 0, WINDOW_W, WINDOW_H);
+    glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+
+    while (true) {
+        SDL_Event evt;
+        while (SDL_PollEvent(&evt)) {
+
+            if (evt.type == SDL_QUIT) {
+                return 0;
+            }
+
+            if (evt.type == SDL_KEYDOWN) {
+                if (evt.key.keysym.sym == SDLK_q) {
+                    return 0;
+                }
+            }
+        }
+    }
 
     return 0;
 }

@@ -20,10 +20,7 @@ FetchContent_MakeAvailable(glm)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/glad.c)
-#file(GLOB 3dgraph_SRC CONFIGURE_DEPENDS "src/*.cpp" "src/*.c")
-#add_executable(${PROJECT_NAME} ${3dgraph_SRC})
 
-#target_link_libraries(3dgraph PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME}
