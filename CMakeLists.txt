@@ -1,32 +1,26 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.23)
 project(3dgraph
   VERSION 1.0
   DESCRIPTION "a very basic opengl render"
   LANGUAGES CXX)
 
-include(FetchContent)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
-
-find_package(SDL2 REQUIRED)
-find_package(OpenGL REQUIRED)
-
-FetchContent_Declare(glm
-    GIT_REPOSITORY https://github.com/g-truc/glm
-    GIT_SHALLOW 1
-    SOURCE_SUBDIR glm
-)
-
-FetchContent_MakeAvailable(glm)
+find_package(range-v3 REQUIRED)
+find_package(sdl2 REQUIRED)
+find_package(glm REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/glad.c)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE range-v3::range-v3
+  PRIVATE SDL2::SDL2
+  PRIVATE SDL2::SDL2main
+  PRIVATE glm::glm)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME}
   PRIVATE ${3dgraph_SOURCE_DIR}/include
-  PRIVATE $<TARGET_PROPERTY:glm,INTERFACE_INCLUDE_DIRECTORIES>
-  PRIVATE ${SDL2_INCLUDE_DIRS}
 )
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
