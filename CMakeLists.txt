@@ -7,7 +7,7 @@ project(3dgraph
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 find_package(range-v3 REQUIRED)
-find_package(sdl2 REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
