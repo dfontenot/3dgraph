@@ -35,11 +35,11 @@ ostream& operator<<(ostream& o, const array<T, N>& arr) {
 }
 
 // source: https://stackoverflow.com/a/2602060/854854
-string read_file(const char* fn) {
+string read_file(const string& source_fn) {
     using std::ifstream;
     using std::istreambuf_iterator;
 
-    ifstream file { fn };
+    ifstream file { source_fn };
     string str;
 
     file.seekg(0, std::ios::end);
@@ -94,17 +94,25 @@ public:
     }
 };
 
-class Shaders {
+class Shader {
     static constexpr GLsizei number_of_sources = 1;
     static constexpr GLint* source_lengths = 0; // can be set to 0 since source ends with a null terminator
 
 public:
     GLuint shader_handle;
     GLenum shader_type;
+    string source_fn;
+    string last_error;
 
-    void init(const char* shader_fn) {
-        auto shader_source = read_file(shader_fn);
+    Shader() = delete;
+    Shader(const char* source_fn, GLenum shader_type) :
+        shader_type(shader_type),
+        source_fn(string(source_fn)) {}
+
+    void compile() {
+        auto shader_source = read_file(source_fn);
         auto shader_handle_data = shader_source.data();
+        last_error.clear();
 
         shader_handle = glCreateShader(shader_type);
         glShaderSource(shader_handle,
@@ -113,6 +121,18 @@ public:
                        source_lengths);
 
         glCompileShader(shader_handle);
+        int did_compile;
+        glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &did_compile);
+        if (did_compile == GL_FALSE) {
+            int to_allocate;
+            glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &to_allocate);
+            last_error.reserve(to_allocate);
+            glGetShaderInfoLog(shader_handle, to_allocate, &to_allocate, last_error.data());
+        }
+    }
+
+    bool did_compile() const {
+        return last_error.size() == 0;
     }
 };
 
@@ -161,6 +181,16 @@ int main(int argc, char *argv[]) {
 
     Vertices verts {};
     verts.init(make_lattice());
+
+    Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
+    if (! vertex_shader.did_compile()) {
+        cerr << "vertex shader compilation failed:" << endl << vertex_shader.last_error << endl;
+    }
+
+    Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
+    if (! fragment_shader.did_compile()) {
+        cerr << "fragment shader compilation failed:" << endl << fragment_shader.last_error << endl;
+    }
 
     while (true) {
         SDL_Event evt;
