@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <filesystem>
 #include <fstream>
 #include "glad/glad.h"
 #include <iostream>
@@ -13,6 +14,7 @@ using std::cerr;
 using std::copy;
 using std::cout;
 using std::endl;
+using std::filesystem::current_path;
 using std::get;
 using std::next;
 using std::ostream;
@@ -111,7 +113,9 @@ public:
         source_fn(string(source_fn)) {}
 
     void compile() {
-        auto shader_source = read_file(source_fn);
+        auto shader_dir = current_path() / "shaders";
+
+        auto shader_source = read_file(shader_dir / source_fn);
         auto shader_handle_data = shader_source.data();
         last_error.clear();
 
@@ -172,6 +176,7 @@ int main(int argc, char *argv[]) {
     cout << "vendor: " << glGetString(GL_VENDOR) << endl;
     cout << "renderer: " << glGetString(GL_RENDERER) << endl;
     cout << "version: " << glGetString(GL_VERSION) << endl;
+    cout << "shading language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);
