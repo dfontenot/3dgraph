@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <string>
+#include <string_view>
 
 using std::array;
 using std::cerr;
@@ -21,6 +22,7 @@ using std::ostream;
 using std::ostream_iterator;
 using std::size_t;
 using std::string;
+using std::string_view;
 using ranges::views::iota;
 using ranges::views::cartesian_product;
 using ranges::for_each;
@@ -101,15 +103,17 @@ class Shader {
     static constexpr GLsizei number_of_sources = 1;
     static constexpr GLint* source_lengths = 0; // can be set to 0 since source ends with a null terminator
 
+    string source_fn;
+    string last_error_;
+    int compiled;
 public:
     GLuint shader_handle;
     GLenum shader_type;
-    string source_fn;
-    string last_error;
 
     Shader() = delete;
     Shader(const char* source_fn, GLenum shader_type) :
         shader_type(shader_type),
+        compiled(GL_FALSE),
         source_fn(string(source_fn)) {}
 
     void compile() {
@@ -117,7 +121,7 @@ public:
 
         auto shader_source = read_file(shader_dir / source_fn);
         auto shader_handle_data = shader_source.data();
-        last_error.clear();
+        last_error_.clear();
 
         shader_handle = glCreateShader(shader_type);
         glShaderSource(shader_handle,
@@ -126,18 +130,21 @@ public:
                        source_lengths);
 
         glCompileShader(shader_handle);
-        int did_compile;
-        glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &did_compile);
-        if (did_compile == GL_FALSE) {
+        glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &compiled);
+        if (! did_compile()) {
             int to_allocate;
             glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &to_allocate);
-            last_error.reserve(to_allocate);
-            glGetShaderInfoLog(shader_handle, to_allocate, &to_allocate, last_error.data());
+            last_error_.reserve(to_allocate);
+            glGetShaderInfoLog(shader_handle, to_allocate, &to_allocate, last_error_.data());
         }
     }
 
     bool did_compile() const {
-        return last_error.size() == 0;
+        return compiled == GL_TRUE;
+    }
+
+    string_view last_error() const {
+        return string_view { last_error_ };
     }
 };
 
@@ -190,12 +197,12 @@ int main(int argc, char *argv[]) {
 
     Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
     if (! vertex_shader.did_compile()) {
-        cerr << "vertex shader compilation failed:" << endl << vertex_shader.last_error << endl;
+        cerr << "vertex shader compilation failed:" << endl << vertex_shader.last_error() << endl;
     }
 
     Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
     if (! fragment_shader.did_compile()) {
-        cerr << "fragment shader compilation failed:" << endl << fragment_shader.last_error << endl;
+        cerr << "fragment shader compilation failed:" << endl << fragment_shader.last_error() << endl;
     }
 
     while (true) {
