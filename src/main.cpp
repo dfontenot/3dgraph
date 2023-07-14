@@ -4,6 +4,7 @@
 #include <fstream>
 #include "glad/glad.h"
 #include <iostream>
+#include <memory>
 #include <range/v3/all.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -17,6 +18,7 @@ using std::cout;
 using std::endl;
 using std::filesystem::current_path;
 using std::get;
+using std::make_unique;
 using std::next;
 using std::ostream;
 using std::ostream_iterator;
@@ -86,6 +88,7 @@ public:
     template <size_t N>
     void init(array<GLfloat, N> data) {
         glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, N * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
@@ -105,7 +108,7 @@ class Shader {
 
     string source_fn;
     string last_error_;
-    int compiled;
+    GLint compiled;
 public:
     GLuint shader_handle;
     GLenum shader_type;
@@ -132,10 +135,11 @@ public:
         glCompileShader(shader_handle);
         glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &compiled);
         if (! did_compile()) {
-            int to_allocate;
+            GLsizei to_allocate;
             glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &to_allocate);
-            last_error_.reserve(to_allocate);
-            glGetShaderInfoLog(shader_handle, to_allocate, &to_allocate, last_error_.data());
+            auto compilation_err_str = make_unique<GLchar[]>(to_allocate);
+            glGetShaderInfoLog(shader_handle, to_allocate, nullptr, compilation_err_str.get());
+            last_error_ = compilation_err_str.get();
         }
     }
 
@@ -196,11 +200,13 @@ int main(int argc, char *argv[]) {
     verts.init(make_lattice());
 
     Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
+    vertex_shader.compile();
     if (! vertex_shader.did_compile()) {
         cerr << "vertex shader compilation failed:" << endl << vertex_shader.last_error() << endl;
     }
 
     Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
+    fragment_shader.compile();
     if (! fragment_shader.did_compile()) {
         cerr << "fragment shader compilation failed:" << endl << fragment_shader.last_error() << endl;
     }
