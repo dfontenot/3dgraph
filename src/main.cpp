@@ -10,6 +10,8 @@
 #include <SDL2/SDL_opengl.h>
 #include <string>
 #include <string_view>
+#include <stdexcept>
+#include <sstream>
 
 using std::array;
 using std::cerr;
@@ -25,6 +27,8 @@ using std::ostream_iterator;
 using std::size_t;
 using std::string;
 using std::string_view;
+using std::runtime_error;
+using std::stringstream;
 using ranges::views::iota;
 using ranges::views::cartesian_product;
 using ranges::for_each;
@@ -38,6 +42,22 @@ template <class T, size_t N>
 ostream& operator<<(ostream& o, const array<T, N>& arr) {
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
     return o;
+}
+
+/**
+ * @brief similar to glu
+ * @return string representation of the shader type (one word)
+ */
+string shader_type_to_string(GLenum shader_type) {
+    if (shader_type == GL_VERTEX_SHADER) {
+        return string { "vertex" };
+    }
+    else if (shader_type == GL_FRAGMENT_SHADER) {
+        return string { "fragment" };
+    }
+    else {
+        throw runtime_error("unknown shader type");
+    }
 }
 
 // source: https://stackoverflow.com/a/2602060/854854
@@ -57,6 +77,10 @@ string read_file(const string& source_fn) {
     return str;
 }
 
+/**
+* @ brief creates a lattice of points
+* @ return a flat GLfloat array
+*/
 auto make_lattice() {
     constexpr size_t total_size = tesselation_amount * tesselation_amount * 2;
     constexpr GLfloat scaling = 1.0 / static_cast<GLfloat>(tesselation_amount);
@@ -80,16 +104,18 @@ class Vertices {
     static constexpr GLuint vertex_attrib_location = 0;
     static constexpr GLboolean is_normalized = GL_FALSE;
     static constexpr GLsizei stride = 0;
+    static constexpr GLsizei num_create = 1;
+    static constexpr GLvoid* first_component_offset = nullptr;
 
 public:
     GLuint vao;
     GLuint vbo;
 
     template <size_t N>
-    void init(array<GLfloat, N> data) {
-        glGenVertexArrays(1, &vao);
+    void init(array<GLfloat, N>&& data) {
+        glGenVertexArrays(num_create, &vao);
         glBindVertexArray(vao);
-        glGenBuffers(1, &vbo);
+        glGenBuffers(num_create, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, N * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
         glVertexAttribPointer(vertex_attrib_location,
@@ -97,8 +123,26 @@ public:
                               GL_FLOAT,
                               is_normalized,
                               stride,
-                              0);
+                              first_component_offset);
         glEnableVertexAttribArray(vertex_attrib_location);
+    }
+};
+
+class ShaderCompilationException : public std::exception {
+    string message;
+    GLenum shader_type;
+public:
+    ShaderCompilationException(string& msg, GLenum shader_type) : message(msg), shader_type(shader_type) {}
+    ShaderCompilationException(char* msg, GLenum shader_type) : message(msg), shader_type(shader_type) {}
+
+    char* what() {
+        stringstream ss;
+        ss << shader_type_to_string(shader_type) << ": " << message;
+        auto result = ss.str();
+        const std::string::size_type size = result.size();
+        char* buffer = new char[size + 1];
+        memcpy(buffer, result.c_str(), size + 1);
+        return buffer;
     }
 };
 
@@ -119,7 +163,7 @@ public:
         compiled(GL_FALSE),
         source_fn(string(source_fn)) {}
 
-    void compile() {
+    bool compile() {
         auto shader_dir = current_path() / "shaders";
 
         auto shader_source = read_file(shader_dir / source_fn);
@@ -139,16 +183,29 @@ public:
             glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &to_allocate);
             auto compilation_err_str = make_unique<GLchar[]>(to_allocate);
             glGetShaderInfoLog(shader_handle, to_allocate, nullptr, compilation_err_str.get());
-            last_error_ = compilation_err_str.get();
+            throw ShaderCompilationException(compilation_err_str.get(), shader_type);
         }
+
+        return did_compile();
     }
 
+    /**
+    * @brief has the shader been successfully compiled yet
+    * @return bool
+    */
     bool did_compile() const {
         return compiled == GL_TRUE;
     }
+};
 
-    string_view last_error() const {
-        return string_view { last_error_ };
+class ShaderProgram {
+    static constexpr GLuint position_index = 0;
+public:
+    GLuint program;
+
+    ShaderProgram& attach_shader(Shader& shader) {
+        glAttachShader(program, shader.shader_handle);
+        return *this;
     }
 };
 
@@ -199,33 +256,33 @@ int main(int argc, char *argv[]) {
     Vertices verts {};
     verts.init(make_lattice());
 
-    Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
-    vertex_shader.compile();
-    if (! vertex_shader.did_compile()) {
-        cerr << "vertex shader compilation failed:" << endl << vertex_shader.last_error() << endl;
-    }
+    try {
+        Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
+        vertex_shader.compile();
 
-    Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
-    fragment_shader.compile();
-    if (! fragment_shader.did_compile()) {
-        cerr << "fragment shader compilation failed:" << endl << fragment_shader.last_error() << endl;
-    }
+        Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
+        fragment_shader.compile();
 
-    while (true) {
-        SDL_Event evt;
-        while (SDL_PollEvent(&evt)) {
+        while (true) {
+            SDL_Event evt;
+            while (SDL_PollEvent(&evt)) {
 
-            if (evt.type == SDL_QUIT) {
-                return 0;
-            }
-
-            if (evt.type == SDL_KEYDOWN) {
-                if (evt.key.keysym.sym == SDLK_q) {
+                if (evt.type == SDL_QUIT) {
                     return 0;
+                }
+
+                if (evt.type == SDL_KEYDOWN) {
+                    if (evt.key.keysym.sym == SDLK_q) {
+                        return 0;
+                    }
                 }
             }
         }
-    }
 
-    return 0;
+        return 0;
+    }
+    catch (std::exception& e) {
+        cerr << e.what() << endl;
+        return 1;
+    }
 }
