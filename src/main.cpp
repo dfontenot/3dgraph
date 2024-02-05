@@ -60,6 +60,48 @@ string shader_type_to_string(GLenum shader_type) {
     }
 }
 
+/**
+ * @brief similar to gluErrorString
+ * @return string rep of the error
+ */
+string gl_get_error_string() {
+    auto err = glGetError();
+
+    stringstream ss;
+    ss << "0x" << std::hex << err << std::dec << ": ";
+    switch(err) {
+        case GL_NO_ERROR:
+            ss << "no error";
+            break;
+        case GL_INVALID_ENUM:
+            ss << "invalid enum";
+            break;
+        case GL_INVALID_VALUE:
+            ss << "invalid value";
+            break;
+        case GL_INVALID_OPERATION:
+            ss << "invalid operation";
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            ss << "invalid framebuffer operation";
+            break;
+        case GL_OUT_OF_MEMORY:
+            ss << "out of memory";
+            break;
+        case GL_STACK_UNDERFLOW:
+            ss << "stack underflow";
+            break;
+        case GL_STACK_OVERFLOW:
+            ss << "stack overflow";
+            break;
+        default:
+            ss << "unknown";
+            break;
+    }
+
+    return ss.str();
+}
+
 // source: https://stackoverflow.com/a/2602060/854854
 string read_file(const string& source_fn) {
     using std::ifstream;
@@ -128,16 +170,23 @@ public:
     }
 };
 
-class ShaderCompilationException : public std::exception {
-    string message;
+class WrappedOpenGLError : public runtime_error {
+public:
+    WrappedOpenGLError(string& msg) : runtime_error(msg) {}
+    WrappedOpenGLError(char* msg) : runtime_error(msg) {}
+    WrappedOpenGLError(const char* msg) : runtime_error(msg) {}
+};
+
+class ShaderCompilationError : public WrappedOpenGLError {
     GLenum shader_type;
 public:
-    ShaderCompilationException(string& msg, GLenum shader_type) : message(msg), shader_type(shader_type) {}
-    ShaderCompilationException(char* msg, GLenum shader_type) : message(msg), shader_type(shader_type) {}
+    ShaderCompilationError(string& msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
+    ShaderCompilationError(char* msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
+    ShaderCompilationError(const char* msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
 
-    char* what() {
+    const char* what() const noexcept override {
         stringstream ss;
-        ss << shader_type_to_string(shader_type) << ": " << message;
+        ss << shader_type_to_string(shader_type) << ": " << WrappedOpenGLError::what();
         auto result = ss.str();
         const std::string::size_type size = result.size();
         char* buffer = new char[size + 1];
@@ -151,7 +200,6 @@ class Shader {
     static constexpr GLint* source_lengths = 0; // can be set to 0 since source ends with a null terminator
 
     string source_fn;
-    string last_error_;
     GLint compiled;
 public:
     GLuint shader_handle;
@@ -168,7 +216,6 @@ public:
 
         auto shader_source = read_file(shader_dir / source_fn);
         auto shader_handle_data = shader_source.data();
-        last_error_.clear();
 
         shader_handle = glCreateShader(shader_type);
         glShaderSource(shader_handle,
@@ -183,10 +230,11 @@ public:
             glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &to_allocate);
             auto compilation_err_str = make_unique<GLchar[]>(to_allocate);
             glGetShaderInfoLog(shader_handle, to_allocate, nullptr, compilation_err_str.get());
-            throw ShaderCompilationException(compilation_err_str.get(), shader_type);
+            throw ShaderCompilationError(compilation_err_str.get(), shader_type);
         }
-
-        return did_compile();
+        else {
+            return true;
+        }
     }
 
     /**
@@ -198,14 +246,54 @@ public:
     }
 };
 
+
+class ShaderProgramCompilationError : public WrappedOpenGLError {
+public:
+    ShaderProgramCompilationError(string& msg) : WrappedOpenGLError(msg) {}
+    ShaderProgramCompilationError(char* msg) : WrappedOpenGLError(msg) {}
+    ShaderProgramCompilationError(const char* msg) : WrappedOpenGLError(msg) {}
+};
+
 class ShaderProgram {
     static constexpr GLuint position_index = 0;
+    static constexpr const GLchar* position_variable_name = "position"; // must line up w/ shader source code
+    
+    GLint linked;
 public:
-    GLuint program;
+    GLuint program_handle;
+
+    ShaderProgram() : linked(GL_FALSE), program_handle(glCreateProgram()) {}
 
     ShaderProgram& attach_shader(Shader& shader) {
-        glAttachShader(program, shader.shader_handle);
+        glAttachShader(program_handle, shader.shader_handle);
         return *this;
+    }
+
+    bool link() {
+        glBindAttribLocation(program_handle, position_index, position_variable_name);
+        glLinkProgram(program_handle);
+        glGetProgramiv(program_handle, GL_LINK_STATUS, &linked);
+
+        if (! did_link()) {
+            GLsizei to_allocate;
+            glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &to_allocate);
+            auto link_err_str = make_unique<GLchar[]>(to_allocate);
+            glGetProgramInfoLog(program_handle, to_allocate, nullptr, link_err_str.get());
+            throw ShaderProgramCompilationError(link_err_str.get());
+        }
+        else {
+            return true;
+        }
+    }
+
+    bool use() {
+        bool link_result = link();
+        glUseProgram(program_handle);
+        return link_result;
+    }
+
+    bool did_link() const {
+        return linked == GL_TRUE;
     }
 };
 
@@ -262,6 +350,9 @@ int main(int argc, char *argv[]) {
 
         Shader fragment_shader("fragment.glsl", GL_FRAGMENT_SHADER);
         fragment_shader.compile();
+
+        ShaderProgram program {};
+        program.attach_shader(vertex_shader).attach_shader(fragment_shader).use();
 
         while (true) {
             SDL_Event evt;
