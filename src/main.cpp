@@ -257,6 +257,8 @@ public:
 class ShaderProgram {
     static constexpr GLuint position_index = 0;
     static constexpr const GLchar* position_variable_name = "position"; // must line up w/ shader source code
+    static constexpr const GLchar* offset_x_uniform_variable_name = "offset_x";
+    static constexpr const GLchar* offset_y_uniform_variable_name = "offset_y";
     
     GLint linked;
 public:
@@ -269,7 +271,7 @@ public:
         return *this;
     }
 
-    bool link() {
+    ShaderProgram& link() {
         glBindAttribLocation(program_handle, position_index, position_variable_name);
         glLinkProgram(program_handle);
         glGetProgramiv(program_handle, GL_LINK_STATUS, &linked);
@@ -281,15 +283,34 @@ public:
             glGetProgramInfoLog(program_handle, to_allocate, nullptr, link_err_str.get());
             throw ShaderProgramCompilationError(link_err_str.get());
         }
-        else {
-            return true;
-        }
+
+        // initialize uniform variables
+        update_uniforms(0.0, 0.0);
+
+        return *this;
     }
 
-    bool use() {
-        bool link_result = link();
+    ShaderProgram& use() {
         glUseProgram(program_handle);
-        return link_result;
+        return *this;
+    }
+
+    void update_uniforms(float offset_x, float offset_y) {
+        if (! did_link()) {
+            throw WrappedOpenGLError("need to link the program first");
+        }
+
+        GLint offset_x_location = glGetUniformLocation(program_handle, offset_x_uniform_variable_name);
+        if (offset_x_location < 0) {
+            throw WrappedOpenGLError("unable to set offset_x");
+        }
+        glUniform1f(offset_x_location, offset_x);
+
+        GLint offset_y_location = glGetUniformLocation(program_handle, offset_y_uniform_variable_name);
+        if (offset_y_location < 0) {
+            throw WrappedOpenGLError("unable to set offset_y");
+        }
+        glUniform1f(offset_y_location, offset_y);
     }
 
     bool did_link() const {
@@ -340,6 +361,7 @@ int main(int argc, char *argv[]) {
 
     glViewport(0, 0, window_w, window_h);
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     Vertices verts {};
     verts.init(make_lattice());
@@ -352,9 +374,14 @@ int main(int argc, char *argv[]) {
         fragment_shader.compile();
 
         ShaderProgram program {};
-        program.attach_shader(vertex_shader).attach_shader(fragment_shader).use();
+        program.attach_shader(vertex_shader).attach_shader(fragment_shader).link().use();
+
+        // allows panning the 3d function
+        float offset_x;
+        float offset_y;
 
         while (true) {
+            //glDrawElements(GL_TRIANGLES, );
             SDL_Event evt;
             while (SDL_PollEvent(&evt)) {
 
@@ -366,7 +393,26 @@ int main(int argc, char *argv[]) {
                     if (evt.key.keysym.sym == SDLK_q) {
                         return 0;
                     }
+
+                    if (evt.key.keysym.sym == SDLK_LEFT) {
+                        offset_x -= 0.1;
+                    }
+
+                    if (evt.key.keysym.sym == SDLK_RIGHT) {
+                        offset_x += 0.1;
+                    }
+
+                    if (evt.key.keysym.sym == SDLK_UP) {
+                        offset_y += 0.1;
+                    }
+
+                    if (evt.key.keysym.sym == SDLK_DOWN) {
+                        offset_y -= 0.1;
+                    }
                 }
+
+                SDL_Delay(200);
+                program.update_uniforms(offset_x, offset_y);
             }
         }
 
