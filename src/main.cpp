@@ -120,11 +120,11 @@ string read_file(const string& source_fn) {
 }
 
 /**
-* @ brief creates a lattice of points
+* @ brief creates a lattice of points (no triangles)
 * @ return a flat GLfloat array
 */
 auto make_lattice() {
-    constexpr size_t total_size = tesselation_amount * tesselation_amount * 2;
+    constexpr size_t total_size = tesselation_amount * tesselation_amount * 3; // 3 dims per vertex
     constexpr GLfloat scaling = 1.0 / static_cast<GLfloat>(tesselation_amount);
     array<GLfloat, total_size> lattice;
 
@@ -136,13 +136,15 @@ auto make_lattice() {
         point_location = next(point_location);
         *point_location = get<1>(pt) * scaling;
         point_location = next(point_location);
+        *point_location = 0.0f; // let shader compute height
+        point_location = next(point_location);
     });
 
     return lattice;
 }
 
 class Vertices {
-    static constexpr GLint points_per_vertex = 2;
+    static constexpr GLint points_per_vertex = 3;
     static constexpr GLuint vertex_attrib_location = 0;
     static constexpr GLboolean is_normalized = GL_FALSE;
     static constexpr GLsizei stride = 0;
@@ -150,11 +152,13 @@ class Vertices {
     static constexpr GLvoid* first_component_offset = nullptr;
 
 public:
+    size_t num_verts;
     GLuint vao;
     GLuint vbo;
 
     template <size_t N>
     void init(array<GLfloat, N>&& data) {
+        num_verts = N / 3;
         glGenVertexArrays(num_create, &vao);
         glBindVertexArray(vao);
         glGenBuffers(num_create, &vbo);
@@ -381,7 +385,10 @@ int main(int argc, char *argv[]) {
         float offset_y;
 
         while (true) {
-            //glDrawElements(GL_TRIANGLES, );
+
+            glBindVertexArray(verts.vao);
+            glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
+            glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
             SDL_Event evt;
             while (SDL_PollEvent(&evt)) {
 
