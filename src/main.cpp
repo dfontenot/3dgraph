@@ -418,6 +418,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
     glViewport(0, 0, window_w, window_h);
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
