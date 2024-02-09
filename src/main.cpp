@@ -35,7 +35,7 @@ using ranges::for_each;
 
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
-constexpr int tesselation_amount = 20;
+constexpr int tesselation_amount = 10;
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N>
@@ -60,12 +60,12 @@ string shader_type_to_string(GLenum shader_type) {
     }
 }
 
+
 /**
  * @brief similar to gluErrorString
  * @return string rep of the error
  */
-string gl_get_error_string() {
-    auto err = glGetError();
+string gl_get_error_string(GLenum err) {
 
     stringstream ss;
     ss << "0x" << std::hex << err << std::dec << ": ";
@@ -100,6 +100,14 @@ string gl_get_error_string() {
     }
 
     return ss.str();
+}
+
+/**
+ * @brief similar to gluErrorString
+ * @return string rep of the error
+ */
+string gl_get_error_string() {
+    return gl_get_error_string(glGetError());
 }
 
 // source: https://stackoverflow.com/a/2602060/854854
@@ -145,7 +153,7 @@ auto make_lattice() {
 
 class Vertices {
     static constexpr GLint points_per_vertex = 3;
-    static constexpr GLuint vertex_attrib_location = 0;
+    static constexpr GLuint vertex_attrib_location = 0; // where the vertex data is stored
     static constexpr GLboolean is_normalized = GL_FALSE;
     static constexpr GLsizei stride = 0;
     static constexpr GLsizei num_create = 1;
@@ -171,12 +179,15 @@ public:
                               stride,
                               first_component_offset);
         glEnableVertexAttribArray(vertex_attrib_location);
+        glBindVertexArray(0); // unbind the vao
+        glDisableVertexAttribArray(vertex_attrib_location); // close attributes
     }
 };
 
 class WrappedOpenGLError : public runtime_error {
 public:
     WrappedOpenGLError(string& msg) : runtime_error(msg) {}
+    WrappedOpenGLError(string&& msg) : runtime_error(msg) {}
     WrappedOpenGLError(char* msg) : runtime_error(msg) {}
     WrappedOpenGLError(const char* msg) : runtime_error(msg) {}
 };
@@ -267,15 +278,32 @@ class ShaderProgram {
     GLint linked;
 public:
     GLuint program_handle;
+    bool program_enabled;
 
-    ShaderProgram() : linked(GL_FALSE), program_handle(glCreateProgram()) {}
+    ShaderProgram() : linked(GL_FALSE), program_handle(glCreateProgram()), program_enabled(false) {}
 
     ShaderProgram& attach_shader(Shader& shader) {
+        auto current_error = glGetError();
+
+        if (current_error != GL_NO_ERROR) {
+            throw WrappedOpenGLError("cannot link " + shader_type_to_string(shader.shader_type) + " shader due to existing error: " + gl_get_error_string(current_error));
+        }
+
         glAttachShader(program_handle, shader.shader_handle);
+
+        if ((current_error = glGetError()) != GL_NO_ERROR) {
+            throw WrappedOpenGLError("error occurred during " + shader_type_to_string(shader.shader_type) + " shader linkage: " + gl_get_error_string(current_error));
+        }
+
         return *this;
     }
 
     ShaderProgram& link() {
+        auto current_error = glGetError();
+        if (current_error != GL_NO_ERROR) {
+            throw WrappedOpenGLError("cannot link shader program due to existing error: " + gl_get_error_string(current_error));
+        }
+
         glBindAttribLocation(program_handle, position_index, position_variable_name);
         glLinkProgram(program_handle);
         glGetProgramiv(program_handle, GL_LINK_STATUS, &linked);
@@ -288,20 +316,42 @@ public:
             throw ShaderProgramCompilationError(link_err_str.get());
         }
 
+        // TODO: call glDetachShader() on each shader then call glDeleteShader() on each shader
+
+        return *this;
+    }
+
+    ShaderProgram& use() {
+        if (! did_link()) {
+            throw WrappedOpenGLError("need to link the program first");
+        }
+
+        auto current_error = glGetError();
+        if (current_error != GL_NO_ERROR) {
+            throw WrappedOpenGLError("cannot enable shader program due to existing error: " + gl_get_error_string(current_error));
+        }
+
+        glUseProgram(program_handle);
+        if ((current_error = glGetError()) != GL_NO_ERROR) {
+            throw WrappedOpenGLError("failed to enable the program: " + gl_get_error_string(current_error));
+        }
+
+        program_enabled = true;
+
         // initialize uniform variables
         update_uniforms(0.0, 0.0);
 
         return *this;
     }
 
-    ShaderProgram& use() {
-        glUseProgram(program_handle);
-        return *this;
-    }
+    void update_uniforms(float offset_x, GLfloat offset_y) {
+        if (! program_enabled) {
+            throw WrappedOpenGLError("need to enable the program first");
+        }
 
-    void update_uniforms(float offset_x, float offset_y) {
-        if (! did_link()) {
-            throw WrappedOpenGLError("need to link the program first");
+        auto current_error = glGetError();
+        if (current_error != GL_NO_ERROR) {
+            throw WrappedOpenGLError("cannot set uniforms due to existing error: " + gl_get_error_string(current_error));
         }
 
         GLint offset_x_location = glGetUniformLocation(program_handle, offset_x_uniform_variable_name);
@@ -309,12 +359,18 @@ public:
             throw WrappedOpenGLError("unable to set offset_x");
         }
         glUniform1f(offset_x_location, offset_x);
+        if ((current_error = glGetError()) != GL_NO_ERROR) {
+            throw WrappedOpenGLError("error setting x_offset uniform: " + gl_get_error_string(current_error));
+        }
 
         GLint offset_y_location = glGetUniformLocation(program_handle, offset_y_uniform_variable_name);
         if (offset_y_location < 0) {
             throw WrappedOpenGLError("unable to set offset_y");
         }
         glUniform1f(offset_y_location, offset_y);
+        if ((current_error = glGetError()) != GL_NO_ERROR) {
+            throw WrappedOpenGLError("error setting y_offset uniform: " + gl_get_error_string(current_error));
+        }
     }
 
     bool did_link() const {
@@ -381,14 +437,17 @@ int main(int argc, char *argv[]) {
         program.attach_shader(vertex_shader).attach_shader(fragment_shader).link().use();
 
         // allows panning the 3d function
-        float offset_x;
-        float offset_y;
+        GLfloat offset_x;
+        GLfloat offset_y;
 
         while (true) {
 
             glBindVertexArray(verts.vao);
             glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
-            glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
+            //glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
+            glDrawArrays(GL_POINTS, 0, verts.num_verts);
+            SDL_GL_SwapWindow(window);
+
             SDL_Event evt;
             while (SDL_PollEvent(&evt)) {
 
