@@ -192,11 +192,13 @@ class Vertices {
 
     template <size_t N>
     void init_vert_indices() {
+        constexpr size_t num_indices = N / 3;
+
         glGenBuffers(num_create, &ibo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        array<GLuint, N / 3> indices;
+        array<GLuint, num_indices> indices;
         std::iota(indices.begin(), indices.end(), 0);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, N * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
         auto current_error = glGetError();
         if (current_error != GL_NO_ERROR) {
