@@ -12,6 +12,7 @@
 #include <string_view>
 #include <stdexcept>
 #include <sstream>
+#include <numeric>
 
 using std::array;
 using std::cerr;
@@ -31,11 +32,19 @@ using std::runtime_error;
 using std::stringstream;
 using ranges::views::iota;
 using ranges::views::cartesian_product;
-using ranges::for_each;
 
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
 constexpr int tesselation_amount = 10;
+
+
+class WrappedOpenGLError : public runtime_error {
+public:
+    WrappedOpenGLError(string& msg) : runtime_error(msg) {}
+    WrappedOpenGLError(string&& msg) : runtime_error(msg) {}
+    WrappedOpenGLError(char* msg) : runtime_error(msg) {}
+    WrappedOpenGLError(const char* msg) : runtime_error(msg) {}
+};
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N>
@@ -56,10 +65,10 @@ string shader_type_to_string(GLenum shader_type) {
         return string { "fragment" };
     }
     else {
+        // TODO: support more as needed
         throw runtime_error("unknown shader type");
     }
 }
-
 
 /**
  * @brief similar to gluErrorString
@@ -132,6 +141,8 @@ string read_file(const string& source_fn) {
 * @ return a flat GLfloat array
 */
 auto make_lattice() {
+    using ranges::for_each;
+
     constexpr size_t total_size = tesselation_amount * tesselation_amount * 3; // 3 dims per vertex
     constexpr GLfloat scaling = 1.0 / static_cast<GLfloat>(tesselation_amount);
     array<GLfloat, total_size> lattice;
@@ -159,13 +170,8 @@ class Vertices {
     static constexpr GLsizei num_create = 1;
     static constexpr GLvoid* first_component_offset = nullptr;
 
-public:
-    size_t num_verts;
-    GLuint vao;
-    GLuint vbo;
-
     template <size_t N>
-    void init(array<GLfloat, N>&& data) {
+    void init_verts(array<GLfloat, N>& data) {
         num_verts = N / 3;
         glGenVertexArrays(num_create, &vao);
         glBindVertexArray(vao);
@@ -182,14 +188,33 @@ public:
         glBindVertexArray(0); // unbind the vao
         glDisableVertexAttribArray(vertex_attrib_location); // close attributes
     }
-};
 
-class WrappedOpenGLError : public runtime_error {
+
+    template <size_t N>
+    void init_vert_indices() {
+        glGenBuffers(num_create, &ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        array<GLuint, N / 3> indices;
+        std::iota(indices.begin(), indices.end(), 0);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, N * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+        auto current_error = glGetError();
+        if (current_error != GL_NO_ERROR) {
+            throw WrappedOpenGLError("cannot setup ibo: " + gl_get_error_string(current_error));
+        }
+    }
+
 public:
-    WrappedOpenGLError(string& msg) : runtime_error(msg) {}
-    WrappedOpenGLError(string&& msg) : runtime_error(msg) {}
-    WrappedOpenGLError(char* msg) : runtime_error(msg) {}
-    WrappedOpenGLError(const char* msg) : runtime_error(msg) {}
+    size_t num_verts;
+    GLuint vao;
+    GLuint vbo;
+    GLuint ibo;
+
+    template <size_t N>
+    void init(array<GLfloat, N>&& data) {
+        init_verts(data);
+        init_vert_indices<N>();
+    }
 };
 
 class ShaderCompilationError : public WrappedOpenGLError {
@@ -444,9 +469,10 @@ int main(int argc, char *argv[]) {
         while (true) {
 
             glBindVertexArray(verts.vao);
-            glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
-            //glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
-            glDrawArrays(GL_POINTS, 0, verts.num_verts);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, verts.ibo);
+            glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
+            //glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
+            //glDrawArrays(GL_POINTS, 0, verts.num_verts);
             SDL_GL_SwapWindow(window);
 
             SDL_Event evt;
