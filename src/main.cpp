@@ -1,3 +1,8 @@
+#include "gl_inspect.hpp"
+#include "exceptions.hpp"
+#include "vertices.hpp"
+#include "grid_points.hpp"
+
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -37,86 +42,11 @@ constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
 constexpr int tesselation_amount = 10;
 
-
-class WrappedOpenGLError : public runtime_error {
-public:
-    WrappedOpenGLError(string& msg) : runtime_error(msg) {}
-    WrappedOpenGLError(string&& msg) : runtime_error(msg) {}
-    WrappedOpenGLError(char* msg) : runtime_error(msg) {}
-    WrappedOpenGLError(const char* msg) : runtime_error(msg) {}
-};
-
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N>
 ostream& operator<<(ostream& o, const array<T, N>& arr) {
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
     return o;
-}
-
-/**
- * @brief similar to glu
- * @return string representation of the shader type (one word)
- */
-string shader_type_to_string(GLenum shader_type) {
-    if (shader_type == GL_VERTEX_SHADER) {
-        return string { "vertex" };
-    }
-    else if (shader_type == GL_FRAGMENT_SHADER) {
-        return string { "fragment" };
-    }
-    else {
-        // TODO: support more as needed
-        throw runtime_error("unknown shader type");
-    }
-}
-
-/**
- * @brief similar to gluErrorString
- * @return string rep of the error
- */
-string gl_get_error_string(GLenum err) {
-
-    stringstream ss;
-    ss << "0x" << std::hex << err << std::dec << ": ";
-    switch(err) {
-        case GL_NO_ERROR:
-            ss << "no error";
-            break;
-        case GL_INVALID_ENUM:
-            ss << "invalid enum";
-            break;
-        case GL_INVALID_VALUE:
-            ss << "invalid value";
-            break;
-        case GL_INVALID_OPERATION:
-            ss << "invalid operation";
-            break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            ss << "invalid framebuffer operation";
-            break;
-        case GL_OUT_OF_MEMORY:
-            ss << "out of memory";
-            break;
-        case GL_STACK_UNDERFLOW:
-            ss << "stack underflow";
-            break;
-        case GL_STACK_OVERFLOW:
-            ss << "stack overflow";
-            break;
-        default:
-            ss << "unknown";
-            break;
-    }
-
-    return ss.str();
-}
-
-/**
- * @brief similar to gluErrorString
- * @return string rep of the error
- */
-string gl_get_error_string() {
-    return gl_get_error_string(glGetError());
 }
 
 // source: https://stackoverflow.com/a/2602060/854854
@@ -161,81 +91,6 @@ auto make_lattice() {
 
     return lattice;
 }
-
-class Vertices {
-    static constexpr GLint points_per_vertex = 3;
-    static constexpr GLuint vertex_attrib_location = 0; // where the vertex data is stored
-    static constexpr GLboolean is_normalized = GL_FALSE;
-    static constexpr GLsizei stride = 0;
-    static constexpr GLsizei num_create = 1;
-    static constexpr GLvoid* first_component_offset = nullptr;
-
-    template <size_t N>
-    void init_verts(array<GLfloat, N>& data) {
-        num_verts = N / 3;
-        glGenVertexArrays(num_create, &vao);
-        glBindVertexArray(vao);
-        glGenBuffers(num_create, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, N * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(vertex_attrib_location,
-                              points_per_vertex,
-                              GL_FLOAT,
-                              is_normalized,
-                              stride,
-                              first_component_offset);
-        glEnableVertexAttribArray(vertex_attrib_location);
-        glBindVertexArray(0); // unbind the vao
-        glDisableVertexAttribArray(vertex_attrib_location); // close attributes
-    }
-
-
-    template <size_t N>
-    void init_vert_indices() {
-        constexpr size_t num_indices = N / 3;
-
-        glGenBuffers(num_create, &ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        array<GLuint, num_indices> indices;
-        std::iota(indices.begin(), indices.end(), 0);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-
-        auto current_error = glGetError();
-        if (current_error != GL_NO_ERROR) {
-            throw WrappedOpenGLError("cannot setup ibo: " + gl_get_error_string(current_error));
-        }
-    }
-
-public:
-    size_t num_verts;
-    GLuint vao;
-    GLuint vbo;
-    GLuint ibo;
-
-    template <size_t N>
-    void init(array<GLfloat, N>&& data) {
-        init_verts(data);
-        init_vert_indices<N>();
-    }
-};
-
-class ShaderCompilationError : public WrappedOpenGLError {
-    GLenum shader_type;
-public:
-    ShaderCompilationError(string& msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
-    ShaderCompilationError(char* msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
-    ShaderCompilationError(const char* msg, GLenum shader_type) : WrappedOpenGLError(msg), shader_type(shader_type) {}
-
-    const char* what() const noexcept override {
-        stringstream ss;
-        ss << shader_type_to_string(shader_type) << ": " << WrappedOpenGLError::what();
-        auto result = ss.str();
-        const std::string::size_type size = result.size();
-        char* buffer = new char[size + 1];
-        memcpy(buffer, result.c_str(), size + 1);
-        return buffer;
-    }
-};
 
 class Shader {
     static constexpr GLsizei number_of_sources = 1;
@@ -385,6 +240,7 @@ public:
         if (offset_x_location < 0) {
             throw WrappedOpenGLError("unable to set offset_x");
         }
+
         glUniform1f(offset_x_location, offset_x);
         if ((current_error = glGetError()) != GL_NO_ERROR) {
             throw WrappedOpenGLError("error setting x_offset uniform: " + gl_get_error_string(current_error));
@@ -394,6 +250,7 @@ public:
         if (offset_y_location < 0) {
             throw WrappedOpenGLError("unable to set offset_y");
         }
+
         glUniform1f(offset_y_location, offset_y);
         if ((current_error = glGetError()) != GL_NO_ERROR) {
             throw WrappedOpenGLError("error setting y_offset uniform: " + gl_get_error_string(current_error));
@@ -451,10 +308,12 @@ int main(int argc, char *argv[]) {
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    Vertices verts {};
-    verts.init(make_lattice());
-
     try {
+
+        auto points = make_lattice();
+        Vertices verts(points);
+        GridPoints<points.size()> grid_points {};
+
         Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
         vertex_shader.compile();
 
@@ -470,9 +329,12 @@ int main(int argc, char *argv[]) {
 
         while (true) {
 
-            glBindVertexArray(verts.vao);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, verts.ibo);
-            glDrawElements(GL_POINTS, verts.num_verts, GL_UNSIGNED_INT, nullptr);
+            verts.get_vao()->bind();
+            grid_points.get_ibo()->bind();
+            // glBindVertexArray(*verts.get_vao());
+            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *grid_points.get_ibo());
+
+            glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
             //glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
             //glDrawArrays(GL_POINTS, 0, verts.num_verts);
             SDL_GL_SwapWindow(window);
@@ -508,6 +370,7 @@ int main(int argc, char *argv[]) {
 
                 SDL_Delay(200);
                 program.update_uniforms(offset_x, offset_y);
+                glBindVertexArray(0); // TODO: clean up direct opengl call
             }
         }
 
