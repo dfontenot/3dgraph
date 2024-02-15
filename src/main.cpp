@@ -38,6 +38,8 @@ using std::stringstream;
 using ranges::views::iota;
 using ranges::views::cartesian_product;
 
+constexpr Uint32 target_fps = 30;
+constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
 constexpr int tesselation_amount = 10;
@@ -313,6 +315,7 @@ int main(int argc, char *argv[]) {
         auto points = make_lattice();
         Vertices verts(points);
         GridPoints<points.size()> grid_points {};
+        verts.unbind();
 
         Shader vertex_shader("vertex.glsl", GL_VERTEX_SHADER);
         vertex_shader.compile();
@@ -329,14 +332,10 @@ int main(int argc, char *argv[]) {
 
         while (true) {
 
+            auto start_ticks = SDL_GetTicks();
             verts.get_vao()->bind();
-            grid_points.get_ibo()->bind();
-            // glBindVertexArray(*verts.get_vao());
-            // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *grid_points.get_ibo());
 
             glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
-            //glBindBuffer(GL_ARRAY_BUFFER, verts.vbo);
-            //glDrawArrays(GL_POINTS, 0, verts.num_verts);
             SDL_GL_SwapWindow(window);
 
             SDL_Event evt;
@@ -367,10 +366,16 @@ int main(int argc, char *argv[]) {
                         offset_y -= 0.1;
                     }
                 }
+            }
 
-                SDL_Delay(200);
-                program.update_uniforms(offset_x, offset_y);
-                glBindVertexArray(0); // TODO: clean up direct opengl call
+            program.update_uniforms(offset_x, offset_y);
+            verts.get_vao()->unbind();
+
+            auto end_ticks = SDL_GetTicks();
+            auto sleep_for_ticks = end_ticks - start_ticks;
+
+            if (max_sleep_per_tick > sleep_for_ticks) {
+                SDL_Delay(max_sleep_per_tick - sleep_for_ticks);
             }
         }
 

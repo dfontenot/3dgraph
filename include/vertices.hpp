@@ -41,7 +41,9 @@ public:
         if ((current_error = glGetError()) != GL_NO_ERROR) {
             throw WrappedOpenGLError("cannot set vertex data attribs: " + gl_get_error_string(current_error));
         }
+    }
 
+    void unbind() {
         glEnableVertexAttribArray(vertex_attrib_location);
         vao->unbind();
         glDisableVertexAttribArray(vertex_attrib_location); // close attributes
