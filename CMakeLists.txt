@@ -11,7 +11,7 @@ find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
-add_executable(${PROJECT_NAME} src/main.cpp src/glad.c src/gl_inspect.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE range-v3::range-v3

@@ -20,3 +20,10 @@ public:
     ShaderCompilationError(char* msg, GLenum shader_type) : WrappedOpenGLError(shader_type_to_string(shader_type) + " " + msg) {}
     ShaderCompilationError(const char* msg, GLenum shader_type) : WrappedOpenGLError(shader_type_to_string(shader_type) + " " + msg) {}
 };
+
+class ShaderProgramCompilationError : public WrappedOpenGLError {
+public:
+    ShaderProgramCompilationError(std::string& msg) : WrappedOpenGLError(msg) {}
+    ShaderProgramCompilationError(char* msg) : WrappedOpenGLError(msg) {}
+    ShaderProgramCompilationError(const char* msg) : WrappedOpenGLError(msg) {}
+};

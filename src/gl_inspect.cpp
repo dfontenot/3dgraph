@@ -14,6 +14,15 @@ string shader_type_to_string(GLenum shader_type) {
     if (shader_type == GL_VERTEX_SHADER) {
         return string { "vertex" };
     }
+    else if (shader_type == GL_TESS_CONTROL_SHADER) {
+        return string { "tsc" };
+    }
+    else if (shader_type == GL_TESS_EVALUATION_SHADER) {
+        return string { "tes" };
+    }
+    else if (shader_type == GL_GEOMETRY_SHADER) {
+        return string { "geometry" };
+    }
     else if (shader_type == GL_FRAGMENT_SHADER) {
         return string { "fragment" };
     }
