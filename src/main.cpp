@@ -1,7 +1,6 @@
 #include "gl_inspect.hpp"
 #include "exceptions.hpp"
 #include "vertices.hpp"
-#include "grid_points.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
 
@@ -11,7 +10,6 @@
 #include "glad/glad.h"
 #include <iostream>
 #include <memory>
-#include <range/v3/all.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <string>
@@ -20,6 +18,7 @@
 #include <sstream>
 #include <numeric>
 #include <vector>
+#include <iterator>
 
 using std::array;
 using std::cerr;
@@ -27,9 +26,7 @@ using std::copy;
 using std::cout;
 using std::endl;
 using std::filesystem::current_path;
-using std::get;
 using std::make_unique;
-using std::next;
 using std::ostream;
 using std::ostream_iterator;
 using std::size_t;
@@ -39,46 +36,17 @@ using std::shared_ptr;
 using std::runtime_error;
 using std::stringstream;
 using std::vector;
-using ranges::views::iota;
-using ranges::views::cartesian_product;
 
 constexpr Uint32 target_fps = 30;
 constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
-constexpr int tesselation_amount = 10;
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N>
 ostream& operator<<(ostream& o, const array<T, N>& arr) {
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
     return o;
-}
-
-/**
-* @ brief creates a lattice of points (no triangles)
-* @ return a flat GLfloat array
-*/
-auto make_lattice() {
-    using ranges::for_each;
-
-    constexpr size_t total_size = tesselation_amount * tesselation_amount * 3; // 3 dims per vertex
-    constexpr GLfloat scaling = 1.0 / static_cast<GLfloat>(tesselation_amount);
-    array<GLfloat, total_size> lattice;
-
-    const auto tesselation = iota(0, tesselation_amount);
-    const auto product = cartesian_product(tesselation, tesselation);
-    auto point_location = lattice.begin();
-    for_each(product, [&point_location](auto pt) {
-        *point_location = get<0>(pt) * scaling;
-        point_location = next(point_location);
-        *point_location = get<1>(pt) * scaling;
-        point_location = next(point_location);
-        *point_location = 0.0f; // let shader compute height
-        point_location = next(point_location);
-    });
-
-    return lattice;
 }
 
 int main(int argc, char *argv[]) {
