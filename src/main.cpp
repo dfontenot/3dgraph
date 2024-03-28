@@ -1,3 +1,4 @@
+#include "create_array.hpp"
 #include "gl_inspect.hpp"
 #include "exceptions.hpp"
 #include "vertices.hpp"
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
 
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     glViewport(0, 0, window_w, window_h);
@@ -97,17 +98,21 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        auto points = make_lattice();
-        Vertices verts(points);
-        GridPoints<points.size()> grid_points {};
-        verts.unbind();
-
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
-
+        auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
+        auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
 
-        ShaderProgram program = { vertex_shader, fragment_shader };
-        //program.attach_shader(vertex_shader).attach_shader(fragment_shader).link().use();
+        ShaderProgram program = { vertex_shader, tsc_shader, tes_shader, fragment_shader };
+
+        Vertices verts {
+            create_array_t<GLfloat>(
+                0.5, -0.5, 0.0,
+                0.5, 0.5, 0.0,
+                -0.5, 0.5, 0.0,
+                -0.5, -0.5, 0.0
+            )
+        };
 
         // allows panning the 3d function
         GLfloat offset_x;

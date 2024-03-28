@@ -6,6 +6,9 @@
 #include <memory>
 #include <string>
 
+#include <range/v3/view/indices.hpp>
+#include <range/v3/view/zip.hpp>
+
 #include "exceptions.hpp"
 #include "glad/glad.h"
 #include "shader_program.hpp"
@@ -21,6 +24,7 @@ using std::string;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : program_handle(glCreateProgram()), attached_shaders(shaders) {
     using std::make_unique;
+    using namespace ranges;
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(), [&](const shared_ptr<Shader>& shader) {
         glAttachShader(program_handle, shader->shader_handle);
@@ -52,7 +56,8 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : pro
 
     assert(linked == GL_TRUE);
 
-    for (auto variable_name : uniform_variable_names) {
+    for (const auto& idx_var_name : views::zip(views::indices, uniform_variable_names)) {
+        auto variable_name = idx_var_name.second;
         GLint location = glGetUniformLocation(program_handle, variable_name);
         if (location < 0) {
             string msg = "unable to find uniform ";
@@ -60,6 +65,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : pro
         }
 
         uniform_locations[variable_name] = location;
+        uniform_types[variable_name] = uniform_variable_types[idx_var_name.first];
     }
 }
 
