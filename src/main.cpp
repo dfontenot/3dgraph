@@ -5,21 +5,32 @@
 #include "shader.hpp"
 #include "shader_program.hpp"
 
+#include "glad/glad.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/mat4x4.hpp>
+
 #include <algorithm>
 #include <array>
 #include <filesystem>
-#include "glad/glad.h"
 #include <iostream>
 #include <memory>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
 #include <string>
-#include <string_view>
 #include <stdexcept>
 #include <sstream>
 #include <numeric>
 #include <vector>
 #include <iterator>
+
+using glm::mat4;
+using glm::perspective;
+using glm::radians;
+using glm::rotate;
+using glm::translate;
+using glm::vec3;
 
 using std::array;
 using std::cerr;
@@ -113,6 +124,16 @@ int main(int argc, char *argv[]) {
                 -0.5, -0.5, 0.0
             )
         };
+
+        mat4 model = rotate(mat4(1.0f), radians(-90.0), vec3(1.0f, 0.0f, 0.0f));
+        const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -3.0f));
+        const mat4 projection = perspective(radians(45.0), window_w / window_h, 0.1f, 100.0f);
+
+        program.use();
+        program.set_model(model);
+        program.set_view(view);
+        program.set_projection(projection);
+        program.release();
 
         // allows panning the 3d function
         GLfloat offset_x;

@@ -39,7 +39,7 @@ class ShaderProgram {
     std::unordered_map<const GLchar*, UniformType> uniform_types;
 
     void set_uniform_1f(const GLchar* uniform_variable_name, GLfloat value);
-    void set_uniform_4fv(const GLchar* uniform_variable_name, glm::mat4 value);
+    void set_uniform_4fv(const GLchar* uniform_variable_name, const glm::mat4& value);
 
 public:
     ShaderProgram() = delete;
@@ -49,7 +49,11 @@ public:
 
     void use();
     void release();
+
     void set_offset_x(GLfloat offset_x);
     void set_offset_y(GLfloat offset_y);
     void set_offset_z(GLfloat offset_z);
+    void set_model(const glm::mat4& model);
+    void set_view(const glm::mat4& view);
+    void set_projection(const glm::mat4& projection);
 };
