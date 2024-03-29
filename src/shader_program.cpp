@@ -6,9 +6,6 @@
 #include <memory>
 #include <string>
 
-#include <range/v3/view/indices.hpp>
-#include <range/v3/view/zip.hpp>
-
 #include "exceptions.hpp"
 #include "glad/glad.h"
 #include "shader_program.hpp"
@@ -24,7 +21,6 @@ using std::string;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : program_handle(glCreateProgram()), attached_shaders(shaders) {
     using std::make_unique;
-    using namespace ranges;
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(), [&](const shared_ptr<Shader>& shader) {
         glAttachShader(program_handle, shader->shader_handle);
@@ -56,8 +52,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : pro
 
     assert(linked == GL_TRUE);
 
-    for (const auto& idx_var_name : views::zip(views::indices, uniform_variable_names)) {
-        auto variable_name = idx_var_name.second;
+    for (auto variable_name : uniform_variable_names) {
         GLint location = glGetUniformLocation(program_handle, variable_name);
         if (location < 0) {
             string msg = "unable to find uniform ";
@@ -65,7 +60,6 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders) : pro
         }
 
         uniform_locations[variable_name] = location;
-        uniform_types[variable_name] = uniform_variable_types[idx_var_name.first];
     }
 }
 
@@ -92,22 +86,20 @@ void ShaderProgram::use() {
     }
 }
 
-void ShaderProgram::update_uniforms(GLfloat offset_x, GLfloat offset_y) {
+void ShaderProgram::set_offset_x(GLfloat offset_x) {
+    set_uniform_1f(offset_x_uniform_variable_name, offset_x);
+}
+
+void set_uniform_1f(const GLchar* uniform_variable_name, GLfloat value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
         throw WrappedOpenGLError("update uniforms due to existing error: " + gl_get_error_string(current_error));
     }
 
-    glUniform1f(uniform_locations[offset_x_uniform_variable_name], offset_x);
+    glUniform1f(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error setting x_offset uniform: " + gl_get_error_string(current_error));
-    }
-
-    glUniform1f(uniform_locations[offset_y_uniform_variable_name], offset_y);
-
-    if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error setting y_offset uniform: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError("error setting uniform: " + gl_get_error_string(current_error));
     }
 }
