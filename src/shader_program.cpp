@@ -6,10 +6,14 @@
 #include <memory>
 #include <string>
 
+#include <glm/mat4x4.hpp>
+
 #include "exceptions.hpp"
 #include "glad/glad.h"
 #include "shader_program.hpp"
 #include "shader.hpp"
+
+using glm::mat4;
 
 using std::cerr;
 using std::endl;
@@ -86,8 +90,20 @@ void ShaderProgram::use() {
     }
 }
 
+void ShaderProgram::release() {
+    glUseProgram(0);
+}
+
 void ShaderProgram::set_offset_x(GLfloat offset_x) {
     set_uniform_1f(offset_x_uniform_variable_name, offset_x);
+}
+
+void ShaderProgram::set_offset_y(GLfloat offset_y) {
+    set_uniform_1f(offset_y_uniform_variable_name, offset_y);
+}
+
+void ShaderProgram::set_offset_z(GLfloat offset_z) {
+    set_uniform_1f(offset_z_uniform_variable_name, offset_z);
 }
 
 void set_uniform_1f(const GLchar* uniform_variable_name, GLfloat value) {
@@ -98,6 +114,20 @@ void set_uniform_1f(const GLchar* uniform_variable_name, GLfloat value) {
     }
 
     glUniform1f(uniform_locations[uniform_variable_name], value);
+
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
+        throw WrappedOpenGLError("error setting uniform: " + gl_get_error_string(current_error));
+    }
+}
+
+void set_uniform_4fv(const GLchar* uniform_variable_name, mat4 value) {
+    auto current_error = glGetError();
+
+    if (current_error != GL_NO_ERROR) {
+        throw WrappedOpenGLError("update uniforms due to existing error: " + gl_get_error_string(current_error));
+    }
+
+    glUniform4fv(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
         throw WrappedOpenGLError("error setting uniform: " + gl_get_error_string(current_error));

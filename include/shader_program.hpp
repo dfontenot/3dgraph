@@ -6,9 +6,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include <glm/mat4x4.hpp>
+
 #include "glad/glad.h"
 #include "shader.hpp"
-#include "uniform_type.hpp"
 
 class ShaderProgram {
     //uniforms
@@ -38,6 +39,7 @@ class ShaderProgram {
     std::unordered_map<const GLchar*, UniformType> uniform_types;
 
     void set_uniform_1f(const GLchar* uniform_variable_name, GLfloat value);
+    void set_uniform_4fv(const GLchar* uniform_variable_name, glm::mat4 value);
 
 public:
     ShaderProgram() = delete;
@@ -46,5 +48,8 @@ public:
     ~ShaderProgram();
 
     void use();
+    void release();
     void set_offset_x(GLfloat offset_x);
+    void set_offset_y(GLfloat offset_y);
+    void set_offset_z(GLfloat offset_z);
 };
