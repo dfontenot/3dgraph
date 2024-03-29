@@ -9,6 +9,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/mat4x4.hpp>
@@ -135,17 +136,21 @@ int main(int argc, char *argv[]) {
         program.set_projection(projection);
         program.release();
 
-        // allows panning the 3d function
-        GLfloat offset_x;
-        GLfloat offset_y;
+        // allows panning the 3d function but does not move the model matrix itself
+        // (panning happens in place)
+        GLfloat offset_x = 0.0f;
+        GLfloat offset_y = 0.0f;
+        GLfloat offset_z = 0.0f;
 
         while (true) {
+            bool modified_offset_x = false;
+            bool modified_offset_y = false;
+            bool modified_offset_z = false;
+            bool rotation_modified = false;
 
             auto start_ticks = SDL_GetTicks();
             verts.get_vao()->bind();
-
-            glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
-            SDL_GL_SwapWindow(window);
+            program.use();
 
             SDL_Event evt;
             while (SDL_PollEvent(&evt)) {
@@ -159,25 +164,57 @@ int main(int argc, char *argv[]) {
                         return 0;
                     }
 
+                    if (evt.key.keysym.sym == SDLK_a) {
+                        rotation_modified = true;
+                        model = rotate(model, radians(-1.0), vec3(1.0f, 0.0f, 0.0f));
+                    }
+
+                    if (evt.key.keysym.sym == SDLK_d) {
+                        rotation_modified = true;
+                        model = rotate(model, radians(1.0), vec3(1.0f, 0.0f, 0.0f));
+                    }
+
+                    // TODO: mouse events to make this more intuitive
                     if (evt.key.keysym.sym == SDLK_LEFT) {
-                        offset_x -= 0.1;
+                        if (evt.key.keysym.mod & KMOD_SHIFT) {
+                            offset_y -= 0.1;
+                            modified_offset_y = true;
+                        }
+                        else {
+                            offset_x -= 0.1;
+                            modified_offset_x = true;
+                        }
                     }
 
                     if (evt.key.keysym.sym == SDLK_RIGHT) {
-                        offset_x += 0.1;
+                        if (evt.key.keysym.mod & KMOD_SHIFT) {
+                            offset_y += 0.1;
+                            modified_offset_y = true;
+                        }
+                        else {
+                            offset_x += 0.1;
+                            modified_offset_x = true;
+                        }
                     }
 
                     if (evt.key.keysym.sym == SDLK_UP) {
-                        offset_y += 0.1;
+                        offset_z += 0.1;
+                        modified_offset_z = true;
                     }
 
                     if (evt.key.keysym.sym == SDLK_DOWN) {
-                        offset_y -= 0.1;
+                        offset_z -= 0.1;
+                        modified_offset_z = true;
                     }
                 }
             }
 
+            glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
+            SDL_GL_SwapWindow(window);
+
             program.update_uniforms(offset_x, offset_y);
+
+            program.release();
             verts.get_vao()->unbind();
 
             auto end_ticks = SDL_GetTicks();
