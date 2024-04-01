@@ -4,6 +4,7 @@
 #include "vertices.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
+#include "mouse_loc.hpp"
 
 #include "glad/glad.h"
 #include <SDL2/SDL.h>
@@ -25,6 +26,7 @@
 #include <numeric>
 #include <vector>
 #include <iterator>
+#include <optional>
 
 using glm::mat4;
 using glm::perspective;
@@ -49,6 +51,7 @@ using std::shared_ptr;
 using std::runtime_error;
 using std::stringstream;
 using std::vector;
+using std::optional;
 
 constexpr Uint32 target_fps = 30;
 constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
@@ -147,6 +150,9 @@ int main(int argc, char *argv[]) {
             bool modified_offset_y = false;
             bool modified_offset_z = false;
             bool rotation_modified = false;
+            bool is_mouse_rotating_surface = false;
+            optional<MouseLoc> start_click_loc;
+            MouseLoc current_loc;
 
             auto start_ticks = SDL_GetTicks();
             verts.get_vao()->bind();
@@ -158,20 +164,21 @@ int main(int argc, char *argv[]) {
                 if (evt.type == SDL_QUIT) {
                     return 0;
                 }
-
-                if (evt.type == SDL_KEYDOWN) {
+                else if (evt.type == SDL_KEYDOWN) {
                     if (evt.key.keysym.sym == SDLK_q) {
                         return 0;
                     }
 
-                    if (evt.key.keysym.sym == SDLK_a) {
-                        rotation_modified = true;
-                        model = rotate(model, radians(-1.0), vec3(1.0f, 0.0f, 0.0f));
-                    }
+                    if (! is_mouse_rotating_surface) {
+                        if (evt.key.keysym.sym == SDLK_a) {
+                            rotation_modified = true;
+                            model = rotate(model, radians(-1.0), vec3(1.0f, 0.0f, 0.0f));
+                        }
 
-                    if (evt.key.keysym.sym == SDLK_d) {
-                        rotation_modified = true;
-                        model = rotate(model, radians(1.0), vec3(1.0f, 0.0f, 0.0f));
+                        else if (evt.key.keysym.sym == SDLK_d) {
+                            rotation_modified = true;
+                            model = rotate(model, radians(1.0), vec3(1.0f, 0.0f, 0.0f));
+                        }
                     }
 
                     // TODO: mouse events to make this more intuitive
@@ -207,12 +214,28 @@ int main(int argc, char *argv[]) {
                         modified_offset_z = true;
                     }
                 }
+                else if (evt.type == SDL_MOUSEBUTTONDOWN) {
+                    is_mouse_rotating_surface = true;
+                    MouseLoc new_loc;
+                    start_click_loc = new_loc;
+                }
+                else if (evt.type == SDL_MOUSEBUTTONUP) {
+                    is_mouse_rotating_surface = false;
+                    start_click_loc.reset();
+                }
+
+                if (is_mouse_rotating_surface && start_click_loc) {
+                    current_loc.update_loc();
+
+                    double dist = current_loc.distance(start_click_loc.value());
+                    if (dist >= 5) { // arbitrary
+                        // TODO spin the model based off of how far the mouse has been moved since clicking
+                    }
+                }
             }
 
             glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
             SDL_GL_SwapWindow(window);
-
-            program.update_uniforms(offset_x, offset_y);
 
             program.release();
             verts.get_vao()->unbind();
