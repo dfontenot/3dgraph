@@ -1,5 +1,6 @@
 build/
 Debug/
 .ccls-cache/
+.cache/
 compile_commands.json
 CMakeUserPresets.json

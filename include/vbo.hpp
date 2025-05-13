@@ -2,23 +2,31 @@
 
 #include "glad/glad.h"
 
-struct Vbo {
+struct Vbo
+{
     GLuint val;
 
-    constexpr operator GLuint() const { return val; }
-    Vbo() {
+    constexpr operator GLuint() const
+    {
+        return val;
+    }
+    Vbo()
+    {
         glGenBuffers(num_create, &val);
     }
 
-    ~Vbo() {
+    ~Vbo()
+    {
         glDeleteBuffers(num_create, &val);
     }
 
-    void bind() {
+    void bind()
+    {
         glBindBuffer(GL_ARRAY_BUFFER, val);
     }
 
-    void unbind() {
+    void unbind()
+    {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 

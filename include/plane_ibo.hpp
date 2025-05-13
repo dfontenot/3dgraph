@@ -1,21 +1,23 @@
 #pragma once
 
-#include "ibo.hpp"
-#include "gl_inspect.hpp"
 #include "exceptions.hpp"
+#include "gl_inspect.hpp"
+#include "ibo.hpp"
 
 #include <array>
 #include <cstddef>
 #include <memory>
 #include <numeric>
 
-class PlaneIbo {
+class PlaneIbo
+{
     static constexpr const int num_verts_in_quad = 4;
 
     std::shared_ptr<Ibo> ibo;
 
 public:
-    PlaneIbo() : ibo(std::make_shared<Ibo>()) {
+    PlaneIbo() : ibo(std::make_shared<Ibo>())
+    {
         std::array<GLuint, num_verts_in_quad> indices;
         std::iota(indices.begin(), indices.end(), 0);
 
@@ -28,7 +30,8 @@ public:
         }
     }
 
-    std::shared_ptr<Ibo> get_ibo() const noexcept {
+    std::shared_ptr<Ibo> get_ibo() const noexcept
+    {
         return ibo;
     }
 };

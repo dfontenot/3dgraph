@@ -1,32 +1,31 @@
-#include "create_array.hpp"
-#include "gl_inspect.hpp"
-#include "exceptions.hpp"
-#include "vertices.hpp"
-#include "shader.hpp"
-#include "shader_program.hpp"
-#include "mouse_loc.hpp"
-
-#include "glad/glad.h"
+#include "glad/glad.h" // have to load glad first
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <glm/glm.hpp>
-#include <glm/vec3.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/mat4x4.hpp>
 
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <stdexcept>
-#include <sstream>
-#include <numeric>
-#include <vector>
 #include <iterator>
+#include <memory>
 #include <optional>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "create_array.hpp"
+#include "gl_inspect.hpp"
+#include "glad/glad.h"
+#include "mouse_loc.hpp"
+#include "shader.hpp"
+#include "shader_program.hpp"
+#include "vertices.hpp"
 
 using glm::mat4;
 using glm::perspective;
@@ -40,18 +39,18 @@ using std::cerr;
 using std::copy;
 using std::cout;
 using std::endl;
-using std::filesystem::current_path;
 using std::make_unique;
+using std::optional;
 using std::ostream;
 using std::ostream_iterator;
+using std::runtime_error;
+using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::string_view;
-using std::shared_ptr;
-using std::runtime_error;
 using std::stringstream;
 using std::vector;
-using std::optional;
+using std::filesystem::current_path;
 
 constexpr Uint32 target_fps = 30;
 constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
@@ -59,14 +58,14 @@ constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
 
 // source: https://stackoverflow.com/a/19152438/854854
-template <class T, size_t N>
-ostream& operator<<(ostream& o, const array<T, N>& arr) {
+template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr)
+{
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
     return o;
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
     atexit(SDL_Quit);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         cerr << "sdl init failed: " << SDL_GetError() << endl;
@@ -78,12 +77,8 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-    auto window = SDL_CreateWindow("opengl render test",
-                                   SDL_WINDOWPOS_UNDEFINED,
-                                   SDL_WINDOWPOS_UNDEFINED,
-                                   window_w,
-                                   window_h,
-                                   SDL_WINDOW_OPENGL);
+    auto window = SDL_CreateWindow("opengl render test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_w,
+                                   window_h, SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         cerr << "could not create window: " << SDL_GetError() << endl;
@@ -112,26 +107,18 @@ int main(int argc, char *argv[]) {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     try {
-
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
         auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
 
-        ShaderProgram program = { vertex_shader, tsc_shader, tes_shader, fragment_shader };
+        ShaderProgram program = {vertex_shader, tsc_shader, tes_shader, fragment_shader};
 
-        Vertices verts {
-            create_array_t<GLfloat>(
-                0.5, -0.5, 0.0,
-                0.5, 0.5, 0.0,
-                -0.5, 0.5, 0.0,
-                -0.5, -0.5, 0.0
-            )
-        };
+        Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
-        mat4 model = rotate(mat4(1.0f), radians(-90.0), vec3(1.0f, 0.0f, 0.0f));
+        mat4 model = rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
         const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -3.0f));
-        const mat4 projection = perspective(radians(45.0), window_w / window_h, 0.1f, 100.0f);
+        const mat4 projection = perspective(radians(45.0f), static_cast<float>(window_w / window_h), 0.1f, 100.0f);
 
         program.use();
         program.set_model(model);
@@ -139,8 +126,8 @@ int main(int argc, char *argv[]) {
         program.set_projection(projection);
         program.release();
 
-        // allows panning the 3d function but does not move the model matrix itself
-        // (panning happens in place)
+        // allows panning the 3d function but does not move the model matrix
+        // itself (panning happens in place)
         GLfloat offset_x = 0.0f;
         GLfloat offset_y = 0.0f;
         GLfloat offset_z = 0.0f;
@@ -160,7 +147,6 @@ int main(int argc, char *argv[]) {
 
             SDL_Event evt;
             while (SDL_PollEvent(&evt)) {
-
                 if (evt.type == SDL_QUIT) {
                     return 0;
                 }
@@ -169,15 +155,15 @@ int main(int argc, char *argv[]) {
                         return 0;
                     }
 
-                    if (! is_mouse_rotating_surface) {
+                    if (!is_mouse_rotating_surface) {
                         if (evt.key.keysym.sym == SDLK_a) {
                             rotation_modified = true;
-                            model = rotate(model, radians(-1.0), vec3(1.0f, 0.0f, 0.0f));
+                            model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
                         }
 
                         else if (evt.key.keysym.sym == SDLK_d) {
                             rotation_modified = true;
-                            model = rotate(model, radians(1.0), vec3(1.0f, 0.0f, 0.0f));
+                            model = rotate(model, radians(1.0f), vec3(1.0f, 0.0f, 0.0f));
                         }
                     }
 
@@ -229,7 +215,8 @@ int main(int argc, char *argv[]) {
 
                     double dist = current_loc.distance(start_click_loc.value());
                     if (dist >= 5) { // arbitrary
-                        // TODO spin the model based off of how far the mouse has been moved since clicking
+                                     // TODO spin the model based off of how far the mouse
+                                     // has been moved since clicking
                     }
                 }
             }
@@ -250,7 +237,7 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }
-    catch (std::exception& e) {
+    catch (std::exception &e) {
         cerr << e.what() << endl;
         return 1;
     }

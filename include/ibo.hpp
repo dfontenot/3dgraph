@@ -1,25 +1,33 @@
 #pragma once
 
 #include "exceptions.hpp"
-#include "glad/glad.h"
 #include "gl_inspect.hpp"
+#include "glad/glad.h"
 
-struct Ibo {
+struct Ibo
+{
     GLuint val;
 
-    constexpr operator GLuint() const { return val; }
-    Ibo() {
+    constexpr operator GLuint() const
+    {
+        return val;
+    }
+    Ibo()
+    {
         glGenBuffers(num_create, &val);
     }
 
-    ~Ibo() {
+    ~Ibo()
+    {
         glDeleteBuffers(num_create, &val);
     }
 
-    void bind() {
+    void bind()
+    {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
-            throw WrappedOpenGLError("cannot to bind IBO due to existing error " + std::to_string(val) + ": " + gl_get_error_string(err));
+            throw WrappedOpenGLError("cannot to bind IBO due to existing error " + std::to_string(val) + ": " +
+                                     gl_get_error_string(err));
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, val);
@@ -29,12 +37,14 @@ struct Ibo {
     }
 
     /**
-    * unbind after vao is unbound
-    */
-    void unbind() {
+     * unbind after vao is unbound
+     */
+    void unbind()
+    {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
-            throw WrappedOpenGLError("cannot to unbind IBO due to existing error " + std::to_string(val) + ": " + gl_get_error_string(err));
+            throw WrappedOpenGLError("cannot to unbind IBO due to existing error " + std::to_string(val) + ": " +
+                                     gl_get_error_string(err));
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
