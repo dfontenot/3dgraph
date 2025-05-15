@@ -3,7 +3,20 @@ IndentWidth: 4
 UseTab: Never
 BreakBeforeBraces: Custom
 BraceWrapping:
+  AfterClass: false
   AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterStruct:     false
+  AfterUnion:      false
+  AfterExternBlock: false
+  BeforeCatch:     true
+  BeforeElse:      true
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
 AccessModifierOffset: -4
 IndentAccessModifiers: false
 AllowShortIfStatementsOnASingleLine: Never
