@@ -3,18 +3,18 @@
 
 #include "glad/glad.h"
 
+using ranges::views::cartesian_product;
+using ranges::views::iota;
 using std::array;
 using std::get;
 using std::next;
-using ranges::views::iota;
-using ranges::views::cartesian_product;
 
 constexpr int tesselation_amount = 10;
 
 /**
-* @ brief creates a lattice of points (no triangles)
-* @ return a flat GLfloat array
-*/
+ * @ brief creates a lattice of points (no triangles)
+ * @ return a flat GLfloat array
+ */
 auto make_lattice() {
     using ranges::for_each;
 

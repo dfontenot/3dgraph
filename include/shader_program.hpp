@@ -10,8 +10,7 @@
 #include "glad/glad.h"
 #include "shader.hpp"
 
-class ShaderProgram
-{
+class ShaderProgram {
     // uniforms
     static constexpr const GLchar *offset_x_uniform_variable_name = "u_offset_x";
     static constexpr const GLchar *offset_y_uniform_variable_name = "u_offset_y";

@@ -7,8 +7,7 @@
 
 class ShaderProgram;
 
-class Shader
-{
+class Shader {
     static constexpr GLsizei number_of_sources = 1;
     static constexpr GLint *source_lengths = 0; // can be set to 0 since source ends with a null terminator
 

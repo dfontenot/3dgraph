@@ -10,8 +10,7 @@ using std::runtime_error;
 using std::string;
 using std::stringstream;
 
-string shader_type_to_string(GLenum shader_type)
-{
+string shader_type_to_string(GLenum shader_type) {
     if (shader_type == GL_VERTEX_SHADER) {
         return string{"vertex"};
     }
@@ -33,8 +32,7 @@ string shader_type_to_string(GLenum shader_type)
     }
 }
 
-string gl_get_error_string(GLenum err)
-{
+string gl_get_error_string(GLenum err) {
 
     stringstream ss;
     ss << "0x" << std::hex << err << std::dec << ": ";
@@ -65,7 +63,6 @@ string gl_get_error_string(GLenum err)
     return ss.str();
 }
 
-string gl_get_error_string()
-{
+string gl_get_error_string() {
     return gl_get_error_string(glGetError());
 }

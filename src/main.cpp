@@ -48,14 +48,12 @@ constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
 
 // source: https://stackoverflow.com/a/19152438/854854
-template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr)
-{
+template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr) {
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
     return o;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         cerr << "sdl init failed: " << SDL_GetError() << endl;

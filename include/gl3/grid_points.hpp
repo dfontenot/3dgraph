@@ -1,16 +1,15 @@
 #pragma once
 
-#include "ibo.hpp"
-#include "gl_inspect.hpp"
 #include "exceptions.hpp"
+#include "gl_inspect.hpp"
+#include "ibo.hpp"
 
 #include <array>
 #include <cstddef>
 #include <memory>
 #include <numeric>
 
-template<std::size_t N>
-class GridPoints {
+template <std::size_t N> class GridPoints {
     std::shared_ptr<Ibo> ibo;
 
 public:

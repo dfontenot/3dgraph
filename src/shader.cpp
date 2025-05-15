@@ -15,11 +15,9 @@ using std::shared_ptr;
 using std::string;
 using std::filesystem::current_path;
 
-namespace
-{
+namespace {
 // source: https://stackoverflow.com/a/2602060/854854
-string read_file(const string &source_fn)
-{
+string read_file(const string &source_fn) {
     using std::ifstream;
     using std::istreambuf_iterator;
 
@@ -37,8 +35,7 @@ string read_file(const string &source_fn)
 } // namespace
 
 Shader::Shader(const char *source_fn, GLenum shader_type)
-    : shader_type(shader_type), shader_handle(glCreateShader(shader_type))
-{
+    : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
     auto shader_dir = current_path() / "shaders";
 
     auto shader_source = read_file(shader_dir / source_fn);
@@ -69,13 +66,11 @@ Shader::Shader(const char *source_fn, GLenum shader_type)
     assert(compiled == GL_TRUE);
 }
 
-Shader::~Shader()
-{
+Shader::~Shader() {
     glDeleteShader(shader_handle);
 }
 
-shared_ptr<Shader> make_shader(const char *source_fn, GLenum shader_type)
-{
+shared_ptr<Shader> make_shader(const char *source_fn, GLenum shader_type) {
     using std::make_shared;
     return make_shared<Shader>(Shader(source_fn, shader_type));
 }

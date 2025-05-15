@@ -26,8 +26,7 @@ using std::shared_ptr;
 using std::string;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
-    : program_handle(glCreateProgram()), attached_shaders(shaders)
-{
+    : program_handle(glCreateProgram()), attached_shaders(shaders) {
     using std::make_unique;
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(),
@@ -74,8 +73,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
     glUseProgram(0);
 }
 
-ShaderProgram::~ShaderProgram()
-{
+ShaderProgram::~ShaderProgram() {
     auto detach_shader = [&](const shared_ptr<Shader> &shader) {
         glDetachShader(program_handle, shader->shader_handle);
     };
@@ -84,8 +82,7 @@ ShaderProgram::~ShaderProgram()
     glDeleteProgram(program_handle);
 }
 
-void ShaderProgram::use()
-{
+void ShaderProgram::use() {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
@@ -99,28 +96,23 @@ void ShaderProgram::use()
     }
 }
 
-void ShaderProgram::release()
-{
+void ShaderProgram::release() {
     glUseProgram(0);
 }
 
-void ShaderProgram::set_offset_x(GLfloat offset_x)
-{
+void ShaderProgram::set_offset_x(GLfloat offset_x) {
     set_uniform_1f(offset_x_uniform_variable_name, offset_x);
 }
 
-void ShaderProgram::set_offset_y(GLfloat offset_y)
-{
+void ShaderProgram::set_offset_y(GLfloat offset_y) {
     set_uniform_1f(offset_y_uniform_variable_name, offset_y);
 }
 
-void ShaderProgram::set_offset_z(GLfloat offset_z)
-{
+void ShaderProgram::set_offset_z(GLfloat offset_z) {
     set_uniform_1f(offset_z_uniform_variable_name, offset_z);
 }
 
-void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value)
-{
+void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
@@ -134,23 +126,19 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     }
 }
 
-void ShaderProgram::set_model(const glm::mat4 &model)
-{
+void ShaderProgram::set_model(const glm::mat4 &model) {
     set_uniform_4fv(model_uniform_variable_name, model);
 }
 
-void ShaderProgram::set_view(const glm::mat4 &view)
-{
+void ShaderProgram::set_view(const glm::mat4 &view) {
     set_uniform_4fv(model_uniform_variable_name, view);
 }
 
-void ShaderProgram::set_projection(const glm::mat4 &projection)
-{
+void ShaderProgram::set_projection(const glm::mat4 &projection) {
     set_uniform_4fv(model_uniform_variable_name, projection);
 }
 
-void ShaderProgram::set_uniform_4fv(const GLchar *uniform_variable_name, const mat4 &value)
-{
+void ShaderProgram::set_uniform_4fv(const GLchar *uniform_variable_name, const mat4 &value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {

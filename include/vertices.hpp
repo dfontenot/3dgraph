@@ -8,8 +8,7 @@
 #include <array>
 #include <memory>
 
-template <std::size_t N> class Vertices
-{
+template <std::size_t N> class Vertices {
     static constexpr GLint points_per_vertex = 3;
     static constexpr GLuint vertex_attrib_location = 0; // where the vertex data is stored
     static constexpr GLboolean is_normalized = GL_FALSE;
@@ -22,8 +21,7 @@ template <std::size_t N> class Vertices
 
 public:
     Vertices() = delete;
-    Vertices(const std::array<GLfloat, N> &data) : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>())
-    {
+    Vertices(const std::array<GLfloat, N> &data) : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()) {
         vao->bind();
         vbo->bind();
 
@@ -40,8 +38,7 @@ public:
         }
     }
 
-    void unbind()
-    {
+    void unbind() {
         glEnableVertexAttribArray(vertex_attrib_location);
         vao->unbind();
         glDisableVertexAttribArray(vertex_attrib_location); // close attributes
@@ -52,16 +49,13 @@ public:
     Vertices &operator=(const Vertices &) noexcept = delete;
     Vertices &operator=(Vertices &&) noexcept = default;
 
-    std::shared_ptr<Vao> get_vao() const noexcept
-    {
+    std::shared_ptr<Vao> get_vao() const noexcept {
         return vao;
     }
-    std::shared_ptr<Vbo> get_vbo() const noexcept
-    {
+    std::shared_ptr<Vbo> get_vbo() const noexcept {
         return vbo;
     }
-    constexpr std::size_t get_vert_count() const noexcept
-    {
+    constexpr std::size_t get_vert_count() const noexcept {
         return N / points_per_vertex;
     }
 };

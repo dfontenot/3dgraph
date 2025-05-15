@@ -4,26 +4,21 @@
 #include "gl_inspect.hpp"
 #include "glad/glad.h"
 
-struct Vao
-{
+struct Vao {
     GLuint val;
 
-    constexpr operator GLuint() const
-    {
+    constexpr operator GLuint() const {
         return val;
     }
-    Vao()
-    {
+    Vao() {
         glGenVertexArrays(num_create, &val);
     }
 
-    ~Vao()
-    {
+    ~Vao() {
         glDeleteVertexArrays(num_create, &val);
     }
 
-    void bind()
-    {
+    void bind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
             throw WrappedOpenGLError("cannot bind VAO due to existing error: " + gl_get_error_string(err));
@@ -36,8 +31,7 @@ struct Vao
         }
     }
 
-    void unbind()
-    {
+    void unbind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
             throw WrappedOpenGLError("cannot unbind VAO due to existing error: " + gl_get_error_string(err));

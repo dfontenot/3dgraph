@@ -4,26 +4,21 @@
 #include "gl_inspect.hpp"
 #include "glad/glad.h"
 
-struct Ibo
-{
+struct Ibo {
     GLuint val;
 
-    constexpr operator GLuint() const
-    {
+    constexpr operator GLuint() const {
         return val;
     }
-    Ibo()
-    {
+    Ibo() {
         glGenBuffers(num_create, &val);
     }
 
-    ~Ibo()
-    {
+    ~Ibo() {
         glDeleteBuffers(num_create, &val);
     }
 
-    void bind()
-    {
+    void bind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
             throw WrappedOpenGLError("cannot to bind IBO due to existing error " + std::to_string(val) + ": " +
@@ -39,8 +34,7 @@ struct Ibo
     /**
      * unbind after vao is unbound
      */
-    void unbind()
-    {
+    void unbind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
             throw WrappedOpenGLError("cannot to unbind IBO due to existing error " + std::to_string(val) + ": " +
