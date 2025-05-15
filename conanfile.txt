@@ -1,6 +1,5 @@
 [requires]
 glm/cci.20230113
-range-v3/0.12.0
 opengl/system
 sdl/2.26.5
 
