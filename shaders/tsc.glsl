@@ -1,7 +1,6 @@
 #version 450 core
 
 layout (vertices=4) out;
-in vec4 theColor[];
 out vec4 vertex_color[];
 
 void main() {
@@ -17,6 +16,4 @@ void main() {
         gl_TessLevelInner[0] = 9.0;
         gl_TessLevelInner[1] = 7.0;
     }
-
-    vertex_color[gl_InvocationID] = theColor[gl_InvocationID];
 }

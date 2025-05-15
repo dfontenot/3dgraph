@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -12,15 +11,11 @@
 #include <glm/vec3.hpp>
 #include <iostream>
 #include <iterator>
-#include <memory>
 #include <optional>
 #include <sstream>
-#include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "create_array.hpp"
-#include "gl_inspect.hpp"
 #include "glad/glad.h"
 #include "mouse_loc.hpp"
 #include "shader.hpp"
@@ -39,18 +34,13 @@ using std::cerr;
 using std::copy;
 using std::cout;
 using std::endl;
-using std::make_unique;
 using std::optional;
 using std::ostream;
 using std::ostream_iterator;
-using std::runtime_error;
-using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::string_view;
 using std::stringstream;
-using std::vector;
-using std::filesystem::current_path;
 
 constexpr Uint32 target_fps = 30;
 constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
@@ -121,6 +111,9 @@ int main(int argc, char *argv[])
         const mat4 projection = perspective(radians(45.0f), static_cast<float>(window_w / window_h), 0.1f, 100.0f);
 
         program.use();
+        program.set_offset_x(0.0);
+        program.set_offset_y(0.0);
+        program.set_offset_z(0.0);
         program.set_model(model);
         program.set_view(view);
         program.set_projection(projection);

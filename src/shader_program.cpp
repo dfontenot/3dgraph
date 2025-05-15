@@ -24,7 +24,6 @@ using std::for_each;
 using std::initializer_list;
 using std::shared_ptr;
 using std::string;
-using std::vector;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
     : program_handle(glCreateProgram()), attached_shaders(shaders)

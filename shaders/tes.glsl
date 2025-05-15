@@ -2,7 +2,6 @@
 
 // reference: https://learnopengl.com/Guest-Articles/2021/Tessellation/Tessellation
 layout (quads, fractional_odd_spacing, ccw) in;
-in vec4 vertex_color[];
 out vec4 tes_color;
 
 void main() {
