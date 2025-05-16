@@ -29,6 +29,11 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
     : program_handle(glCreateProgram()), attached_shaders(shaders) {
     using std::make_unique;
 
+    auto current_error = glGetError();
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
+        throw WrappedOpenGLError("precondition failed to init shader program: " + gl_get_error_string(current_error));
+    }
+
     for_each(attached_shaders.cbegin(), attached_shaders.cend(),
              [&](const shared_ptr<Shader> &shader) { glAttachShader(program_handle, shader->shader_handle); });
 
@@ -58,7 +63,12 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
 
     assert(linked == GL_TRUE);
 
+    // progam has to be in use first https://stackoverflow.com/a/36416867
     glUseProgram(program_handle);
+
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
+        throw WrappedOpenGLError("program issue: " + gl_get_error_string(current_error));
+    }
 
     for (auto variable_name : uniform_variable_names) {
         GLint location = glGetUniformLocation(program_handle, variable_name);
