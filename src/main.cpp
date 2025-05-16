@@ -93,8 +93,6 @@ int main(int argc, char *argv[]) {
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     glViewport(0, 0, window_w, window_h);
-    glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     CPPTRACE_TRY {
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
@@ -214,6 +212,9 @@ int main(int argc, char *argv[]) {
                 }
             }
 
+            glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
             glPatchParameteri(GL_PATCH_VERTICES, 4);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glDrawArrays(GL_PATCHES, 0, 4);
@@ -222,8 +223,8 @@ int main(int argc, char *argv[]) {
             //glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
             SDL_GL_SwapWindow(window);
 
-            program.release();
             verts.get_vao()->unbind();
+            program.release();
 
             auto end_ticks = SDL_GetTicks();
             auto sleep_for_ticks = end_ticks - start_ticks;
