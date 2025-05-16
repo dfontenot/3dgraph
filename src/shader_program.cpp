@@ -3,6 +3,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,7 @@ using std::for_each;
 using std::initializer_list;
 using std::shared_ptr;
 using std::string;
+using std::stringstream;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
     : program_handle(glCreateProgram()), attached_shaders(shaders) {
@@ -39,11 +41,6 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(),
              [&](const shared_ptr<Shader> &shader) { glAttachShader(program_handle, shader->shader_handle); });
-
-    GLuint pos = 0;
-    for (auto variable_name : uniform_variable_names) {
-        glBindAttribLocation(program_handle, pos++, variable_name);
-    }
 
     glLinkProgram(program_handle);
 
@@ -135,32 +132,38 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     glUniform1f(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error setting uniform: " + gl_get_error_string(current_error));
+        stringstream ss;
+        ss << "error setting uniform " << uniform_variable_name << " " << gl_get_error_string(current_error)
+           << " at location " << uniform_locations[uniform_variable_name] << endl;
+        throw WrappedOpenGLError(ss.str());
     }
 }
 
 void ShaderProgram::set_model(const glm::mat4 &model) {
-    set_uniform_4fv(model_uniform_variable_name, model);
+    set_uniform_matrix_4fv(model_uniform_variable_name, model);
 }
 
 void ShaderProgram::set_view(const glm::mat4 &view) {
-    set_uniform_4fv(model_uniform_variable_name, view);
+    set_uniform_matrix_4fv(model_uniform_variable_name, view);
 }
 
 void ShaderProgram::set_projection(const glm::mat4 &projection) {
-    set_uniform_4fv(model_uniform_variable_name, projection);
+    set_uniform_matrix_4fv(model_uniform_variable_name, projection);
 }
 
-void ShaderProgram::set_uniform_4fv(const GLchar *uniform_variable_name, const mat4 &value) {
+void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, const mat4 &value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
         throw WrappedOpenGLError("cannot update uniforms due to existing error: " + gl_get_error_string(current_error));
     }
 
-    glUniform4fv(uniform_locations[uniform_variable_name], 1, value_ptr(value));
+    glUniformMatrix4fv(uniform_locations[uniform_variable_name], 1, GL_FALSE, value_ptr(value));
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error setting uniform: " + gl_get_error_string(current_error));
+        stringstream ss;
+        ss << "error setting uniform matrix " << uniform_variable_name << " " << gl_get_error_string(current_error)
+           << " at location " << uniform_locations[uniform_variable_name] << endl;
+        throw WrappedOpenGLError(ss.str());
     }
 }

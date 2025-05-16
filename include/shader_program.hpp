@@ -34,7 +34,7 @@ class ShaderProgram {
     // std::unordered_map<const GLchar*, UniformType> uniform_types;
 
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
-    void set_uniform_4fv(const GLchar *uniform_variable_name, const glm::mat4 &value);
+    void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, const glm::mat4 &value);
 
 public:
     ShaderProgram() = delete;
