@@ -6,6 +6,8 @@ project(3dgraph
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE, Debug)
+find_package(cpptrace REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
 
@@ -13,6 +15,7 @@ set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp)
 
 target_link_libraries(${PROJECT_NAME}
+  PRIVATE cpptrace::cpptrace
   PRIVATE SDL2::SDL2
   PRIVATE SDL2::SDL2main
   PRIVATE glm::glm)

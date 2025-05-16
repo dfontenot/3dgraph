@@ -1,4 +1,5 @@
 [requires]
+cpptrace/0.8.3
 glm/cci.20230113
 opengl/system
 sdl/2.26.5

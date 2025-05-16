@@ -3,12 +3,11 @@
 #include "glad/glad.h"
 
 #include <memory>
-#include <string>
 
 class ShaderProgram;
 
 class Shader {
-    static constexpr GLsizei number_of_sources = 1;
+    static constexpr GLsizei number_of_sources = 1; // only supporting 1 source per shader type
     static constexpr GLint *source_lengths = 0; // can be set to 0 since source ends with a null terminator
 
     const GLuint shader_handle;

@@ -2,6 +2,7 @@
 #include "exceptions.hpp"
 #include "gl_inspect.hpp"
 #include <cassert>
+#include <cpptrace/cpptrace.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -36,6 +37,8 @@ string read_file(const string &source_fn) {
 
 Shader::Shader(const char *source_fn, GLenum shader_type)
     : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
+    assert(shader_handle != 0);
+
     auto shader_dir = current_path() / "shaders";
 
     auto shader_source = read_file(shader_dir / source_fn);
@@ -72,5 +75,5 @@ Shader::~Shader() {
 
 shared_ptr<Shader> make_shader(const char *source_fn, GLenum shader_type) {
     using std::make_shared;
-    return make_shared<Shader>(Shader(source_fn, shader_type));
+    return make_shared<Shader>(source_fn, shader_type);
 }

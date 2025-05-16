@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cpptrace/from_current.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -55,6 +56,7 @@ template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &
 
 int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         cerr << "sdl init failed: " << SDL_GetError() << endl;
         return 1;
@@ -94,7 +96,7 @@ int main(int argc, char *argv[]) {
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    try {
+    CPPTRACE_TRY {
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
         auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
@@ -228,8 +230,9 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }
-    catch (std::exception &e) {
+    CPPTRACE_CATCH(std::exception & e) {
         cerr << e.what() << endl;
+        cpptrace::from_current_exception().print();
         return 1;
     }
 }

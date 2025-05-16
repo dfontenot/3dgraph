@@ -11,6 +11,7 @@
 #include <glm/mat4x4.hpp>
 
 #include "exceptions.hpp"
+#include "gl_inspect.hpp"
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "shader_program.hpp"
@@ -29,8 +30,10 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
     : program_handle(glCreateProgram()), attached_shaders(shaders) {
     using std::make_unique;
 
+    assert(program_handle != 0);
+
     auto current_error = glGetError();
-    if ((current_error = glGetError()) != GL_NO_ERROR) {
+    if (current_error != GL_NO_ERROR) {
         throw WrappedOpenGLError("precondition failed to init shader program: " + gl_get_error_string(current_error));
     }
 
