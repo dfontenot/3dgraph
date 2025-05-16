@@ -214,7 +214,12 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
+            glPatchParameteri(GL_PATCH_VERTICES, 4);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glDrawArrays(GL_PATCHES, 0, 4);
+
+            // debug the points only (need to disable tessellation)
+            //glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
             SDL_GL_SwapWindow(window);
 
             program.release();
