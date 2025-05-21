@@ -144,11 +144,11 @@ void ShaderProgram::set_model(const glm::mat4 &model) {
 }
 
 void ShaderProgram::set_view(const glm::mat4 &view) {
-    set_uniform_matrix_4fv(model_uniform_variable_name, view);
+    set_uniform_matrix_4fv(view_uniform_variable_name, view);
 }
 
 void ShaderProgram::set_projection(const glm::mat4 &projection) {
-    set_uniform_matrix_4fv(model_uniform_variable_name, projection);
+    set_uniform_matrix_4fv(projection_uniform_variable_name, projection);
 }
 
 void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, const mat4 &value) {

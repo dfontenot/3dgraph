@@ -114,8 +114,8 @@ int main(int argc, char *argv[]) {
 
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
-        // mat4 model = rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-        mat4 model = mat4(1.0f);
+        mat4 model = rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+        //mat4 model = mat4(1.0f);
         const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -3.0f));
         const mat4 projection = perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.0f);
 
