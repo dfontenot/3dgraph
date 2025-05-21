@@ -104,6 +104,9 @@ int main(int argc, char *argv[]) {
 
     glViewport(0, 0, window_w, window_h);
 
+    glEnable(GL_LINE_SMOOTH);
+    glLineWidth(1.5);
+
     CPPTRACE_TRY {
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
@@ -115,9 +118,8 @@ int main(int argc, char *argv[]) {
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
         mat4 model = rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-        //mat4 model = mat4(1.0f);
-        const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -3.0f));
-        const mat4 projection = perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.0f);
+        const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f));
+        const mat4 projection = perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f);
 
         program.use();
         program.set_offset_x(0.0);
@@ -230,9 +232,19 @@ int main(int argc, char *argv[]) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glDrawArrays(GL_PATCHES, 0, 4);
 
-            // debug the points only (need to disable tessellation)
-            // glDrawElements(GL_POINTS, static_cast<GLsizei>(verts.get_vert_count()), GL_UNSIGNED_INT, nullptr);
             SDL_GL_SwapWindow(window);
+
+            if (modified_offset_x) {
+                program.set_offset_x(offset_x);
+            }
+
+            if (modified_offset_y) {
+                program.set_offset_y(offset_y);
+            }
+
+            if (modified_offset_z) {
+                program.set_offset_z(offset_z);
+            }
 
             verts.get_vao()->unbind();
             program.release();
