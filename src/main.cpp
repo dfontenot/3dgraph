@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
+#include <SDL_video.h>
 #include <algorithm>
 #include <array>
 #include <cpptrace/from_current.hpp>
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     auto window = SDL_CreateWindow("opengl render test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_w,
                                    window_h, SDL_WINDOW_OPENGL);
@@ -87,10 +89,18 @@ int main(int argc, char *argv[]) {
     cout << "version: " << glGetString(GL_VERSION) << endl;
     cout << "shading language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    if (major < 4 || minor < 1) {
+        cerr << "invalid opengl version" << endl;
+        return 1;
+    }
+
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    //glEnable(GL_PROGRAM_POINT_SIZE);
+    // glEnable(GL_PROGRAM_POINT_SIZE);
 
     glViewport(0, 0, window_w, window_h);
 
