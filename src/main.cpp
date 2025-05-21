@@ -48,6 +48,7 @@ constexpr Uint32 target_fps = 30;
 constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
+constexpr GLfloat panning_delta = 0.01f;
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr) {
@@ -121,25 +122,28 @@ int main(int argc, char *argv[]) {
         const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f));
         const mat4 projection = perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f);
 
-        program.use();
-        program.set_offset_x(0.0);
-        program.set_offset_y(0.0);
-        program.set_offset_z(0.0);
-        program.set_model(model);
-        program.set_view(view);
-        program.set_projection(projection);
-        program.release();
 
         // allows panning the 3d function but does not move the model matrix
         // itself (panning happens in place)
         GLfloat offset_x = 0.0f;
         GLfloat offset_y = 0.0f;
-        GLfloat offset_z = 0.0f;
+
+        // make parts of the function more intense in the z direction
+        GLfloat z_mult = 10.0f;
+
+        program.use();
+        program.set_offset_x(offset_x);
+        program.set_offset_y(offset_y);
+        program.set_z_mult(z_mult);
+        program.set_model(model);
+        program.set_view(view);
+        program.set_projection(projection);
+        program.release();
 
         while (true) {
             bool modified_offset_x = false;
             bool modified_offset_y = false;
-            bool modified_offset_z = false;
+            bool modified_z_mult = false;
             bool rotation_modified = false;
             bool is_mouse_rotating_surface = false;
             optional<MouseLoc> start_click_loc;
@@ -174,34 +178,34 @@ int main(int argc, char *argv[]) {
                     // TODO: mouse events to make this more intuitive
                     if (evt.key.keysym.sym == SDLK_LEFT) {
                         if (evt.key.keysym.mod & KMOD_SHIFT) {
-                            offset_y -= 0.1;
+                            offset_y -= panning_delta;
                             modified_offset_y = true;
                         }
                         else {
-                            offset_x -= 0.1;
+                            offset_x -= panning_delta;
                             modified_offset_x = true;
                         }
                     }
 
                     if (evt.key.keysym.sym == SDLK_RIGHT) {
                         if (evt.key.keysym.mod & KMOD_SHIFT) {
-                            offset_y += 0.1;
+                            offset_y += panning_delta;
                             modified_offset_y = true;
                         }
                         else {
-                            offset_x += 0.1;
+                            offset_x += panning_delta;
                             modified_offset_x = true;
                         }
                     }
 
                     if (evt.key.keysym.sym == SDLK_UP) {
-                        offset_z += 0.1;
-                        modified_offset_z = true;
+                        z_mult += 0.1;
+                        modified_z_mult = true;
                     }
 
                     if (evt.key.keysym.sym == SDLK_DOWN) {
-                        offset_z -= 0.1;
-                        modified_offset_z = true;
+                        z_mult -= 0.1;
+                        modified_z_mult = true;
                     }
                 }
                 else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -242,8 +246,8 @@ int main(int argc, char *argv[]) {
                 program.set_offset_y(offset_y);
             }
 
-            if (modified_offset_z) {
-                program.set_offset_z(offset_z);
+            if (modified_z_mult) {
+                program.set_z_mult(z_mult);
             }
 
             verts.get_vao()->unbind();

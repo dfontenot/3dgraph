@@ -13,6 +13,7 @@ float map(float value, float min1, float max1, float min2, float max2) {
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
+uniform float u_z_mult;
 // out vec4 tes_color;
 
 void main() {
@@ -23,7 +24,7 @@ void main() {
 
     // ref: https://www.benjoffe.com/code/tools/functions3d/examples
     // apply the function now that there are more levels of tessellation
-    interpolated.z = map(sin(10.0 * (pow(interpolated.x, 2) + pow(interpolated.y, 2))) / 10.0, -1.0, 1.0, -0.5, 0.5);
+    interpolated.z = map(sin(10.0 * (pow(interpolated.x, 2) + pow(interpolated.y, 2))) / u_z_mult, -1.0, 1.0, -0.5, 0.5);
 
     // before rotation, etc. store the UV coords to use in the fragment shader
     uv = vec2(map(interpolated.x, -1.0, 1.0, 0.0, 1.0), map(interpolated.y, -1.0, 1.0, 0.0, 1.0));

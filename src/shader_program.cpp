@@ -118,8 +118,8 @@ void ShaderProgram::set_offset_y(GLfloat offset_y) {
     set_uniform_1f(offset_y_uniform_variable_name, offset_y);
 }
 
-void ShaderProgram::set_offset_z(GLfloat offset_z) {
-    set_uniform_1f(offset_z_uniform_variable_name, offset_z);
+void ShaderProgram::set_z_mult(GLfloat offset_z) {
+    set_uniform_1f(z_mult_uniform_variable_name, offset_z);
 }
 
 void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value) {
