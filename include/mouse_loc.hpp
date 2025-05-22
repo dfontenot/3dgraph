@@ -2,13 +2,14 @@
 
 #include <SDL/SDL_mouse.h>
 #include <cmath>
+#include <cstdint>
 
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 
 class MouseLoc {
-    int x;
-    int y;
+    int32_t x;
+    int32_t y;
 
 public:
     MouseLoc() {

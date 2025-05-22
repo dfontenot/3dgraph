@@ -1,12 +1,14 @@
 #pragma once
 
-#include "glad/glad.h"
 #include "function_params.hpp"
+#include "tick_result.hpp"
+#include "glad/glad.h"
+#include "mouse_loc.hpp"
 #include <SDL/SDL_events.h>
-#include <cstdint>
 #include <memory>
 
 #include <glm/mat4x4.hpp>
+#include <optional>
 
 constexpr GLfloat panning_delta = 0.01f;
 
@@ -20,16 +22,17 @@ class EventLoop {
     // state stuff
     bool function_params_modified_;
     bool view_modified_;
-    bool is_mouse_rotating_surface;
+    std::optional<MouseLoc> start_click;
 
 public:
     /**
      * returns how long the tick took to run
      */
-    uint32_t tick();
+    TickResult tick();
 
     EventLoop() = delete;
-    EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection, std::shared_ptr<FunctionParams> function_params);
+    EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
+              std::shared_ptr<FunctionParams> function_params);
     ~EventLoop();
 
     /**

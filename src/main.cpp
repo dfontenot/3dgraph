@@ -150,7 +150,10 @@ int main(int argc, char *argv[]) {
 
             SDL_GL_SwapWindow(window);
 
-            auto sleep_for_ticks = event_loop.tick();
+            auto tick_result = event_loop.tick();
+            if (tick_result.should_exit) {
+                return 0;
+            }
 
             if (event_loop.function_params_modified()) {
                 program.update_function_params();
@@ -163,8 +166,8 @@ int main(int argc, char *argv[]) {
             verts.get_vao()->unbind();
             program.release();
 
-            if (max_sleep_per_tick > sleep_for_ticks) {
-                SDL_Delay(max_sleep_per_tick - sleep_for_ticks);
+            if (max_sleep_per_tick > tick_result.elapsed_ticks) {
+                SDL_Delay(max_sleep_per_tick - tick_result.elapsed_ticks);
             }
         }
 

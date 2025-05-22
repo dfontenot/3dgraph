@@ -1,4 +1,5 @@
 #include "event_loop.hpp"
+#include "tick_result.hpp"
 #include "function_params.hpp"
 #include "mouse_loc.hpp"
 
@@ -14,6 +15,7 @@
 using std::optional;
 using std::shared_ptr;
 using std::make_optional;
+using std::nullopt;
 
 using glm::mat4;
 using glm::radians;
@@ -24,7 +26,7 @@ using glm::vec3;
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false), is_mouse_rotating_surface(false) {
+      function_params_modified_(false), view_modified_(false), start_click(nullopt) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -35,23 +37,21 @@ bool EventLoop::view_modified() const {
     return view_modified_;
 }
 
-uint32_t EventLoop::tick() {
+TickResult EventLoop::tick() {
     function_params_modified_ = false;
     view_modified_ = false;
-    optional<MouseLoc> start_click_loc;
-    MouseLoc current_loc;
 
     auto start_ticks = SDL_GetTicks();
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_QUIT) {
-            return 0;
+            return TickResult(SDL_GetTicks() - start_ticks, true);
         }
         else if (evt.type == SDL_KEYDOWN) {
             if (evt.key.keysym.sym == SDLK_q) {
-                return 0;
+                return TickResult(SDL_GetTicks() - start_ticks, true);
             }
 
-            if (!is_mouse_rotating_surface) {
+            if (!start_click.has_value()) {
                 if (evt.key.keysym.sym == SDLK_a) {
                     view_modified_ = true;
                     *model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
@@ -97,14 +97,13 @@ uint32_t EventLoop::tick() {
             }
         }
         else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-            is_mouse_rotating_surface = true;
-            start_click_loc = make_optional<MouseLoc>();
+            start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
         }
         else if (evt.type == SDL_MOUSEBUTTONUP) {
-            is_mouse_rotating_surface = false;
-            start_click_loc.reset();
+            start_click = nullopt;
         }
-        else if (is_mouse_rotating_surface && evt.type == SDL_MOUSEMOTION) {
+        else if (start_click.has_value() && evt.type == SDL_MOUSEMOTION) {
+            MouseLoc current(evt.motion.x, evt.motion.y);
         }
 
         if (is_mouse_rotating_surface && start_click_loc) {
@@ -118,6 +117,5 @@ uint32_t EventLoop::tick() {
         }
     }
 
-    auto end_ticks = SDL_GetTicks();
-    return end_ticks - start_ticks;
+    return TickResult(SDL_GetTicks() - start_ticks, false);
 }
