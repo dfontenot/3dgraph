@@ -8,12 +8,13 @@ BASEDIR=$(dirname "$0")
 pushd "$BASEDIR"
 
 cmake_timestamp=$(date +%s -r CMakeLists.txt)
+conanfile_timestamp=$(date +%s -r conanfile.txt)
 
 if [ -f build/CmakeCache.txt ]; then
   cache_timestamp=$(date +%s -r build/CMakeCache.txt)
 
   # not always necessary, but for local dev ensure clean cache
-  if [ "$cmake_timestamp" -gt "$cache_timestamp" ]; then
+  if [ "$cmake_timestamp" -gt "$cache_timestamp" ] || [ "$conanfile_timestamp" -gt "$cache_timestamp" ]; then
     echo "clearing cmake cache"
     rm -rf build
   fi

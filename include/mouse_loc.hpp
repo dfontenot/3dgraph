@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL/SDL_mouse.h>
+#include <SDL2/SDL.h>
 #include <cmath>
 #include <cstdint>
 
