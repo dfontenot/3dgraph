@@ -16,6 +16,11 @@ find_package(opengl_system)
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp)
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_SWIZZLE_XYZW)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_MESSAGES=GLM_ENABLE)
+
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace
   PRIVATE opengl::opengl

@@ -7,8 +7,6 @@
 #include <memory>
 #include <optional>
 
-#define GLM_SWIZZLE
-#define GLM_SWIZZLE_XYZW
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/vec_swizzle.hpp>
