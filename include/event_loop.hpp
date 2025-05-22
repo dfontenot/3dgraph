@@ -20,6 +20,7 @@ class EventLoop {
     // state stuff
     bool function_params_modified_;
     bool view_modified_;
+    bool is_mouse_rotating_surface;
 
 public:
     /**

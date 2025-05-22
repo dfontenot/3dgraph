@@ -13,6 +13,7 @@
 
 using std::optional;
 using std::shared_ptr;
+using std::make_optional;
 
 using glm::mat4;
 using glm::radians;
@@ -23,7 +24,7 @@ using glm::vec3;
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false) {
+      function_params_modified_(false), view_modified_(false), is_mouse_rotating_surface(false) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -37,7 +38,6 @@ bool EventLoop::view_modified() const {
 uint32_t EventLoop::tick() {
     function_params_modified_ = false;
     view_modified_ = false;
-    bool is_mouse_rotating_surface = false;
     optional<MouseLoc> start_click_loc;
     MouseLoc current_loc;
 
@@ -54,12 +54,12 @@ uint32_t EventLoop::tick() {
             if (!is_mouse_rotating_surface) {
                 if (evt.key.keysym.sym == SDLK_a) {
                     view_modified_ = true;
-                    model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
+                    *model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
                 }
 
                 else if (evt.key.keysym.sym == SDLK_d) {
                     view_modified_ = true;
-                    model = rotate(model, radians(1.0f), vec3(1.0f, 0.0f, 0.0f));
+                    *model = rotate(model, radians(1.0f), vec3(1.0f, 0.0f, 0.0f));
                 }
             }
 
@@ -98,12 +98,13 @@ uint32_t EventLoop::tick() {
         }
         else if (evt.type == SDL_MOUSEBUTTONDOWN) {
             is_mouse_rotating_surface = true;
-            MouseLoc new_loc;
-            start_click_loc = new_loc;
+            start_click_loc = make_optional<MouseLoc>();
         }
         else if (evt.type == SDL_MOUSEBUTTONUP) {
             is_mouse_rotating_surface = false;
             start_click_loc.reset();
+        }
+        else if (is_mouse_rotating_surface && evt.type == SDL_MOUSEMOTION) {
         }
 
         if (is_mouse_rotating_surface && start_click_loc) {
