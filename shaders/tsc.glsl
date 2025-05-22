@@ -1,4 +1,4 @@
-#version 450 core
+#version 410 core
 
 layout (vertices=4) out;
 out vec4 vertex_color[];

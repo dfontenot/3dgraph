@@ -1,8 +1,8 @@
 #pragma once
 
+#include <SDL/SDL_mouse.h>
 #include <cmath>
 
-#include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 

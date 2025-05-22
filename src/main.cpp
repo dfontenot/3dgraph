@@ -1,3 +1,5 @@
+#include "event_loop.hpp"
+#include "function_params.hpp"
 #include "glad/glad.h" // have to load glad first
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -5,6 +7,7 @@
 #include <SDL_video.h>
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cpptrace/from_current.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -13,13 +16,12 @@
 #include <glm/vec3.hpp>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 
 #include "create_array.hpp"
-#include "glad/glad.h"
-#include "mouse_loc.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
 #include "vertices.hpp"
@@ -36,19 +38,21 @@ using std::cerr;
 using std::copy;
 using std::cout;
 using std::endl;
+using std::make_shared;
+using std::move;
 using std::optional;
 using std::ostream;
 using std::ostream_iterator;
+using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::string_view;
 using std::stringstream;
 
-constexpr Uint32 target_fps = 30;
-constexpr Uint32 max_sleep_per_tick = 1000 / target_fps;
+constexpr uint32_t target_fps = 30;
+constexpr uint32_t max_sleep_per_tick = 1000 / target_fps;
 constexpr size_t window_h = 800;
 constexpr size_t window_w = 1200;
-constexpr GLfloat panning_delta = 0.01f;
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr) {
@@ -109,125 +113,33 @@ int main(int argc, char *argv[]) {
     glLineWidth(1.5);
 
     CPPTRACE_TRY {
+        auto model = make_shared<mat4>(rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)));
+        auto view = make_shared<mat4>(translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f)));
+        auto projection =
+            make_shared<mat4>(perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f));
+        auto function_params = make_shared<FunctionParams>(0.0f, 0.0f);
+
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
         auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
 
-        ShaderProgram program = {vertex_shader, tsc_shader, tes_shader, fragment_shader};
+        ShaderProgram program{{vertex_shader, tsc_shader, tes_shader, fragment_shader}, model, view, projection, function_params};
 
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
-        mat4 model = rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-        const mat4 view = translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f));
-        const mat4 projection = perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f);
-
-
-        // allows panning the 3d function but does not move the model matrix
-        // itself (panning happens in place)
-        GLfloat offset_x = 0.0f;
-        GLfloat offset_y = 0.0f;
-
-        // make parts of the function more intense in the z direction
-        GLfloat z_mult = 10.0f;
-
         program.use();
-        program.set_offset_x(offset_x);
-        program.set_offset_y(offset_y);
-        program.set_z_mult(z_mult);
-        program.set_model(model);
-        program.set_view(view);
-        program.set_projection(projection);
+        program.update_function_params();
+        program.update_model();
+        program.update_view();
+        program.update_projection();
         program.release();
 
+        EventLoop event_loop { model, view, projection, function_params };
         while (true) {
-            bool modified_offset_x = false;
-            bool modified_offset_y = false;
-            bool modified_z_mult = false;
-            bool rotation_modified = false;
-            bool is_mouse_rotating_surface = false;
-            optional<MouseLoc> start_click_loc;
-            MouseLoc current_loc;
 
-            auto start_ticks = SDL_GetTicks();
             verts.get_vao()->bind();
             program.use();
-
-            SDL_Event evt;
-            while (SDL_PollEvent(&evt)) {
-                if (evt.type == SDL_QUIT) {
-                    return 0;
-                }
-                else if (evt.type == SDL_KEYDOWN) {
-                    if (evt.key.keysym.sym == SDLK_q) {
-                        return 0;
-                    }
-
-                    if (!is_mouse_rotating_surface) {
-                        if (evt.key.keysym.sym == SDLK_a) {
-                            rotation_modified = true;
-                            model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
-                        }
-
-                        else if (evt.key.keysym.sym == SDLK_d) {
-                            rotation_modified = true;
-                            model = rotate(model, radians(1.0f), vec3(1.0f, 0.0f, 0.0f));
-                        }
-                    }
-
-                    // TODO: mouse events to make this more intuitive
-                    if (evt.key.keysym.sym == SDLK_LEFT) {
-                        if (evt.key.keysym.mod & KMOD_SHIFT) {
-                            offset_y -= panning_delta;
-                            modified_offset_y = true;
-                        }
-                        else {
-                            offset_x -= panning_delta;
-                            modified_offset_x = true;
-                        }
-                    }
-
-                    if (evt.key.keysym.sym == SDLK_RIGHT) {
-                        if (evt.key.keysym.mod & KMOD_SHIFT) {
-                            offset_y += panning_delta;
-                            modified_offset_y = true;
-                        }
-                        else {
-                            offset_x += panning_delta;
-                            modified_offset_x = true;
-                        }
-                    }
-
-                    if (evt.key.keysym.sym == SDLK_UP) {
-                        z_mult += 0.1;
-                        modified_z_mult = true;
-                    }
-
-                    if (evt.key.keysym.sym == SDLK_DOWN) {
-                        z_mult -= 0.1;
-                        modified_z_mult = true;
-                    }
-                }
-                else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-                    is_mouse_rotating_surface = true;
-                    MouseLoc new_loc;
-                    start_click_loc = new_loc;
-                }
-                else if (evt.type == SDL_MOUSEBUTTONUP) {
-                    is_mouse_rotating_surface = false;
-                    start_click_loc.reset();
-                }
-
-                if (is_mouse_rotating_surface && start_click_loc) {
-                    current_loc.update_loc();
-
-                    double dist = current_loc.distance(start_click_loc.value());
-                    if (dist >= 5) { // arbitrary
-                                     // TODO spin the model based off of how far the mouse
-                                     // has been moved since clicking
-                    }
-                }
-            }
 
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -238,23 +150,18 @@ int main(int argc, char *argv[]) {
 
             SDL_GL_SwapWindow(window);
 
-            if (modified_offset_x) {
-                program.set_offset_x(offset_x);
+            auto sleep_for_ticks = event_loop.tick();
+
+            if (event_loop.function_params_modified()) {
+                program.update_function_params();
             }
 
-            if (modified_offset_y) {
-                program.set_offset_y(offset_y);
-            }
-
-            if (modified_z_mult) {
-                program.set_z_mult(z_mult);
+            if (event_loop.view_modified()) {
+                program.update_view();
             }
 
             verts.get_vao()->unbind();
             program.release();
-
-            auto end_ticks = SDL_GetTicks();
-            auto sleep_for_ticks = end_ticks - start_ticks;
 
             if (max_sleep_per_tick > sleep_for_ticks) {
                 SDL_Delay(max_sleep_per_tick - sleep_for_ticks);

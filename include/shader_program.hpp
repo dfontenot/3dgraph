@@ -7,6 +7,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include "function_params.hpp"
 #include "glad/glad.h"
 #include "shader.hpp"
 
@@ -31,24 +32,26 @@ class ShaderProgram {
     GLuint program_handle;
     std::vector<std::shared_ptr<Shader>> attached_shaders;
     std::unordered_map<const GLchar *, GLint> uniform_locations;
-    // std::unordered_map<const GLchar*, UniformType> uniform_types;
+    std::shared_ptr<glm::mat4> model;
+    std::shared_ptr<glm::mat4> view;
+    std::shared_ptr<glm::mat4> projection;
+    std::shared_ptr<FunctionParams> function_params;
 
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
-    void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, const glm::mat4 &value);
+    void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> value);
 
 public:
     ShaderProgram() = delete;
     // TODO: more ergonomic ways of constructing this class
-    ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shaders);
+    ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shaders, std::shared_ptr<glm::mat4> model,
+                  std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection, std::shared_ptr<FunctionParams> function_params);
     ~ShaderProgram();
 
     void use();
     void release();
 
-    void set_offset_x(GLfloat offset_x);
-    void set_offset_y(GLfloat offset_y);
-    void set_z_mult(GLfloat offset_z);
-    void set_model(const glm::mat4 &model);
-    void set_view(const glm::mat4 &view);
-    void set_projection(const glm::mat4 &projection);
+    void update_function_params();
+    void update_model();
+    void update_view();
+    void update_projection();
 };

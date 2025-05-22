@@ -12,6 +12,7 @@
 #include <glm/mat4x4.hpp>
 
 #include "exceptions.hpp"
+#include "function_params.hpp"
 #include "gl_inspect.hpp"
 #include "glad/glad.h"
 #include "shader.hpp"
@@ -28,8 +29,11 @@ using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
-ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders)
-    : program_handle(glCreateProgram()), attached_shaders(shaders) {
+ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, shared_ptr<mat4> model,
+                             shared_ptr<mat4> view, shared_ptr<mat4> projection,
+                             shared_ptr<FunctionParams> function_params)
+    : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
+      function_params(function_params) {
     using std::make_unique;
 
     assert(program_handle != 0);
@@ -110,16 +114,10 @@ void ShaderProgram::release() {
     glUseProgram(0);
 }
 
-void ShaderProgram::set_offset_x(GLfloat offset_x) {
-    set_uniform_1f(offset_x_uniform_variable_name, offset_x);
-}
-
-void ShaderProgram::set_offset_y(GLfloat offset_y) {
-    set_uniform_1f(offset_y_uniform_variable_name, offset_y);
-}
-
-void ShaderProgram::set_z_mult(GLfloat offset_z) {
-    set_uniform_1f(z_mult_uniform_variable_name, offset_z);
+void ShaderProgram::update_function_params() {
+    set_uniform_1f(offset_x_uniform_variable_name, function_params->x_offset);
+    set_uniform_1f(offset_y_uniform_variable_name, function_params->y_offset);
+    set_uniform_1f(z_mult_uniform_variable_name, function_params->z_mult);
 }
 
 void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value) {
@@ -139,26 +137,26 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     }
 }
 
-void ShaderProgram::set_model(const glm::mat4 &model) {
+void ShaderProgram::update_model() {
     set_uniform_matrix_4fv(model_uniform_variable_name, model);
 }
 
-void ShaderProgram::set_view(const glm::mat4 &view) {
+void ShaderProgram::update_view() {
     set_uniform_matrix_4fv(view_uniform_variable_name, view);
 }
 
-void ShaderProgram::set_projection(const glm::mat4 &projection) {
+void ShaderProgram::update_projection() {
     set_uniform_matrix_4fv(projection_uniform_variable_name, projection);
 }
 
-void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, const mat4 &value) {
+void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, shared_ptr<mat4> value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
         throw WrappedOpenGLError("cannot update uniforms due to existing error: " + gl_get_error_string(current_error));
     }
 
-    glUniformMatrix4fv(uniform_locations[uniform_variable_name], 1, GL_FALSE, value_ptr(value));
+    glUniformMatrix4fv(uniform_locations[uniform_variable_name], 1, GL_FALSE, value_ptr(*value));
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
         stringstream ss;
