@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.23)
 project(3dgraph
   VERSION 1.0
   DESCRIPTION "a very basic opengl render"
@@ -8,22 +8,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE, Debug)
 
-# TODO: use EGL
-find_package(OpenGL REQUIRED COMPONENTS GLX)
-
-# use whatever is on the system for OpenGL, but force use the versions from conan for everything else
-set(CMAKE_PREFIX_PATH "${CONAN_PACKAGE_DIRS_3dgraph}" CACHE PATH "${OPENGL_glx_LIBRARY}" FORCE)
-
 find_package(cpptrace REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
+find_package(opengl_system)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace
-  PRIVATE OpenGL::GLX
+  PRIVATE opengl::opengl
   PRIVATE SDL2::SDL2
   PRIVATE SDL2::SDL2main
   PRIVATE glm::glm)
