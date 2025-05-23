@@ -4,7 +4,7 @@
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <memory>
 #include <optional>
@@ -64,31 +64,31 @@ TickResult EventLoop::tick() {
     auto stdout = spdlog::get("stdout");
     auto start_ticks = SDL_GetTicks();
     while (SDL_PollEvent(&evt)) {
-        if (evt.type == SDL_QUIT) {
+        if (evt.type == SDL_EVENT_QUIT) {
             return TickResult(SDL_GetTicks() - start_ticks, true);
         }
-        else if (evt.type == SDL_KEYDOWN) {
-            if (evt.key.keysym.sym == SDLK_q) {
+        else if (evt.type == SDL_EVENT_KEY_DOWN) {
+            if (evt.key.key == SDLK_Q) {
                 return TickResult(SDL_GetTicks() - start_ticks, true);
             }
 
             if (!start_click.has_value()) {
-                if (evt.key.keysym.sym == SDLK_a) {
+                if (evt.key.key == SDLK_A) {
                     model_modified_ = true;
                     rotational_axis_direction = -1.0f;
                     rotational_axis = x_axis;
                 }
-                else if (evt.key.keysym.sym == SDLK_d) {
+                else if (evt.key.key == SDLK_D) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
                     rotational_axis = x_axis;
                 }
-                else if (evt.key.keysym.sym == SDLK_w) {
+                else if (evt.key.key == SDLK_W) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
                     rotational_axis = y_axis;
                 }
-                else if (evt.key.keysym.sym == SDLK_s) {
+                else if (evt.key.key == SDLK_S) {
                     model_modified_ = true;
                     rotational_axis = y_axis;
                     rotational_axis_direction = -1.0f;
@@ -96,8 +96,8 @@ TickResult EventLoop::tick() {
             }
 
             // TODO: mouse events to make this more intuitive
-            if (evt.key.keysym.sym == SDLK_LEFT) {
-                if (evt.key.keysym.mod & KMOD_SHIFT) {
+            if (evt.key.key == SDLK_LEFT) {
+                if (evt.key.mod & SDL_KMOD_SHIFT) {
                     function_params->y_offset -= panning_delta;
                     function_params_modified_ = true;
                 }
@@ -107,8 +107,8 @@ TickResult EventLoop::tick() {
                 }
             }
 
-            if (evt.key.keysym.sym == SDLK_RIGHT) {
-                if (evt.key.keysym.mod & KMOD_SHIFT) {
+            if (evt.key.key == SDLK_RIGHT) {
+                if (evt.key.mod & SDL_KMOD_SHIFT) {
                     function_params->y_offset += panning_delta;
                     function_params_modified_ = true;
                 }
@@ -118,31 +118,32 @@ TickResult EventLoop::tick() {
                 }
             }
 
-            if (evt.key.keysym.sym == SDLK_UP) {
+            if (evt.key.key == SDLK_UP) {
                 function_params->z_mult += 0.1;
                 function_params_modified_ = true;
             }
 
-            if (evt.key.keysym.sym == SDLK_DOWN) {
+            if (evt.key.key == SDLK_DOWN) {
                 function_params->z_mult -= 0.1;
                 function_params_modified_ = true;
             }
         }
-        else if (evt.type == SDL_MOUSEBUTTONDOWN) {
+        else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             stdout->debug("started click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
         }
-        else if (evt.type == SDL_MOUSEBUTTONUP) {
+        else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             stdout->debug("ended click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = nullopt;
         }
-        else if (start_click.has_value() && evt.type == SDL_MOUSEMOTION) {
-            MouseLoc current(evt.motion.x, evt.motion.y);
+        else if (start_click.has_value() && evt.type == SDL_EVENT_MOUSE_MOTION) {
+            //MouseLoc current(evt.motion.x, evt.motion.y);
         }
     }
 
     auto end_ticks = SDL_GetTicks();
     auto elapsed_millis = end_ticks - start_ticks;
+    stdout->debug("that took {} millis", elapsed_millis);
 
     if (model_modified_) {
         quat current(*model);

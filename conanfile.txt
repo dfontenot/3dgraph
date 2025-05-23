@@ -3,7 +3,7 @@ cpptrace/0.8.3
 fmt/11.1.3
 glm/1.0.1
 opengl/system
-sdl/2.26.5
+sdl/3.2.14
 spdlog/1.15.1
 
 [generators]
@@ -11,18 +11,16 @@ CMakeDeps
 CMakeToolchain
 
 [options]
-sdl*:directx=False
 sdl*:alsa=False
-sdl*:jack=False
-sdl*:pulse=False
+sdl*:dbus=False
+sdl*:audio=False
 sdl*:sndio=False
-sdl*:nas=False
-sdl*:esd=False
-sdl*:arts=False
-sdl*:video_rpi=False
+sdl*:camera=False
+sdl*:libusb=False
+sdl*:opengl=True
 sdl*:vulkan=False
-sdl*:opengles=False
+sdl*:opengles=True
 sdl*:xinerama=False
 sdl*:iconv=False
 sdl*:wayland=False
-sdl*:opengl=True
+sdl*:pulseaudio=False

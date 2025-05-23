@@ -3,7 +3,7 @@
 Graph a 3d function using OpenGL.
 
 ## Building
-Ensure SDL2 is installed
+Ensure SDL3 is installed
 
 1. `mkdir build`
 1. `cd build`

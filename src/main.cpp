@@ -2,9 +2,10 @@
 #include "event_loop.hpp"
 #include "function_params.hpp"
 #include "glad/glad.h" // have to load glad first
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
 
+#include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <array>
 #include <cpptrace/from_current.hpp>
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
     auto stdout = spdlog::stdout_color_mt("stdout");
     auto stderr = spdlog::stderr_color_mt("stderr");
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         stderr->error("sdl init failed: {}", SDL_GetError());
         return 1;
     }
@@ -69,8 +70,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-    auto window = SDL_CreateWindow("opengl render test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_w,
-                                   window_h, SDL_WINDOW_OPENGL);
+    auto window = SDL_CreateWindow("opengl render test", window_w, window_h, SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         stderr->error("could not create window: {}", SDL_GetError());
@@ -83,7 +83,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    gladLoadGLLoader(SDL_GL_GetProcAddress);
+    SDL_GL_MakeCurrent(window, context);
+
+    gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
     stdout->info("vendor: {}", reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
     stdout->info("renderer: {}", reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     stdout->info("version: {}", reinterpret_cast<const char *>(glGetString(GL_VERSION)));

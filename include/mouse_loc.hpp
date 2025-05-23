@@ -1,22 +1,21 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <cmath>
-#include <cstdint>
 
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 
 class MouseLoc {
-    int32_t x;
-    int32_t y;
+    float x;
+    float y;
 
 public:
     MouseLoc() {
         SDL_GetMouseState(&x, &y);
     }
 
-    MouseLoc(int x, int y) : x(x), y(y) {
+    MouseLoc(int x, int y) : x((float)x), y((float)y) {
     }
 
     void update_loc() {

@@ -4,7 +4,7 @@
 #include "tick_result.hpp"
 #include "glad/glad.h"
 #include "mouse_loc.hpp"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <memory>
 
 #include <glm/mat4x4.hpp>

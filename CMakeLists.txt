@@ -12,7 +12,7 @@ find_package(cpptrace REQUIRED)
 find_package(fmt REQUIRED)
 find_package(glm REQUIRED)
 find_package(opengl_system REQUIRED)
-find_package(SDL2 REQUIRED)
+find_package(SDL3 REQUIRED)
 find_package(spdlog REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
@@ -28,8 +28,7 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE fmt::fmt
   PRIVATE glm::glm
   PRIVATE opengl::opengl
-  PRIVATE SDL2::SDL2
-  PRIVATE SDL2::SDL2main
+  PRIVATE SDL3::SDL3
   PRIVATE spdlog::spdlog)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME}
