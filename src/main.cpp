@@ -35,10 +35,7 @@ using glm::translate;
 using glm::vec3;
 
 using std::array;
-using std::cerr;
 using std::copy;
-using std::cout;
-using std::endl;
 using std::make_shared;
 using std::ostream;
 using std::ostream_iterator;
