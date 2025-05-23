@@ -1,4 +1,4 @@
-#version 450 core
+#version 410 core
 
 // reference: https://learnopengl.com/Guest-Articles/2021/Tessellation/Tessellation
 layout(quads, fractional_odd_spacing, ccw) in;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 constexpr uint32_t target_fps = 30;
 constexpr uint32_t max_sleep_per_tick = 1000 / target_fps;
