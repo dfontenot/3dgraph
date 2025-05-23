@@ -54,6 +54,7 @@ template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &
 int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
 
+    spdlog::set_level(spdlog::level::debug);
     auto stdout = spdlog::stdout_color_mt("stdout");
     auto stderr = spdlog::stderr_color_mt("stderr");
 

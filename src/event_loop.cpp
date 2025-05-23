@@ -1,4 +1,5 @@
 #include "event_loop.hpp"
+#include "formatters.hpp"
 #include "function_params.hpp"
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
@@ -28,9 +29,12 @@ using glm::toMat4;
 using glm::vec3;
 
 constexpr double pi = 3.1415926;
-constexpr double rotation_max_degrees_second = 40.0;
+constexpr double rotation_max_degrees_second = 900.0;
 constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
 constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
+
+constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
+constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
@@ -57,6 +61,7 @@ TickResult EventLoop::tick() {
     float rotational_axis_direction = 0.0f;
     vec3 rotational_axis = vec3(1.0f, 0.0f, 0.0f);
 
+    auto stdout = spdlog::get("stdout");
     auto start_ticks = SDL_GetTicks();
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_QUIT) {
@@ -71,21 +76,21 @@ TickResult EventLoop::tick() {
                 if (evt.key.keysym.sym == SDLK_a) {
                     model_modified_ = true;
                     rotational_axis_direction = -1.0f;
-                    rotational_axis = vec3(1.0f, 0.0f, 0.0f);
+                    rotational_axis = x_axis;
                 }
                 else if (evt.key.keysym.sym == SDLK_d) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    rotational_axis = vec3(1.0f, 0.0f, 0.0f);
+                    rotational_axis = x_axis;
                 }
                 else if (evt.key.keysym.sym == SDLK_w) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    rotational_axis = vec3(0.0f, 1.0f, 0.0f);
+                    rotational_axis = y_axis;
                 }
                 else if (evt.key.keysym.sym == SDLK_s) {
                     model_modified_ = true;
-                    rotational_axis = vec3(0.0f, 1.0f, 0.0f);
+                    rotational_axis = y_axis;
                     rotational_axis_direction = -1.0f;
                 }
             }
@@ -124,9 +129,11 @@ TickResult EventLoop::tick() {
             }
         }
         else if (evt.type == SDL_MOUSEBUTTONDOWN) {
+            stdout->debug("started click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
         }
         else if (evt.type == SDL_MOUSEBUTTONUP) {
+            stdout->debug("ended click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = nullopt;
         }
         else if (start_click.has_value() && evt.type == SDL_MOUSEMOTION) {
@@ -138,12 +145,13 @@ TickResult EventLoop::tick() {
     auto elapsed_millis = end_ticks - start_ticks;
 
     if (model_modified_) {
-        spdlog::get("stdout")->debug("will update model matrix");
         quat current(*model);
 
         quat rotation =
             angleAxis((float)(rotation_rad_millis * elapsed_millis) * rotational_axis_direction, rotational_axis);
         quat new_model_orientation = rotation * current;
+
+        stdout->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
         *model = toMat4(new_model_orientation);
     }
 
