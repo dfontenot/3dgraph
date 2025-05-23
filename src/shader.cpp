@@ -37,7 +37,12 @@ string read_file(const string &source_fn) {
 
 Shader::Shader(const char *source_fn, GLenum shader_type)
     : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
+    // preconditions
     assert(shader_handle != 0);
+    auto current_error = glGetError();
+    if (current_error != GL_NO_ERROR) {
+        throw WrappedOpenGLError("precondition failed in shader ctor: " + gl_get_error_string(current_error));
+    }
 
     auto shader_dir = current_path() / "shaders";
 
@@ -67,11 +72,6 @@ Shader::Shader(const char *source_fn, GLenum shader_type)
     }
 
     assert(compiled == GL_TRUE);
-
-    auto current_error = glGetError();
-    if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error after compilation: " + gl_get_error_string(current_error));
-    }
 }
 
 Shader::~Shader() {

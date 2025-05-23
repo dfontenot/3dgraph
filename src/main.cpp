@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     if (major < 4 || minor < 1) {
-        stderr->error("invalid opengl version");
+        stderr->error("invalid opengl version 2");
         return 1;
     }
 
@@ -105,7 +105,18 @@ int main(int argc, char *argv[]) {
     glViewport(0, 0, window_w, window_h);
 
     glEnable(GL_LINE_SMOOTH);
-    glLineWidth(1.5);
+
+#if __APPLE__
+    // see: https://www.reddit.com/r/opengl/comments/at1az3/comment/egy4keo
+    glLineWidth(1.0f);
+#else
+    glLineWidth(1.5f);
+#endif
+
+    auto current_error = glGetError();
+    if (current_error != GL_NO_ERROR) {
+        stderr->error("OpenGL setup failed");
+    }
 
     CPPTRACE_TRY {
         auto model = make_shared<mat4>(rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)));
