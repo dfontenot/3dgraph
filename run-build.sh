@@ -36,7 +36,9 @@ conan install . --output-folder=build --build=missing
 
 cd build
 #cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
-cmake --preset conan-release ..
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+# TODO: fix this
+#cmake --preset conan-debug ..
 cmake --build .
 
 popd

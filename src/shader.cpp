@@ -67,6 +67,11 @@ Shader::Shader(const char *source_fn, GLenum shader_type)
     }
 
     assert(compiled == GL_TRUE);
+
+    auto current_error = glGetError();
+    if (current_error != GL_NO_ERROR) {
+        throw WrappedOpenGLError("error after compilation: " + gl_get_error_string(current_error));
+    }
 }
 
 Shader::~Shader() {
