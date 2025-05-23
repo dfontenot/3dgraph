@@ -21,6 +21,7 @@ class EventLoop {
 
     // state stuff
     bool function_params_modified_;
+    bool model_modified_;
     bool view_modified_;
     std::optional<MouseLoc> start_click;
 
@@ -33,12 +34,16 @@ public:
     EventLoop() = delete;
     EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
               std::shared_ptr<FunctionParams> function_params);
-    ~EventLoop();
 
     /**
-     * if the view (zoom, rotate, pan, etc.) was changed in any way during the tick
+     * if the view (zoom, pan, etc.) was changed in any way during the tick
      */
     bool view_modified() const;
+
+    /**
+     * if the model orientation (orbit) was changed in any way during the tick
+     */
+    bool model_modified() const;
 
     /**
      * if the parameters of the 3D function that is being displayed were changed during the tick

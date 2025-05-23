@@ -1,12 +1,12 @@
 #include "event_loop.hpp"
 #include "function_params.hpp"
+#include "consts.hpp"
 #include "glad/glad.h" // have to load glad first
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <cpptrace/from_current.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -16,7 +16,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <optional>
 #include <sstream>
 #include <string>
 
@@ -38,19 +37,11 @@ using std::copy;
 using std::cout;
 using std::endl;
 using std::make_shared;
-using std::move;
-using std::optional;
 using std::ostream;
 using std::ostream_iterator;
-using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::stringstream;
-
-constexpr uint32_t target_fps = 30;
-constexpr uint32_t max_sleep_per_tick = 1000 / target_fps;
-constexpr size_t window_h = 800;
-constexpr size_t window_w = 1200;
 
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr) {
@@ -159,6 +150,10 @@ int main(int argc, char *argv[]) {
 
             if (event_loop.view_modified()) {
                 program.update_view();
+            }
+
+            if (event_loop.model_modified()) {
+                program.update_model();
             }
 
             verts.get_vao()->unbind();

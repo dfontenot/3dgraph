@@ -1,15 +1,19 @@
 #include "event_loop.hpp"
+#include "consts.hpp"
 #include "function_params.hpp"
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
 
 #include <SDL2/SDL.h>
+#include <glm/ext/quaternion_trigonometric.hpp>
 #include <memory>
 #include <optional>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
-#include <glm/gtx/vec_swizzle.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 using std::make_optional;
@@ -17,17 +21,21 @@ using std::nullopt;
 using std::optional;
 using std::shared_ptr;
 
+using glm::angleAxis;
 using glm::mat4;
-using glm::radians;
-using glm::rotate;
-//using glm::swizzle;
-using glm::translate;
+using glm::quat;
+using glm::toMat4;
 using glm::vec3;
+
+constexpr double pi = 3.1415926;
+constexpr double rotation_max_degrees_second = 40.0;
+constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
+constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false), start_click(nullopt) {
+      function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -38,11 +46,16 @@ bool EventLoop::view_modified() const {
     return view_modified_;
 }
 
+bool EventLoop::model_modified() const {
+    return model_modified_;
+}
+
 TickResult EventLoop::tick() {
     function_params_modified_ = false;
     view_modified_ = false;
+    model_modified_ = false;
     float rotational_axis_direction = 0.0f;
-    vec3 rotational_axis = vec3(0.0f, 0.0f, 0.0f);
+    vec3 rotational_axis = vec3(1.0f, 0.0f, 0.0f);
 
     auto start_ticks = SDL_GetTicks();
     while (SDL_PollEvent(&evt)) {
@@ -56,26 +69,24 @@ TickResult EventLoop::tick() {
 
             if (!start_click.has_value()) {
                 if (evt.key.keysym.sym == SDLK_a) {
-                    view_modified_ = true;
+                    model_modified_ = true;
                     rotational_axis_direction = -1.0f;
-                    rotational_axis.x = 1.0f;
-                    //rotational_axis.yz = 0.0f;
-                    //*model = rotate(model, radians(-1.0f), vec3(1.0f, 0.0f, 0.0f));
+                    rotational_axis = vec3(1.0f, 0.0f, 0.0f);
                 }
                 else if (evt.key.keysym.sym == SDLK_d) {
-                    view_modified_ = true;
+                    model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    //*model = rotate(model, radians(1.0f), vec3(1.0f, 0.0f, 0.0f));
+                    rotational_axis = vec3(1.0f, 0.0f, 0.0f);
                 }
                 else if (evt.key.keysym.sym == SDLK_w) {
-                    view_modified_ = true;
+                    model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    //*model = rotate(model, radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
+                    rotational_axis = vec3(0.0f, 1.0f, 0.0f);
                 }
                 else if (evt.key.keysym.sym == SDLK_s) {
-                    view_modified_ = true;
+                    model_modified_ = true;
+                    rotational_axis = vec3(0.0f, 1.0f, 0.0f);
                     rotational_axis_direction = -1.0f;
-                    //*model = rotate(model, radians(-1.0f), vec3(0.0f, 1.0f, 0.0f));
                 }
             }
 
@@ -123,5 +134,17 @@ TickResult EventLoop::tick() {
         }
     }
 
-    return TickResult(SDL_GetTicks() - start_ticks, false);
+    auto end_ticks = SDL_GetTicks();
+    auto elapsed_millis = end_ticks - start_ticks;
+
+    if (model_modified_) {
+        quat current(*model);
+
+        quat rotation =
+            angleAxis((float)(rotation_rad_millis * elapsed_millis) * rotational_axis_direction, rotational_axis);
+        quat new_model_orientation = rotation * current;
+        *model = toMat4(new_model_orientation);
+    }
+
+    return TickResult(elapsed_millis, false);
 }
