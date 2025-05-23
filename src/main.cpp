@@ -1,6 +1,6 @@
+#include "consts.hpp"
 #include "event_loop.hpp"
 #include "function_params.hpp"
-#include "consts.hpp"
 #include "glad/glad.h" // have to load glad first
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
@@ -16,6 +16,8 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <string>
 
@@ -52,8 +54,11 @@ template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &
 int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
 
+    auto stdout = spdlog::stdout_color_mt("stdout");
+    auto stderr = spdlog::stderr_color_mt("stderr");
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        cerr << "sdl init failed: " << SDL_GetError() << endl;
+        stderr->error("sdl init failed: {}", SDL_GetError());
         return 1;
     }
 
@@ -67,27 +72,28 @@ int main(int argc, char *argv[]) {
                                    window_h, SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
-        cerr << "could not create window: " << SDL_GetError() << endl;
+        stderr->error("could not create window: {}", SDL_GetError());
         return 1;
     }
 
     auto context = SDL_GL_CreateContext(window);
     if (context == nullptr) {
-        cerr << "could not create opengl context: " << SDL_GetError() << endl;
+        stderr->error("could not create opengl context: {}", SDL_GetError());
         return 1;
     }
 
     gladLoadGLLoader(SDL_GL_GetProcAddress);
-    cout << "vendor: " << glGetString(GL_VENDOR) << endl;
-    cout << "renderer: " << glGetString(GL_RENDERER) << endl;
-    cout << "version: " << glGetString(GL_VERSION) << endl;
-    cout << "shading language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
+    stdout->info("vendor: {}", reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
+    stdout->info("renderer: {}", reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
+    stdout->info("version: {}", reinterpret_cast<const char *>(glGetString(GL_VERSION)));
+    stdout->info("shading language version: {}",
+                 reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
     GLint major, minor;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     if (major < 4 || minor < 1) {
-        cerr << "invalid opengl version" << endl;
+        stderr->error("invalid opengl version");
         return 1;
     }
 
@@ -113,7 +119,8 @@ int main(int argc, char *argv[]) {
         auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
 
-        ShaderProgram program{{vertex_shader, tsc_shader, tes_shader, fragment_shader}, model, view, projection, function_params};
+        ShaderProgram program{
+            {vertex_shader, tsc_shader, tes_shader, fragment_shader}, model, view, projection, function_params};
 
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
@@ -124,7 +131,7 @@ int main(int argc, char *argv[]) {
         program.update_projection();
         program.release();
 
-        EventLoop event_loop { model, view, projection, function_params };
+        EventLoop event_loop{model, view, projection, function_params};
         while (true) {
 
             verts.get_vao()->bind();
@@ -167,7 +174,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     CPPTRACE_CATCH(std::exception & e) {
-        cerr << e.what() << endl;
+        stderr->info(e.what());
         cpptrace::from_current_exception().print();
         return 1;
     }

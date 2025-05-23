@@ -3,6 +3,7 @@ cpptrace/0.8.3
 glm/1.0.1
 opengl/system
 sdl/2.26.5
+spdlog/1.15.1
 
 [generators]
 CMakeDeps

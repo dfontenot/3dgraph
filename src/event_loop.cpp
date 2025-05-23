@@ -1,5 +1,4 @@
 #include "event_loop.hpp"
-#include "consts.hpp"
 #include "function_params.hpp"
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
@@ -9,6 +8,8 @@
 #include <memory>
 #include <optional>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -18,7 +19,6 @@
 
 using std::make_optional;
 using std::nullopt;
-using std::optional;
 using std::shared_ptr;
 
 using glm::angleAxis;
@@ -138,6 +138,7 @@ TickResult EventLoop::tick() {
     auto elapsed_millis = end_ticks - start_ticks;
 
     if (model_modified_) {
+        spdlog::get("stdout")->debug("will update model matrix");
         quat current(*model);
 
         quat rotation =

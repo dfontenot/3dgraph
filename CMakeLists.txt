@@ -11,7 +11,8 @@ set(CMAKE_BUILD_TYPE, Debug)
 find_package(cpptrace REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(glm REQUIRED)
-find_package(opengl_system)
+find_package(opengl_system REQUIRED)
+find_package(spdlog REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp)
@@ -26,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE opengl::opengl
   PRIVATE SDL2::SDL2
   PRIVATE SDL2::SDL2main
+  PRIVATE spdlog::spdlog
   PRIVATE glm::glm)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME}
