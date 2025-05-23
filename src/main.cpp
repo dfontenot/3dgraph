@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     if (major < 4 || minor < 1) {
-        stderr->error("invalid opengl version 2");
+        stderr->error("invalid opengl version");
         return 1;
     }
 
@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
     glEnable(GL_LINE_SMOOTH);
 
 #if __APPLE__
+    // macOS only supports a line width of 1.0
     // see: https://www.reddit.com/r/opengl/comments/at1az3/comment/egy4keo
     glLineWidth(1.0f);
 #else
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]) {
     auto current_error = glGetError();
     if (current_error != GL_NO_ERROR) {
         stderr->error("OpenGL setup failed");
+        return 1;
     }
 
     CPPTRACE_TRY {
@@ -177,8 +179,8 @@ int main(int argc, char *argv[]) {
             verts.get_vao()->unbind();
             program.release();
 
-            if (max_sleep_per_tick > tick_result.elapsed_ticks) {
-                SDL_Delay(max_sleep_per_tick - tick_result.elapsed_ticks);
+            if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ns) {
+                SDL_Delay(max_sleep_ms_per_tick - tick_result.elapsed_ticks_ns);
             }
         }
 

@@ -31,7 +31,6 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE SDL3::SDL3
   PRIVATE spdlog::spdlog)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME}
   PRIVATE ${3dgraph_SOURCE_DIR}/include
 )

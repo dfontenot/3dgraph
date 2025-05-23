@@ -1,26 +1,31 @@
 #include "event_loop.hpp"
+#include "consts.hpp"
 #include "formatters.hpp"
 #include "function_params.hpp"
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_timer.h>
+#include <cstddef>
+#include <cstdint>
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <memory>
 #include <optional>
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 using std::make_optional;
 using std::nullopt;
 using std::shared_ptr;
+using std::size_t;
 
 using glm::angleAxis;
 using glm::mat4;
@@ -36,10 +41,43 @@ constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
 constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
+constexpr GLfloat panning_delta = 0.01f;
+
+/**
+ * the number of event timings to hold on to
+ * for calculating historic timings of how long it takes
+ * to drain the sdl event queue, in ns
+ */
+constexpr size_t num_event_timings_maintain = 10;
+
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt) {
+      function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
+      prev_event_poll_ns_sum(0), rotational_axis_direction(0.0f), rotational_axis(nullopt) {
+}
+
+uint64_t EventLoop::get_historic_event_poll_ns() const {
+
+    auto num_event_timings = prev_event_poll_ns.size();
+
+    if (num_event_timings == 0) {
+        return 0;
+    }
+
+    return prev_event_poll_ns_sum / num_event_timings;
+}
+
+void EventLoop::add_historic_event_poll_ns(uint64_t new_timing) {
+    auto num_event_timings = prev_event_poll_ns.size();
+
+    if (num_event_timings == num_event_timings_maintain) {
+        prev_event_poll_ns_sum -= prev_event_poll_ns.front();
+        prev_event_poll_ns.pop_front();
+    }
+
+    prev_event_poll_ns.push_back(new_timing);
+    prev_event_poll_ns_sum += new_timing;
 }
 
 bool EventLoop::function_params_modified() const {
@@ -54,43 +92,38 @@ bool EventLoop::model_modified() const {
     return model_modified_;
 }
 
-TickResult EventLoop::tick() {
-    function_params_modified_ = false;
-    view_modified_ = false;
-    model_modified_ = false;
-    float rotational_axis_direction = 0.0f;
-    vec3 rotational_axis = vec3(1.0f, 0.0f, 0.0f);
+bool EventLoop::drain_event_queue_should_exit() {
+    rotational_axis_direction = 0.0f;
+    rotational_axis = nullopt;
 
-    auto stdout = spdlog::get("stdout");
-    auto start_ticks = SDL_GetTicks();
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_EVENT_QUIT) {
-            return TickResult(SDL_GetTicks() - start_ticks, true);
+            return true;
         }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
             if (evt.key.key == SDLK_Q) {
-                return TickResult(SDL_GetTicks() - start_ticks, true);
+                return true;
             }
 
             if (!start_click.has_value()) {
                 if (evt.key.key == SDLK_A) {
                     model_modified_ = true;
                     rotational_axis_direction = -1.0f;
-                    rotational_axis = x_axis;
+                    rotational_axis = make_optional(x_axis);
                 }
                 else if (evt.key.key == SDLK_D) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    rotational_axis = x_axis;
+                    rotational_axis = make_optional(x_axis);
                 }
                 else if (evt.key.key == SDLK_W) {
                     model_modified_ = true;
                     rotational_axis_direction = 1.0f;
-                    rotational_axis = y_axis;
+                    rotational_axis = make_optional(y_axis);
                 }
                 else if (evt.key.key == SDLK_S) {
                     model_modified_ = true;
-                    rotational_axis = y_axis;
+                    rotational_axis = make_optional(y_axis);
                     rotational_axis_direction = -1.0f;
                 }
             }
@@ -129,32 +162,62 @@ TickResult EventLoop::tick() {
             }
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            stdout->debug("started click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            stdout->debug("ended click at {0} {1}", evt.motion.x, evt.motion.y);
             start_click = nullopt;
         }
         else if (start_click.has_value() && evt.type == SDL_EVENT_MOUSE_MOTION) {
-            //MouseLoc current(evt.motion.x, evt.motion.y);
+            // MouseLoc current(evt.motion.x, evt.motion.y);
         }
     }
 
-    auto end_ticks = SDL_GetTicks();
-    auto elapsed_millis = end_ticks - start_ticks;
-    stdout->debug("that took {} millis", elapsed_millis);
+    return false;
+}
+
+TickResult EventLoop::tick() {
+    // reset state for new tick
+    function_params_modified_ = false;
+    view_modified_ = false;
+    model_modified_ = false;
+
+    auto stdout = spdlog::get("stdout");
+
+    int frame_count = 0;
+    auto start_ticks_ns = SDL_GetTicksNS();
+
+    // what ticks ns timestamp to not exceed to maintain fps
+    auto absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick;
+
+    // what's the latest ticks ns that can do another sdl event queue drain
+    // without likely going over the time allowed to process the frame
+    auto end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
+    while (SDL_GetTicksNS() < end_ticks_ns) {
+        auto drain_start_ns = SDL_GetTicksNS();
+        if (drain_event_queue_should_exit()) {
+            return TickResult{SDL_GetTicksNS() - start_ticks_ns, true};
+        }
+
+        auto drain_end_ns = SDL_GetTicksNS();
+
+        // adjust timing expectations based on latest data
+        add_historic_event_poll_ns(drain_end_ns - drain_start_ns);
+        end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
+    }
+
+    auto actual_end_ticks_ns = SDL_GetTicksNS();
+    double elapsed_millis = static_cast<double>(actual_end_ticks_ns - start_ticks_ns) * 1.0e-6;
 
     if (model_modified_) {
         quat current(*model);
 
         quat rotation =
-            angleAxis((float)(rotation_rad_millis * elapsed_millis) * rotational_axis_direction, rotational_axis);
+            angleAxis((float)(rotation_rad_millis * elapsed_millis) * rotational_axis_direction, rotational_axis.value());
         quat new_model_orientation = rotation * current;
 
         stdout->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
         *model = toMat4(new_model_orientation);
     }
 
-    return TickResult(elapsed_millis, false);
+    return TickResult(actual_end_ticks_ns - start_ticks_ns, false);
 }
