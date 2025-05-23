@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 
-constexpr GLfloat z_mult_default = 0.01f;
+constexpr GLfloat z_mult_default = 10.0f;
 
 struct FunctionParams {
     // allows panning the 3d function but does not move the model matrix

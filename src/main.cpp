@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
         auto view = make_shared<mat4>(translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f)));
         auto projection =
             make_shared<mat4>(perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f));
-        auto function_params = make_shared<FunctionParams>((GLfloat)0.0f, (GLfloat)0.0f, z_mult_default);
+        auto function_params = make_shared<FunctionParams>();
 
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
