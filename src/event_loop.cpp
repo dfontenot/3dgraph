@@ -55,30 +55,7 @@ EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<m
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
       function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
-      prev_event_poll_ns_sum(0), rotational_axis_direction(0.0f), rotational_axis(nullopt) {
-}
-
-uint64_t EventLoop::get_historic_event_poll_ns() const {
-
-    auto const num_event_timings = prev_event_poll_ns.size();
-
-    if (num_event_timings == 0) {
-        return 0;
-    }
-
-    return prev_event_poll_ns_sum / num_event_timings;
-}
-
-void EventLoop::add_historic_event_poll_ns(uint64_t new_timing) {
-    auto const num_event_timings = prev_event_poll_ns.size();
-
-    if (num_event_timings == num_event_timings_maintain) {
-        prev_event_poll_ns_sum -= prev_event_poll_ns.front();
-        prev_event_poll_ns.pop_front();
-    }
-
-    prev_event_poll_ns.push_back(new_timing);
-    prev_event_poll_ns_sum += new_timing;
+      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f), rotational_axis(nullopt) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -177,11 +154,6 @@ bool EventLoop::drain_event_queue_should_exit() {
 }
 
 TickResult EventLoop::tick() {
-    // reset state for new tick
-    function_params_modified_ = false;
-    view_modified_ = false;
-    model_modified_ = false;
-
     auto const stdout = spdlog::get("stdout");
 
     auto const start_ticks_ms = SDL_GetTicks();
@@ -192,17 +164,25 @@ TickResult EventLoop::tick() {
 
     // what's the latest ticks ns that can do another sdl event queue drain
     // without likely going over the time allowed to process the frame
-    auto end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
+    auto end_ticks_ns = absolute_max_end_ticks_ns - event_poll_timings.get_avg();
 
     auto drain_start_ns = SDL_GetTicksNS();
     if (drain_start_ns >= end_ticks_ns) {
         stdout->debug("skipping input polling this tick");
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
-        add_historic_event_poll_ns(0);
+        event_poll_timings.add(0);
         return TickResult{SDL_GetTicks() - start_ticks_ms, false, true};
     }
 
+    // TODO: these variables are not correct
+    // instead need to access keyboard state at the start each time
+    // to determine what actually is pressed / not pressed
+
+    // reset state for new tick
+    function_params_modified_ = false;
+    view_modified_ = false;
+    model_modified_ = false;
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
         stdout->debug("draining events queue");
         if (drain_event_queue_should_exit()) {
@@ -212,13 +192,13 @@ TickResult EventLoop::tick() {
         auto const drain_end_ns = SDL_GetTicksNS();
 
         // adjust timing expectations based on latest data
-        add_historic_event_poll_ns(drain_end_ns - drain_start_ns);
-        end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
+        event_poll_timings.add(drain_end_ns - drain_start_ns);
+        end_ticks_ns = absolute_max_end_ticks_ns - event_poll_timings.get_avg();
     }
 
     auto const elapsed_millis = SDL_GetTicks() - start_ticks_ms;
 
-    if (model_modified_) {
+    if (model_modified_ && rotational_axis.has_value()) {
         quat const current(*model);
 
         auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(elapsed_millis));

@@ -2,12 +2,12 @@
 
 #include "function_params.hpp"
 #include "tick_result.hpp"
+#include "max_deque.hpp"
 #include "glad/glad.h"
 #include "mouse_loc.hpp"
 #include <SDL3/SDL.h>
 #include <memory>
 #include <cstdint>
-#include <deque>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -19,8 +19,7 @@ class EventLoop {
     std::shared_ptr<glm::mat4> view;
     std::shared_ptr<glm::mat4> projection;
     std::shared_ptr<FunctionParams> function_params;
-    std::deque<uint64_t> prev_event_poll_ns;
-    uint64_t prev_event_poll_ns_sum;
+    MaxDeque<uint64_t> event_poll_timings;
 
     // state stuff
     bool function_params_modified_;
@@ -29,18 +28,6 @@ class EventLoop {
     float rotational_axis_direction;
     std::optional<glm::vec3> rotational_axis;
     std::optional<MouseLoc> start_click;
-
-    /**
-     * how long, on average, does it take to poll all of the events, in nanoseconds
-     */
-    uint64_t get_historic_event_poll_ns() const;
-
-    /**
-     * maintain a limited number of timings for event draining in order to determine
-     * if another event poll can occur during the tick
-     */
-    void add_historic_event_poll_ns(uint64_t new_timing);
-
 
     /**
      * drain the sdl event queue one time
