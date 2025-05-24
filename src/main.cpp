@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cpptrace/from_current.hpp>
+#include <cstdio>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>

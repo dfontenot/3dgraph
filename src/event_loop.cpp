@@ -60,7 +60,7 @@ EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<m
 
 uint64_t EventLoop::get_historic_event_poll_ns() const {
 
-    auto num_event_timings = prev_event_poll_ns.size();
+    auto const num_event_timings = prev_event_poll_ns.size();
 
     if (num_event_timings == 0) {
         return 0;
@@ -70,7 +70,7 @@ uint64_t EventLoop::get_historic_event_poll_ns() const {
 }
 
 void EventLoop::add_historic_event_poll_ns(uint64_t new_timing) {
-    auto num_event_timings = prev_event_poll_ns.size();
+    auto const num_event_timings = prev_event_poll_ns.size();
 
     if (num_event_timings == num_event_timings_maintain) {
         prev_event_poll_ns_sum -= prev_event_poll_ns.front();
@@ -194,10 +194,18 @@ TickResult EventLoop::tick() {
     // without likely going over the time allowed to process the frame
     auto end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
 
-    while (SDL_GetTicksNS() < end_ticks_ns) {
-        auto const drain_start_ns = SDL_GetTicksNS();
+    auto drain_start_ns = SDL_GetTicksNS();
+    if (drain_start_ns >= end_ticks_ns) {
+        stdout->debug("skipping input polling this tick");
+        // not entirely accurate, is used to prevent a couple of slow input poll loops
+        // from locking out all input polling by dropping down the average
+        add_historic_event_poll_ns(0);
+    }
+
+    while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
+        stdout->debug("draining events queue");
         if (drain_event_queue_should_exit()) {
-            return TickResult{SDL_GetTicksNS() - start_ticks_ns, true};
+            return TickResult{SDL_GetTicks() - start_ticks_ms, true};
         }
 
         auto const drain_end_ns = SDL_GetTicksNS();
@@ -207,8 +215,7 @@ TickResult EventLoop::tick() {
         end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
     }
 
-    auto const actual_end_ticks_ms = SDL_GetTicks();
-    auto const elapsed_millis = actual_end_ticks_ms - start_ticks_ms;
+    auto const elapsed_millis = SDL_GetTicks() - start_ticks_ms;
 
     if (model_modified_) {
         quat const current(*model);
@@ -221,5 +228,5 @@ TickResult EventLoop::tick() {
         *model = toMat4(new_model_orientation);
     }
 
-    return TickResult(actual_end_ticks_ms - start_ticks_ms, false);
+    return TickResult(SDL_GetTicks() - start_ticks_ms, false);
 }
