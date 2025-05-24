@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
 
     spdlog::set_level(spdlog::level::debug);
-    auto stdout = spdlog::stdout_color_mt("stdout");
-    auto stderr = spdlog::stderr_color_mt("stderr");
+    auto const stdout = spdlog::stdout_color_mt("stdout");
+    auto const stderr = spdlog::stderr_color_mt("stderr");
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         stderr->error("sdl init failed: {}", SDL_GetError());
@@ -67,14 +67,14 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-    auto window = SDL_CreateWindow("opengl render test", window_w, window_h, SDL_WINDOW_OPENGL);
+    auto const window = SDL_CreateWindow("opengl render test", window_w, window_h, SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         stderr->error("could not create window: {}", SDL_GetError());
         return 1;
     }
 
-    auto context = SDL_GL_CreateContext(window);
+    auto const context = SDL_GL_CreateContext(window);
     if (context == nullptr) {
         stderr->error("could not create opengl context: {}", SDL_GetError());
         return 1;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
             SDL_GL_SwapWindow(window);
 
-            auto tick_result = event_loop.tick();
+            auto const tick_result = event_loop.tick();
             if (tick_result.should_exit) {
                 return 0;
             }

@@ -182,7 +182,7 @@ TickResult EventLoop::tick() {
     view_modified_ = false;
     model_modified_ = false;
 
-    auto stdout = spdlog::get("stdout");
+    auto const stdout = spdlog::get("stdout");
 
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
@@ -195,12 +195,12 @@ TickResult EventLoop::tick() {
     auto end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
 
     while (SDL_GetTicksNS() < end_ticks_ns) {
-        auto drain_start_ns = SDL_GetTicksNS();
+        auto const drain_start_ns = SDL_GetTicksNS();
         if (drain_event_queue_should_exit()) {
             return TickResult{SDL_GetTicksNS() - start_ticks_ns, true};
         }
 
-        auto drain_end_ns = SDL_GetTicksNS();
+        auto const drain_end_ns = SDL_GetTicksNS();
 
         // adjust timing expectations based on latest data
         add_historic_event_poll_ns(drain_end_ns - drain_start_ns);
@@ -211,12 +211,11 @@ TickResult EventLoop::tick() {
     auto const elapsed_millis = actual_end_ticks_ms - start_ticks_ms;
 
     if (model_modified_) {
-        quat current(*model);
+        quat const current(*model);
 
         auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(elapsed_millis));
-        quat rotation =
-            angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
-        quat new_model_orientation = rotation * current;
+        quat const rotation = angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
+        quat const new_model_orientation = rotation * current;
 
         stdout->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
         *model = toMat4(new_model_orientation);
