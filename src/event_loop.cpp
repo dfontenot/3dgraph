@@ -200,12 +200,13 @@ TickResult EventLoop::tick() {
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
         add_historic_event_poll_ns(0);
+        return TickResult{SDL_GetTicks() - start_ticks_ms, false, true};
     }
 
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
         stdout->debug("draining events queue");
         if (drain_event_queue_should_exit()) {
-            return TickResult{SDL_GetTicks() - start_ticks_ms, true};
+            return TickResult{SDL_GetTicks() - start_ticks_ms, true, false};
         }
 
         auto const drain_end_ns = SDL_GetTicksNS();
@@ -228,5 +229,5 @@ TickResult EventLoop::tick() {
         *model = toMat4(new_model_orientation);
     }
 
-    return TickResult(SDL_GetTicks() - start_ticks_ms, false);
+    return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
 }

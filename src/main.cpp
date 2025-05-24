@@ -148,18 +148,6 @@ int main(int argc, char *argv[]) {
         EventLoop event_loop{model, view, projection, function_params};
         while (true) {
 
-            verts.get_vao()->bind();
-            program.use();
-
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-            glPatchParameteri(GL_PATCH_VERTICES, 4);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glDrawArrays(GL_PATCHES, 0, 4);
-
-            SDL_GL_SwapWindow(window);
-
             auto const tick_result = event_loop.tick();
             if (tick_result.should_exit) {
                 return 0;
@@ -178,7 +166,24 @@ int main(int argc, char *argv[]) {
             }
 
             verts.get_vao()->unbind();
+
             program.release();
+            verts.get_vao()->bind();
+            program.use();
+
+            if (tick_result.frame_skip) {
+                continue;
+            }
+
+            // TODO: factor in these times as well for more accurate FPS
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+            glPatchParameteri(GL_PATCH_VERTICES, 4);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glDrawArrays(GL_PATCHES, 0, 4);
+
+            SDL_GL_SwapWindow(window);
 
             if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ms) {
                 SDL_Delay(max_sleep_ms_per_tick - tick_result.elapsed_ticks_ms);
