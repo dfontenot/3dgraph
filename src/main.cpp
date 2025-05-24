@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
             verts.get_vao()->unbind();
             program.release();
 
-            if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ns) {
-                SDL_Delay(max_sleep_ms_per_tick - tick_result.elapsed_ticks_ns);
+            if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ms) {
+                SDL_Delay(max_sleep_ms_per_tick - tick_result.elapsed_ticks_ms);
             }
         }
 

@@ -9,6 +9,7 @@
 #include <SDL3/SDL_timer.h>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <memory>
 #include <optional>
@@ -183,15 +184,16 @@ TickResult EventLoop::tick() {
 
     auto stdout = spdlog::get("stdout");
 
-    int frame_count = 0;
-    auto start_ticks_ns = SDL_GetTicksNS();
+    auto const start_ticks_ms = SDL_GetTicks();
+    auto const start_ticks_ns = SDL_GetTicksNS();
 
     // what ticks ns timestamp to not exceed to maintain fps
-    auto absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick;
+    auto const absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick;
 
     // what's the latest ticks ns that can do another sdl event queue drain
     // without likely going over the time allowed to process the frame
     auto end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
+
     while (SDL_GetTicksNS() < end_ticks_ns) {
         auto drain_start_ns = SDL_GetTicksNS();
         if (drain_event_queue_should_exit()) {
@@ -205,19 +207,20 @@ TickResult EventLoop::tick() {
         end_ticks_ns = absolute_max_end_ticks_ns - get_historic_event_poll_ns();
     }
 
-    auto actual_end_ticks_ns = SDL_GetTicksNS();
-    double elapsed_millis = static_cast<double>(actual_end_ticks_ns - start_ticks_ns) * 1.0e-6;
+    auto const actual_end_ticks_ms = SDL_GetTicks();
+    auto const elapsed_millis = actual_end_ticks_ms - start_ticks_ms;
 
     if (model_modified_) {
         quat current(*model);
 
+        auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(elapsed_millis));
         quat rotation =
-            angleAxis((float)(rotation_rad_millis * elapsed_millis) * rotational_axis_direction, rotational_axis.value());
+            angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
         quat new_model_orientation = rotation * current;
 
         stdout->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
         *model = toMat4(new_model_orientation);
     }
 
-    return TickResult(actual_end_ticks_ns - start_ticks_ns, false);
+    return TickResult(actual_end_ticks_ms - start_ticks_ms, false);
 }
