@@ -8,6 +8,7 @@
 #include <SDL3/SDL.h>
 #include <memory>
 #include <cstdint>
+#include <cstddef>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -39,7 +40,7 @@ public:
     /**
      * returns how long the tick took to run
      */
-    TickResult tick();
+    TickResult tick(uint64_t render_time_ns);
 
     EventLoop() = delete;
     EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,

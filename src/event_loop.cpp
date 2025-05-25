@@ -153,14 +153,14 @@ bool EventLoop::drain_event_queue_should_exit() {
     return false;
 }
 
-TickResult EventLoop::tick() {
+TickResult EventLoop::tick(uint64_t render_time_ns) {
     auto const stdout = spdlog::get("stdout");
 
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
 
     // what ticks ns timestamp to not exceed to maintain fps
-    auto const absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick;
+    auto const absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick - render_time_ns;
 
     // what's the latest ticks ns that can do another sdl event queue drain
     // without likely going over the time allowed to process the frame
@@ -184,7 +184,7 @@ TickResult EventLoop::tick() {
     view_modified_ = false;
     model_modified_ = false;
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
-        stdout->debug("draining events queue");
+        //stdout->debug("draining events queue");
         if (drain_event_queue_should_exit()) {
             return TickResult{SDL_GetTicks() - start_ticks_ms, true, false};
         }

@@ -3,12 +3,15 @@
 #include "function_params.hpp"
 #include "glad/glad.h" // have to load glad first
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_opengl.h>
 
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <array>
 #include <cpptrace/from_current.hpp>
+#include <cstdint>
 #include <cstdio>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -24,6 +27,7 @@
 #include <string>
 
 #include "create_array.hpp"
+#include "max_deque.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
 #include "vertices.hpp"
@@ -145,10 +149,11 @@ int main(int argc, char *argv[]) {
         program.update_projection();
         program.release();
 
+        MaxDeque<uint64_t> render_timings(10);
         EventLoop event_loop{model, view, projection, function_params};
         while (true) {
 
-            auto const tick_result = event_loop.tick();
+            auto const tick_result = event_loop.tick(render_timings.get_avg());
             if (tick_result.should_exit) {
                 return 0;
             }
@@ -165,17 +170,14 @@ int main(int argc, char *argv[]) {
                 program.update_model();
             }
 
-            verts.get_vao()->unbind();
-
-            program.release();
-            verts.get_vao()->bind();
-            program.use();
-
             if (tick_result.frame_skip) {
                 continue;
             }
 
-            // TODO: factor in these times as well for more accurate FPS
+            verts.get_vao()->bind();
+            program.use();
+
+            auto const start_render_tick = SDL_GetTicksNS();
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -183,7 +185,11 @@ int main(int argc, char *argv[]) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glDrawArrays(GL_PATCHES, 0, 4);
 
+            verts.get_vao()->unbind();
+            program.release();
+
             SDL_GL_SwapWindow(window);
+            render_timings.add(SDL_GetTicksNS() - start_render_tick);
 
             if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ms) {
                 SDL_Delay(max_sleep_ms_per_tick - tick_result.elapsed_ticks_ms);
