@@ -158,6 +158,14 @@ int main(int argc, char *argv[]) {
                 return 0;
             }
 
+            if (tick_result.frame_skip) {
+                continue;
+            }
+
+            auto const start_render_tick = SDL_GetTicksNS();
+            verts.get_vao()->bind();
+            program.use();
+
             if (event_loop.function_params_modified()) {
                 program.update_function_params();
             }
@@ -170,14 +178,6 @@ int main(int argc, char *argv[]) {
                 program.update_model();
             }
 
-            if (tick_result.frame_skip) {
-                continue;
-            }
-
-            verts.get_vao()->bind();
-            program.use();
-
-            auto const start_render_tick = SDL_GetTicksNS();
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
