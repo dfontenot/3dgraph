@@ -8,9 +8,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE Debug)
 
-# custom defines for src/
-set(OPENGL_DEBUG)
-
 find_package(cpptrace REQUIRED)
 find_package(fmt REQUIRED)
 find_package(glm REQUIRED)
@@ -25,6 +22,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_SWIZZLE_XYZW)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_MESSAGES=GLM_ENABLE)
+
+# custom defines for src/
+target_compile_definitions(${PROJECT_NAME} PRIVATE OPENGL_DEBUG)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace

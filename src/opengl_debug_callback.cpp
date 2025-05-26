@@ -1,19 +1,22 @@
 #include "opengl_debug_callback.hpp"
 #include "glad/glad.h"
 
+#include <string>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 namespace {
+    using std::string;
+
 auto const opengl_debug = spdlog::stdout_color_mt("opengl_debug");
 
 // original source code: https://gist.github.com/liam-middlebrook/c52b069e4be2d87a6d2f
 // public domain license
 void APIENTRY gl_debug_msg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                                     const GLchar *msg, const void *data) {
-    char *_source;
-    char *_type;
-    char *_severity;
+    string _source;
+    string _type;
+    string _severity;
 
     switch (source) {
     case GL_DEBUG_SOURCE_API:
@@ -121,7 +124,6 @@ void APIENTRY gl_debug_msg_callback(GLenum source, GLenum type, GLuint id, GLenu
         opengl_debug->debug("{0}: {1} of {2} severity, raised from {3}: {4}", id, _type, _severity, _source, msg);
         break;
     }
-    // printf("%d: %s of %s severity, raised from %s: %s\n", id, _type, _severity, _source, msg);
 }
 } // namespace
 

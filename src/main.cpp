@@ -1,6 +1,7 @@
 #include "consts.hpp"
 #include "event_loop.hpp"
 #include "function_params.hpp"
+#include "opengl_debug_callback.hpp"
 #include "glad/glad.h" // have to load glad first
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_oldnames.h>
@@ -104,6 +105,7 @@ int main(int argc, char *argv[]) {
 
 #if OPENGL_DEBUG
     glEnable(GL_DEBUG_OUTPUT);
+    init_opengl_debug();
 #endif
 
     SDL_GL_SetSwapInterval(1); // vsync
