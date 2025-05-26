@@ -19,7 +19,7 @@ find_package(SDL3 REQUIRED)
 find_package(spdlog REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
-add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp src/opengl_debug_callback.cpp)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
