@@ -6,6 +6,7 @@
 #include "tick_result.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_timer.h>
 #include <cstddef>
 #include <cstdint>
@@ -172,6 +173,7 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
         event_poll_timings.add(0);
+        SDL_FlushEvents(SDL_EVENT_QUIT + 1, SDL_EVENT_ENUM_PADDING);
         return TickResult{SDL_GetTicks() - start_ticks_ms, false, true};
     }
 
