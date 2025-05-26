@@ -102,6 +102,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+#if OPENGL_DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+#endif
+
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

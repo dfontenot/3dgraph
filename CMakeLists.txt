@@ -8,6 +8,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE Debug)
 
+# custom defines for src/
+set(OPENGL_DEBUG)
+
 find_package(cpptrace REQUIRED)
 find_package(fmt REQUIRED)
 find_package(glm REQUIRED)
