@@ -4,11 +4,17 @@
 #include <string>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <unordered_set>
 
 namespace {
     using std::string;
+    using std::unordered_set;
 
 auto const opengl_debug = spdlog::stdout_color_mt("opengl_debug");
+
+// manually filter out things to ignore
+// 131185: https://stackoverflow.com/a/62249363
+const unordered_set<GLuint> message_ids_to_ignore{131185};
 
 // original source code: https://gist.github.com/liam-middlebrook/c52b069e4be2d87a6d2f
 // public domain license
@@ -17,6 +23,10 @@ void APIENTRY gl_debug_msg_callback(GLenum source, GLenum type, GLuint id, GLenu
     string _source;
     string _type;
     string _severity;
+
+    if (message_ids_to_ignore.contains(id)) {
+        return;
+    }
 
     switch (source) {
     case GL_DEBUG_SOURCE_API:
