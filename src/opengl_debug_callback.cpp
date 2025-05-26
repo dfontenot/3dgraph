@@ -114,6 +114,8 @@ void APIENTRY gl_debug_msg_callback(GLenum source, GLenum type, GLuint id, GLenu
         break;
     }
 
+    // TODO: consolidate the format string
+    // TODO: take into account severity and type together to determine log level
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
         opengl_debug->error("{0}: {1} of {2} severity, raised from {3}: {4}", id, _type, _severity, _source, msg);

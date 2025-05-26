@@ -8,7 +8,6 @@
 #include <SDL3/SDL.h>
 #include <memory>
 #include <cstdint>
-#include <cstddef>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>

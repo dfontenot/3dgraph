@@ -12,8 +12,10 @@ class MaxDeque {
     T sum;
 
 public:
-    MaxDeque(std::size_t capacity) : capacity(capacity) {
+    MaxDeque() = delete;
+    MaxDeque(std::size_t capacity) : capacity(capacity), sum(0) {
     }
+
     /**
      * average of the values stored in the deque
      */

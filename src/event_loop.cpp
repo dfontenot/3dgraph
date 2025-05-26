@@ -184,7 +184,6 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
     view_modified_ = false;
     model_modified_ = false;
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
-        //stdout->debug("draining events queue");
         if (drain_event_queue_should_exit()) {
             return TickResult{SDL_GetTicks() - start_ticks_ms, true, false};
         }
