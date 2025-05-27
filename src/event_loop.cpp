@@ -1,19 +1,25 @@
 #include "event_loop.hpp"
+#include "active_keys.hpp"
 #include "consts.hpp"
 #include "formatters.hpp"
 #include "function_params.hpp"
+#include "key.hpp"
 #include "mouse_loc.hpp"
 #include "tick_result.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <glm/ext/quaternion_trigonometric.hpp>
+#include <initializer_list>
 #include <memory>
 #include <optional>
+#include <tuple>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -24,10 +30,14 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+using std::any_of;
+using std::initializer_list;
 using std::make_optional;
 using std::nullopt;
+using std::optional;
 using std::shared_ptr;
 using std::size_t;
+using std::tuple;
 
 using glm::angleAxis;
 using glm::mat4;
@@ -43,7 +53,35 @@ constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
 constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
-constexpr GLfloat panning_delta = 0.01f;
+/**
+ * how much to pan the 3d function per frame
+ */
+constexpr GLfloat panning_delta_per_ms = 0.01f;
+
+/**
+ * how much to change the 3d function z mult per frame
+ */
+constexpr GLfloat z_mult_delta_per_ms = 0.1f;
+
+constexpr initializer_list<SDL_Scancode> function_param_mutation_keys = {
+    SDL_SCANCODE_UP,
+    SDL_SCANCODE_DOWN,
+    SDL_SCANCODE_LEFT,
+    SDL_SCANCODE_RIGHT,
+};
+
+constexpr initializer_list<SDL_Scancode> model_mutation_keys = {
+    SDL_SCANCODE_W,
+    SDL_SCANCODE_A,
+    SDL_SCANCODE_S,
+    SDL_SCANCODE_D,
+};
+
+// TODO: constexpr combine these
+constexpr initializer_list<SDL_Scancode> monitored_keys = {
+    SDL_SCANCODE_W,  SDL_SCANCODE_A,    SDL_SCANCODE_S,    SDL_SCANCODE_D,
+    SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT,
+};
 
 /**
  * the number of event timings to hold on to
@@ -56,7 +94,8 @@ EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<m
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
       function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
-      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f), rotational_axis(nullopt) {
+      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f), rotational_axis(nullopt),
+      active_keys(ActiveKeys(monitored_keys)) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -71,6 +110,66 @@ bool EventLoop::model_modified() const {
     return model_modified_;
 }
 
+optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms,
+                                                                                        const Key &key) const {
+    return nullopt;
+}
+
+void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
+    using std::get;
+
+    auto const up_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_UP));
+    auto const down_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_DOWN));
+
+    auto const left_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_LEFT));
+    auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_RIGHT));
+
+    // xor
+    if (left_key_timing.has_value() != right_key_timing.has_value()) {
+
+        if (left_key_timing.has_value()) {
+            function_params_modified_ = true;
+            auto const panning_movement = (get<2>(*left_key_timing) - get<1>(*left_key_timing)) * panning_delta_per_ms;
+            if (get<0>(*left_key_timing).has_shift()) {
+                function_params->y_offset -= panning_movement;
+            }
+            else {
+                function_params->x_offset -= panning_movement;
+            }
+        }
+
+        if (right_key_timing.has_value()) {
+            function_params_modified_ = true;
+            auto const panning_movement = (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
+            if (get<0>(*right_key_timing).has_shift()) {
+                function_params->y_offset += panning_movement;
+            }
+            else {
+                function_params->x_offset += panning_movement;
+            }
+        }
+    }
+
+    if (up_key_timing.has_value() != down_key_timing.has_value()) {
+
+        if (up_key_timing.has_value()) {
+            function_params_modified_ = true;
+            auto const z_mult_movement = (get<2>(*up_key_timing) - get<1>(*up_key_timing)) * z_mult_delta_per_ms;
+            function_params->z_mult += z_mult_movement;
+        }
+
+        if (down_key_timing.has_value()) {
+            function_params_modified_ = true;
+            auto const z_mult_movement = (get<2>(*down_key_timing) - get<1>(*down_key_timing)) * z_mult_delta_per_ms;
+            function_params->z_mult += z_mult_movement;
+        }
+    }
+}
+
+void EventLoop::process_model_mutation_keys(uint64_t start_ticks_ms) {
+    // TODO
+}
+
 bool EventLoop::drain_event_queue_should_exit() {
     rotational_axis_direction = 0.0f;
     rotational_axis = nullopt;
@@ -79,10 +178,19 @@ bool EventLoop::drain_event_queue_should_exit() {
         if (evt.type == SDL_EVENT_QUIT) {
             return true;
         }
+        else if (evt.type == SDL_EVENT_KEY_UP) {
+            active_keys.release_key(Key(evt.key.scancode, evt.key.mod));
+        }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
             if (evt.key.key == SDLK_Q) {
                 return true;
             }
+
+            if (start_click.has_value()) {
+                continue;
+            }
+
+            active_keys.set_key_pressed(Key(evt.key.scancode, evt.key.mod));
 
             if (!start_click.has_value()) {
                 if (evt.key.key == SDLK_A) {
@@ -110,22 +218,22 @@ bool EventLoop::drain_event_queue_should_exit() {
             // TODO: mouse events to make this more intuitive
             if (evt.key.key == SDLK_LEFT) {
                 if (evt.key.mod & SDL_KMOD_SHIFT) {
-                    function_params->y_offset -= panning_delta;
+                    function_params->y_offset -= panning_delta_per_ms;
                     function_params_modified_ = true;
                 }
                 else {
-                    function_params->x_offset -= panning_delta;
+                    function_params->x_offset -= panning_delta_per_ms;
                     function_params_modified_ = true;
                 }
             }
 
             if (evt.key.key == SDLK_RIGHT) {
                 if (evt.key.mod & SDL_KMOD_SHIFT) {
-                    function_params->y_offset += panning_delta;
+                    function_params->y_offset += panning_delta_per_ms;
                     function_params_modified_ = true;
                 }
                 else {
-                    function_params->x_offset += panning_delta;
+                    function_params->x_offset += panning_delta_per_ms;
                     function_params_modified_ = true;
                 }
             }
@@ -181,10 +289,6 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
     // instead need to access keyboard state at the start each time
     // to determine what actually is pressed / not pressed
 
-    // reset state for new tick
-    function_params_modified_ = false;
-    view_modified_ = false;
-    model_modified_ = false;
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
         if (drain_event_queue_should_exit()) {
             return TickResult{SDL_GetTicks() - start_ticks_ms, true, false};
@@ -198,6 +302,11 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
     }
 
     auto const elapsed_millis = SDL_GetTicks() - start_ticks_ms;
+
+    // TODO: track this overhead separately and use to compute how much input to process
+    // per tick
+    process_function_mutation_keys(start_ticks_ms);
+    process_model_mutation_keys(start_ticks_ms);
 
     if (model_modified_ && rotational_axis.has_value()) {
         quat const current(*model);

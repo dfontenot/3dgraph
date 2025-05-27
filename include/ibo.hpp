@@ -10,6 +10,7 @@ struct Ibo {
     constexpr operator GLuint() const {
         return val;
     }
+
     Ibo() {
         glGenBuffers(num_create, &val);
     }

@@ -1,13 +1,16 @@
 #pragma once
 
+#include "active_keys.hpp"
 #include "function_params.hpp"
-#include "tick_result.hpp"
-#include "max_deque.hpp"
 #include "glad/glad.h"
+#include "key.hpp"
+#include "max_deque.hpp"
 #include "mouse_loc.hpp"
+#include "tick_result.hpp"
 #include <SDL3/SDL.h>
-#include <memory>
 #include <cstdint>
+#include <memory>
+#include <tuple>
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -20,6 +23,7 @@ class EventLoop {
     std::shared_ptr<glm::mat4> projection;
     std::shared_ptr<FunctionParams> function_params;
     MaxDeque<uint64_t> event_poll_timings;
+    ActiveKeys active_keys;
 
     // state stuff
     bool function_params_modified_;
@@ -34,6 +38,11 @@ class EventLoop {
      * returns true if should exit due to quit event
      */
     bool drain_event_queue_should_exit();
+
+    std::optional<std::tuple<Key, uint64_t, uint64_t>> which_key_variant_was_pressed_since(uint64_t start_ms,
+                                                                                           const Key &key) const;
+    void process_function_mutation_keys(uint64_t start_ticks_ms);
+    void process_model_mutation_keys(uint64_t start_ticks_ms);
 
 public:
     /**
