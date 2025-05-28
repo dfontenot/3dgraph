@@ -42,7 +42,7 @@ class EventLoop {
     std::optional<std::tuple<Key, uint64_t, uint64_t>> which_key_variant_was_pressed_since(uint64_t start_ms,
                                                                                            const Key &key) const;
     void process_function_mutation_keys(uint64_t start_ticks_ms);
-    void process_model_mutation_keys(uint64_t start_ticks_ms);
+    void process_model_mutation_keys();
 
 public:
     /**

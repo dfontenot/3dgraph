@@ -110,6 +110,7 @@ bool EventLoop::model_modified() const {
 
 optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms,
                                                                                         const Key &key) const {
+    // TODO impl
     return nullopt;
 }
 
@@ -165,7 +166,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     }
 }
 
-void EventLoop::process_model_mutation_keys(uint64_t start_ticks_ms) {
+void EventLoop::process_model_mutation_keys() {
     using std::get;
 
     auto const up_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_W);
