@@ -11,7 +11,6 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -30,7 +29,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-using std::any_of;
 using std::initializer_list;
 using std::make_optional;
 using std::nullopt;
@@ -140,7 +138,8 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
 
         if (right_key_timing.has_value()) {
             function_params_modified_ = true;
-            auto const panning_movement = (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
+            auto const panning_movement =
+                (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
             if (get<0>(*right_key_timing).has_shift()) {
                 function_params->y_offset += panning_movement;
             }
@@ -167,7 +166,42 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
 }
 
 void EventLoop::process_model_mutation_keys(uint64_t start_ticks_ms) {
-    // TODO
+    using std::get;
+
+    auto const up_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_W);
+    auto const down_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_S);
+
+    auto const left_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_A);
+    auto const right_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_D);
+
+    // TODO: remove make_optional call each time, modify in place
+    if (up_key_timing.has_value() != down_key_timing.has_value()) {
+        if (up_key_timing.has_value()) {
+            model_modified_ = true;
+            rotational_axis_direction = 1.0f;
+            rotational_axis = make_optional(y_axis);
+        }
+
+        if (down_key_timing.has_value()) {
+            model_modified_ = true;
+            rotational_axis = make_optional(y_axis);
+            rotational_axis_direction = -1.0f;
+        }
+    }
+
+    if (left_key_timing.has_value() != right_key_timing.has_value()) {
+        if (left_key_timing.has_value()) {
+            model_modified_ = true;
+            rotational_axis_direction = -1.0f;
+            rotational_axis = make_optional(x_axis);
+        }
+
+        if (right_key_timing.has_value()) {
+            model_modified_ = true;
+            rotational_axis_direction = 1.0f;
+            rotational_axis = make_optional(x_axis);
+        }
+    }
 }
 
 bool EventLoop::drain_event_queue_should_exit() {
@@ -191,62 +225,6 @@ bool EventLoop::drain_event_queue_should_exit() {
             }
 
             active_keys.set_key_pressed(Key(evt.key.scancode, evt.key.mod));
-
-            if (!start_click.has_value()) {
-                if (evt.key.key == SDLK_A) {
-                    model_modified_ = true;
-                    rotational_axis_direction = -1.0f;
-                    rotational_axis = make_optional(x_axis);
-                }
-                else if (evt.key.key == SDLK_D) {
-                    model_modified_ = true;
-                    rotational_axis_direction = 1.0f;
-                    rotational_axis = make_optional(x_axis);
-                }
-                else if (evt.key.key == SDLK_W) {
-                    model_modified_ = true;
-                    rotational_axis_direction = 1.0f;
-                    rotational_axis = make_optional(y_axis);
-                }
-                else if (evt.key.key == SDLK_S) {
-                    model_modified_ = true;
-                    rotational_axis = make_optional(y_axis);
-                    rotational_axis_direction = -1.0f;
-                }
-            }
-
-            // TODO: mouse events to make this more intuitive
-            if (evt.key.key == SDLK_LEFT) {
-                if (evt.key.mod & SDL_KMOD_SHIFT) {
-                    function_params->y_offset -= panning_delta_per_ms;
-                    function_params_modified_ = true;
-                }
-                else {
-                    function_params->x_offset -= panning_delta_per_ms;
-                    function_params_modified_ = true;
-                }
-            }
-
-            if (evt.key.key == SDLK_RIGHT) {
-                if (evt.key.mod & SDL_KMOD_SHIFT) {
-                    function_params->y_offset += panning_delta_per_ms;
-                    function_params_modified_ = true;
-                }
-                else {
-                    function_params->x_offset += panning_delta_per_ms;
-                    function_params_modified_ = true;
-                }
-            }
-
-            if (evt.key.key == SDLK_UP) {
-                function_params->z_mult += 0.1;
-                function_params_modified_ = true;
-            }
-
-            if (evt.key.key == SDLK_DOWN) {
-                function_params->z_mult -= 0.1;
-                function_params_modified_ = true;
-            }
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
