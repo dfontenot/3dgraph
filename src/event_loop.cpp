@@ -31,6 +31,7 @@
 
 using std::initializer_list;
 using std::make_optional;
+using std::make_tuple;
 using std::nullopt;
 using std::optional;
 using std::shared_ptr;
@@ -109,19 +110,65 @@ bool EventLoop::model_modified() const {
 }
 
 optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms,
+                                                                                        uint64_t end_ms,
                                                                                         const Key &key) const {
-    // TODO impl
+    using std::get;
+
+    // TODO this is a bit of a leaky abstraction because eventloop knows that activekeys only
+    // checks for the shift modifier, need to restructure the code to remove this implicit coupling
+
+    auto const maybe_this_key_timing = active_keys.maybe_get_key(key);
+    auto const maybe_shift_key_timing = active_keys.maybe_get_key(key.shift_mod_complement());
+
+    if (!maybe_shift_key_timing.has_value() && !maybe_this_key_timing.has_value()) {
+        return nullopt;
+    }
+
+    // xor
+    if (maybe_shift_key_timing.has_value() != maybe_this_key_timing.has_value()) {
+
+        if (maybe_shift_key_timing.has_value()) {
+            auto const shift_key_timing = *maybe_shift_key_timing;
+
+            // button is still held down
+            if (! get<1>(shift_key_timing).has_value()) { 
+                return make_optional(make_tuple(key, get<0>(shift_key_timing), end_ms));
+            }
+
+            // button was released before the start time under consideration
+            if (get<1>(shift_key_timing).value() < start_ms) {
+                return nullopt;
+            }
+        }
+        else {
+            auto const this_key_timing = *maybe_this_key_timing;
+
+            if (! get<1>(this_key_timing).has_value()) { 
+                return make_optional(make_tuple(key, get<0>(this_key_timing), end_ms));
+            }
+
+            if (get<1>(this_key_timing).value() < start_ms) {
+                return nullopt;
+            }
+        }
+    }
+
+    // TODO: tie-breaking
+    auto const shift_key_timing = *maybe_shift_key_timing;
+    auto const this_key_timing = *maybe_this_key_timing;
+
     return nullopt;
 }
 
 void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     using std::get;
 
-    auto const up_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_UP));
-    auto const down_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_DOWN));
+    auto const now_ms = SDL_GetTicks();
+    auto const up_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_UP));
+    auto const down_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_DOWN));
 
-    auto const left_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_LEFT));
-    auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, Key(SDL_SCANCODE_RIGHT));
+    auto const left_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_LEFT));
+    auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
 
     // xor
     if (left_key_timing.has_value() != right_key_timing.has_value()) {
@@ -166,38 +213,38 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     }
 }
 
-void EventLoop::process_model_mutation_keys() {
+void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
     using std::get;
 
-    auto const up_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_W);
-    auto const down_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_S);
+    bool const up_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_W, start_ms);
+    bool const down_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_S, start_ms);
 
-    auto const left_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_A);
-    auto const right_key_timing = active_keys.get_key_press_duration(SDL_SCANCODE_D);
+    bool const left_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_A, start_ms);
+    bool const right_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_D, start_ms);
 
     // TODO: remove make_optional call each time, modify in place
-    if (up_key_timing.has_value() != down_key_timing.has_value()) {
-        if (up_key_timing.has_value()) {
+    if (up_key_timing != down_key_timing) {
+        if (up_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = 1.0f;
             rotational_axis = make_optional(y_axis);
         }
 
-        if (down_key_timing.has_value()) {
+        if (down_key_timing) {
             model_modified_ = true;
             rotational_axis = make_optional(y_axis);
             rotational_axis_direction = -1.0f;
         }
     }
 
-    if (left_key_timing.has_value() != right_key_timing.has_value()) {
-        if (left_key_timing.has_value()) {
+    if (left_key_timing != right_key_timing) {
+        if (left_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = -1.0f;
             rotational_axis = make_optional(x_axis);
         }
 
-        if (right_key_timing.has_value()) {
+        if (right_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = 1.0f;
             rotational_axis = make_optional(x_axis);

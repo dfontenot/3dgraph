@@ -34,6 +34,13 @@ public:
      * new copy of this key without any modifiers
      */
     Key without_mods() const;
+
+    /**
+     * a new copy of this key with the shift modifier
+     * if it isn't applied to this, or without it if it
+     * already is applied
+     */
+    Key shift_mod_complement() const;
 };
 
 struct KeyHash {

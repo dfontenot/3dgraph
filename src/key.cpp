@@ -44,3 +44,12 @@ Key Key::without_mods() const {
 bool Key::has_shift() const {
     return key_mod == SDL_KMOD_LSHIFT || key_mod == SDL_KMOD_RSHIFT;
 }
+
+Key Key::shift_mod_complement() const {
+    if (has_modifier()) {
+        return Key(scan_code);
+    }
+    else {
+        return Key(scan_code, SDL_KMOD_SHIFT);
+    }
+}

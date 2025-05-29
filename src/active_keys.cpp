@@ -3,7 +3,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_timer.h>
-#include <cstdint>
 #include <initializer_list>
 #include <optional>
 #include <utility>
@@ -91,22 +90,6 @@ void ActiveKeys::set_key_pressed(const Key &key) {
     }
 }
 
-optional<uint64_t> ActiveKeys::get_key_press_duration(const Key &key) const {
-    auto const maybe_timing = maybe_get_key(key);
-    if (maybe_timing.has_value()) {
-        auto const timing = *maybe_timing;
-        if (timing.second.has_value()) {
-            return make_optional(*timing.second - timing.first);
-        }
-    }
-
-    return nullopt;
-}
-
-optional<uint64_t> ActiveKeys::get_key_press_duration(SDL_Scancode scan_code) const {
-    return get_key_press_duration(Key(scan_code));
-}
-
 void ActiveKeys::release_key(const Key &key) {
     if (!is_key_registered(key)) {
         return;
@@ -140,4 +123,18 @@ void ActiveKeys::sync_key_state() {
             release_key(Key(monitored_keys[i]));
         }
     }
+}
+
+bool ActiveKeys::was_key_pressed_during_time_range(const Key &key, uint64_t start_ms) const {
+    if (!is_key_registered(key)) {
+        return false;
+    }
+
+    auto const maybe_key_timing = maybe_get_key(key);
+    return maybe_key_timing.has_value() && start_ms <= maybe_key_timing->first;
+}
+
+bool ActiveKeys::was_key_pressed_during_time_range(SDL_Scancode scan_code, uint64_t start_ms) const {
+    auto const key = Key(scan_code);
+    return was_key_pressed_during_time_range(key, start_ms) || was_key_pressed_during_time_range(key.shift_mod_complement(), start_ms);
 }
