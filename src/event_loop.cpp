@@ -60,7 +60,7 @@ constexpr GLfloat panning_delta_per_ms = 0.01f;
 /**
  * how much to change the 3d function z mult per frame
  */
-constexpr GLfloat z_mult_delta_per_ms = 0.1f;
+constexpr GLfloat z_mult_delta_per_ms = 2.5f;
 
 constexpr initializer_list<SDL_Scancode> function_param_mutation_keys = {
     SDL_SCANCODE_UP,
@@ -117,9 +117,12 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
     // TODO this is a bit of a leaky abstraction because eventloop knows that activekeys only
     // checks for the shift modifier, need to restructure the code to remove this implicit coupling
 
-    auto const maybe_this_key_timing = active_keys.maybe_get_key(key);
-    auto const maybe_shift_key_timing = active_keys.maybe_get_key(key.shift_mod_complement());
+    auto const key_only = key.without_mods();
+    auto const key_with_shift = key.copy_shifted();
+    auto const maybe_this_key_timing = active_keys.maybe_get_key(key_only);
+    auto const maybe_shift_key_timing = active_keys.maybe_get_key(key_with_shift);
 
+    // were either of the keys pressed at all?
     if (!maybe_shift_key_timing.has_value() && !maybe_this_key_timing.has_value()) {
         return nullopt;
     }
@@ -131,8 +134,8 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
             auto const shift_key_timing = *maybe_shift_key_timing;
 
             // button is still held down
-            if (! get<1>(shift_key_timing).has_value()) { 
-                return make_optional(make_tuple(key, get<0>(shift_key_timing), end_ms));
+            if (!get<1>(shift_key_timing).has_value()) {
+                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
             }
 
             // button was released before the start time under consideration
@@ -143,8 +146,8 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
         else {
             auto const this_key_timing = *maybe_this_key_timing;
 
-            if (! get<1>(this_key_timing).has_value()) { 
-                return make_optional(make_tuple(key, get<0>(this_key_timing), end_ms));
+            if (!get<1>(this_key_timing).has_value()) {
+                return make_optional(make_tuple(key_only, get<0>(this_key_timing), end_ms));
             }
 
             if (get<1>(this_key_timing).value() < start_ms) {
@@ -153,9 +156,21 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
         }
     }
 
-    // TODO: tie-breaking
+    // tie-breaker if both keys were pressed
     auto const shift_key_timing = *maybe_shift_key_timing;
     auto const this_key_timing = *maybe_this_key_timing;
+
+    // arbitrary: give shift key precedence if either are still 
+    // held down at the end of the frame
+    if (!get<1>(shift_key_timing).has_value() && !get<1>(this_key_timing).has_value()) {
+        return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
+    }
+    else if (get<1>(shift_key_timing).has_value()) {
+        return make_optional(make_tuple(key_only, get<0>(shift_key_timing), end_ms));
+    }
+    else {
+        return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
+    }
 
     return nullopt;
 }
