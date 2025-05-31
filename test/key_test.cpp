@@ -1,7 +1,6 @@
 #include "key.hpp"
-#include <SDL3/SDL_keycode.h>
-#include <gtest/gtest.h>
 #include <SDL3/SDL.h>
+#include <gtest/gtest.h>
 #include <unordered_set>
 
 TEST(Key, CtorScancodeOnly) {

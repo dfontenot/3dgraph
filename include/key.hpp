@@ -28,7 +28,7 @@ public:
     /**
      * new copy of this key but with the shift modifier applied
      */
-    Key copy_shifted(bool only_this_mod=true) const;
+    Key copy_shifted(bool only_this_mod = true) const;
 
     /**
      * new copy of this key without any modifiers

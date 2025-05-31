@@ -44,7 +44,7 @@ target_include_directories(${PROJECT_NAME}
 # tests
 enable_testing()
 
-add_executable(${PROJECT_NAME}_test test/key_test.cpp src/key.cpp)
+add_executable(${PROJECT_NAME}_test test/key_test.cpp test/active_keys_test.cpp src/active_keys.cpp src/key.cpp)
 target_link_libraries(${PROJECT_NAME}_test 
   PRIVATE fmt::fmt
   PRIVATE glm::glm
