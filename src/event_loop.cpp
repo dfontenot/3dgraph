@@ -231,11 +231,11 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
 void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
     using std::get;
 
-    bool const up_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_W, start_ms);
-    bool const down_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_S, start_ms);
+    bool const up_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_W, start_ms);
+    bool const down_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_S, start_ms);
 
-    bool const left_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_A, start_ms);
-    bool const right_key_timing = active_keys.was_key_pressed_during_time_range(SDL_SCANCODE_D, start_ms);
+    bool const left_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_A, start_ms);
+    bool const right_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_D, start_ms);
 
     // TODO: remove make_optional call each time, modify in place
     if (up_key_timing != down_key_timing) {

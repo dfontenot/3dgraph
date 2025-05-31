@@ -37,8 +37,12 @@ public:
     void set_key_pressed(const Key &key);
     void release_key(const Key &key);
     const KeyValue &maybe_get_key(const Key &key) const;
-    bool was_key_pressed_during_time_range(const Key &key, uint64_t start_ms) const;
-    bool was_key_pressed_during_time_range(SDL_Scancode scan_code, uint64_t start_ms) const;
+
+    /**
+     * did this keys' press start time occur before start_ms
+     */
+    bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
+    bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
 
     /**
      * sync the state with SDL_GetKeyboardState

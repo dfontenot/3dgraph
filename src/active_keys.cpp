@@ -125,7 +125,7 @@ void ActiveKeys::sync_key_state() {
     }
 }
 
-bool ActiveKeys::was_key_pressed_during_time_range(const Key &key, uint64_t start_ms) const {
+bool ActiveKeys::was_key_pressed_since(const Key &key, uint64_t start_ms) const {
     if (!is_key_registered(key)) {
         return false;
     }
@@ -134,7 +134,7 @@ bool ActiveKeys::was_key_pressed_during_time_range(const Key &key, uint64_t star
     return maybe_key_timing.has_value() && start_ms <= maybe_key_timing->first;
 }
 
-bool ActiveKeys::was_key_pressed_during_time_range(SDL_Scancode scan_code, uint64_t start_ms) const {
+bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const {
     auto const key = Key(scan_code);
-    return was_key_pressed_during_time_range(key, start_ms) || was_key_pressed_during_time_range(key.shift_mod_complement(), start_ms);
+    return was_key_pressed_since(key, start_ms) || was_key_pressed_since(key.shift_mod_complement(), start_ms);
 }
