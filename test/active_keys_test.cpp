@@ -32,6 +32,7 @@ TEST_F(ActiveKeysTest, StartListenToKey) {
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 
     active_keys.start_listen_to_key(std::move(key));
+    active_keys.set_key_pressed(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(Key(any_scancode)));
 }
 
