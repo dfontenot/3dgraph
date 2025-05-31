@@ -125,13 +125,13 @@ void ActiveKeys::release_key(const Key &key) {
         key_timings[key]->second = now_ms;
     }
 
-    if (key.has_modifier()) {
-        auto const unmodded = key.without_mods();
-        auto const maybe_key_timing_unmodded = maybe_get_key(unmodded);
-        if (maybe_key_timing_unmodded.has_value()) {
+    if (!key.has_modifier()) {
+        auto const modded = key.copy_shifted();
+        auto const maybe_key_timing_modded = maybe_get_key(modded);
+        if (maybe_key_timing_modded.has_value()) {
             //key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
-            key_timings[unmodded]->first = maybe_key_timing->first;
-            key_timings[unmodded]->second = now_ms;
+            key_timings[modded]->first = maybe_key_timing->first;
+            key_timings[modded]->second = now_ms;
         }
     }
 }
