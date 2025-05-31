@@ -24,16 +24,20 @@ public:
     ActiveKeys();
 
     /**
-     * NOTE: all keys listed here and their shift modifiers will be monitored
-     * TODO: functionality to just monitor the exact keys given?
+     * if specifying a key w/o a modifier: it will also monitor the shift version of the key
+     * if a key with a modifier is specified, it will only listen to that exact key
      */
     ActiveKeys(std::initializer_list<Key> keys_to_monitor);
     ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes);
 
     /**
      * register a key for listening
+     * likewise with the ctor: just a key will listen to all modifier versions of it,
+     * if it has a modifier then will only listen to the key with that exact modifier
      */
     void start_listen_to_key(Key &&key);
+    void start_listen_to_key(const Key &key);
+    void start_listen_to_key(SDL_Scancode scan_code);
     void set_key_pressed(const Key &key);
     void release_key(const Key &key);
     const KeyValue &maybe_get_key(const Key &key) const;

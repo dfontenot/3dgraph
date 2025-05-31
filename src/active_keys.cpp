@@ -25,13 +25,20 @@ ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
     for (auto const key : keys_to_monitor) {
         monitored_keys.push_back(key.get_scan_code());
         key_timings.insert({key, nullopt});
+
+        if (! key.has_modifier()) {
+            // TODO: another leaky abstraction, need to fix
+            key_timings.insert({key.copy_shifted(), nullopt});
+        }
     }
 }
 
 ActiveKeys::ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes) {
     for (auto const scan_code : scan_codes) {
         monitored_keys.push_back(scan_code);
-        key_timings.insert({Key(scan_code), nullopt});
+        auto const key = Key(scan_code);
+        key_timings.insert({key, nullopt});
+        key_timings.insert({key.copy_shifted(), nullopt});
     }
 }
 
@@ -48,14 +55,26 @@ bool ActiveKeys::is_key_registered(const Key &key) const {
     return key_timings.find(key) != key_timings.end();
 }
 
-void ActiveKeys::start_listen_to_key(Key &&key) {
-    if (key.has_modifier()) {
-        auto const un_modded = key.without_mods();
-        key_timings.insert({un_modded, nullopt});
-    }
+void ActiveKeys::start_listen_to_key(SDL_Scancode scan_code) {
+    start_listen_to_key(Key(scan_code));
+}
 
+void ActiveKeys::start_listen_to_key(const Key &key) {
     key_timings.insert({key, nullopt});
     monitored_keys.push_back(key.get_scan_code());
+
+    if (!key.has_modifier()) {
+        key_timings.insert({key.copy_shifted(), nullopt});
+    }
+}
+
+void ActiveKeys::start_listen_to_key(Key &&key) {
+    key_timings.insert({key, nullopt});
+    monitored_keys.push_back(key.get_scan_code());
+
+    if (!key.has_modifier()) {
+        key_timings.insert({key.copy_shifted(), nullopt});
+    }
 }
 
 void ActiveKeys::set_key_pressed(const Key &key) {

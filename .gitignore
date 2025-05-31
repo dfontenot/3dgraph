@@ -4,3 +4,4 @@ Debug/
 .cache/
 compile_commands.json
 CMakeUserPresets.json
+.gdb_history
