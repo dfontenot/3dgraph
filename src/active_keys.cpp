@@ -26,7 +26,7 @@ ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
         monitored_keys.push_back(key.get_scan_code());
         key_timings.insert({key, nullopt});
 
-        if (! key.has_modifier()) {
+        if (!key.has_modifier()) {
             // TODO: another leaky abstraction, need to fix
             key_timings.insert({key.copy_shifted(), nullopt});
         }
@@ -94,7 +94,7 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         if (!maybe_get_key(un_modded).has_value()) {
             key_timings[un_modded]->first = now_ms;
             key_timings[un_modded]->second = nullopt;
-            //key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
+            // key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
         }
     }
     else {
@@ -105,7 +105,7 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         auto const shift_modded = key.copy_shifted(true);
         auto const maybe_modded = maybe_get_key(shift_modded);
         if (maybe_modded.has_value()) {
-            //key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));
+            // key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));
             key_timings[shift_modded]->first = maybe_modded->first;
             key_timings[shift_modded]->second = now_ms;
         }
@@ -120,7 +120,7 @@ void ActiveKeys::release_key(const Key &key) {
     auto const now_ms = SDL_GetTicks();
     auto const maybe_key_timing = maybe_get_key(key);
     if (maybe_key_timing.has_value()) {
-        //key_timings[key] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+        // key_timings[key] = make_optional(make_pair(maybe_key_timing->first, now_ms));
         key_timings[key]->first = maybe_key_timing->first;
         key_timings[key]->second = now_ms;
     }
@@ -128,8 +128,8 @@ void ActiveKeys::release_key(const Key &key) {
     if (!key.has_modifier()) {
         auto const modded = key.copy_shifted();
         auto const maybe_key_timing_modded = maybe_get_key(modded);
-        if (maybe_key_timing_modded.has_value()) {
-            //key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+        if (maybe_key_timing_modded.has_value() && !key_timings[modded]->second.has_value()) {
+            // key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
             key_timings[modded]->first = maybe_key_timing->first;
             key_timings[modded]->second = now_ms;
         }
