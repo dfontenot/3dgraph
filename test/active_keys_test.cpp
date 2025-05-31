@@ -28,7 +28,7 @@ protected:
 };
 
 TEST_F(ActiveKeysTest, StartListenToKey) {
-    auto key = Key(any_scancode);
+    auto const key = Key(any_scancode);
     ActiveKeys active_keys;
 
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
@@ -36,9 +36,9 @@ TEST_F(ActiveKeysTest, StartListenToKey) {
     active_keys.set_key_pressed(key);
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 
-    active_keys.start_listen_to_key(std::move(key));
+    active_keys.start_listen_to_key(key);
     active_keys.set_key_pressed(key);
-    EXPECT_NE(nullopt, active_keys.maybe_get_key(Key(any_scancode)));
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
 }
 
 TEST_F(ActiveKeysTest, SetKeyPressed) {
