@@ -26,6 +26,8 @@ TEST_F(ActiveKeysTest, StartListenToKey) {
     auto key = Key(any_scancode);
     ActiveKeys active_keys;
 
+    EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
+
     active_keys.set_key_pressed(key);
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 

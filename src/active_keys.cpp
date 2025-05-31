@@ -45,7 +45,7 @@ const KeyValue &ActiveKeys::maybe_get_key(const Key &key) const {
 }
 
 bool ActiveKeys::is_key_registered(const Key &key) const {
-    return key_timings.find(key) == key_timings.end();
+    return key_timings.find(key) != key_timings.end();
 }
 
 void ActiveKeys::start_listen_to_key(Key &&key) {
