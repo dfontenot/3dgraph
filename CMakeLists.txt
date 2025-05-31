@@ -11,11 +11,14 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(cpptrace REQUIRED)
 find_package(fmt REQUIRED)
 find_package(glm REQUIRED)
+find_package(GTest REQUIRED)
 find_package(opengl_system REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(spdlog REQUIRED)
 
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
+
+# main executable
 add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp src/opengl_debug_callback.cpp src/active_keys.cpp src/key.cpp)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
@@ -33,10 +36,28 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE opengl::opengl
   PRIVATE SDL3::SDL3
   PRIVATE spdlog::spdlog)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME}
   PRIVATE ${3dgraph_SOURCE_DIR}/include
 )
+
+# tests
+enable_testing()
+
+add_executable(${PROJECT_NAME}_test test/key_test.cpp src/key.cpp)
+target_link_libraries(${PROJECT_NAME}_test 
+  PRIVATE fmt::fmt
+  PRIVATE glm::glm
+  PRIVATE GTest::gtest
+  PRIVATE GTest::gtest_main
+  PRIVATE SDL3::SDL3)
+target_compile_features(${PROJECT_NAME}_test PRIVATE cxx_std_20)
+target_include_directories(${PROJECT_NAME}_test
+  PRIVATE ${3dgraph_SOURCE_DIR}/include
+)
+
+include(GoogleTest)
+gtest_discover_tests(${PROJECT_NAME}_test)
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
   ADD_CUSTOM_TARGET(link_compile_commands_json ALL
