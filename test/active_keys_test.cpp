@@ -1,6 +1,7 @@
 #include "active_keys.hpp"
 #include "key.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_timer.h>
 #include <gtest/gtest.h>
 #include <optional>
@@ -13,6 +14,7 @@ class ActiveKeysTest : public ::testing::Test {
 protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;
+    static auto const any_keymod = SDL_KMOD_CTRL;
 
     void SetUp() override {
         if (!SDL_Init(SDL_INIT_EVENTS)) {
@@ -71,9 +73,54 @@ TEST_F(ActiveKeysTest, MaybeGetKey) {
     EXPECT_NE(nullopt, std::get<1>(key_timing));
 }
 
-// TODO: test same key with modifiers
-// pressed and released multiple times
 TEST_F(ActiveKeysTest, ReleaseKey) {
+    // hold down key, then also hold down a modifier, then release modifier, then release key
+    ActiveKeys active_keys{any_scancode};
+    auto const key = Key(any_scancode);
+    auto const key_with_mod = Key(any_scancode, any_keymod);
+
+    // nothing pressed yet
+    EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_EQ(nullopt, active_keys.maybe_get_key(key_with_mod));
+
+    // press just the key
+    active_keys.set_key_pressed(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_EQ(nullopt, active_keys.maybe_get_key(key_with_mod));
+    auto end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
+    EXPECT_EQ(nullopt, end_time_key);
+
+    // also hold down the modifier
+    SDL_Delay(1);
+    active_keys.set_key_pressed(key_with_mod);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key_with_mod));
+    end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
+    auto end_time_mod_key = std::get<1>(*active_keys.maybe_get_key(key_with_mod));
+    EXPECT_EQ(nullopt, end_time_key);
+    EXPECT_EQ(nullopt, end_time_mod_key);
+
+    // release the modifier
+    SDL_Delay(1);
+    active_keys.release_key(key_with_mod);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key_with_mod));
+    end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
+    end_time_mod_key = std::get<1>(*active_keys.maybe_get_key(key_with_mod));
+    EXPECT_EQ(nullopt, end_time_key);
+    EXPECT_NE(nullopt, end_time_mod_key);
+
+    // release the key
+    SDL_Delay(1);
+    active_keys.release_key(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key_with_mod));
+    end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
+    end_time_mod_key = std::get<1>(*active_keys.maybe_get_key(key_with_mod));
+    EXPECT_NE(nullopt, end_time_key);
+    EXPECT_NE(nullopt, end_time_mod_key);
+
+    EXPECT_GT(*end_time_key, *end_time_mod_key);
 }
 
 TEST_F(ActiveKeysTest, WasKeyPressedSince) {

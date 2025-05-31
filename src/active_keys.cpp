@@ -73,7 +73,9 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         // if the regular key itself isn't marked as started, do so now
         auto const un_modded = key.without_mods();
         if (!maybe_get_key(un_modded).has_value()) {
-            key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
+            key_timings[un_modded]->first = now_ms;
+            key_timings[un_modded]->second = nullopt;
+            //key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
         }
     }
     else {
@@ -84,8 +86,9 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         auto const shift_modded = key.copy_shifted(true);
         auto const maybe_modded = maybe_get_key(shift_modded);
         if (maybe_modded.has_value()) {
-            // TODO: update in place instead
-            key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));
+            //key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));
+            key_timings[shift_modded]->first = maybe_modded->first;
+            key_timings[shift_modded]->second = now_ms;
         }
     }
 }
@@ -98,16 +101,18 @@ void ActiveKeys::release_key(const Key &key) {
     auto const now_ms = SDL_GetTicks();
     auto const maybe_key_timing = maybe_get_key(key);
     if (maybe_key_timing.has_value()) {
-        // TODO: update in place
-        key_timings[key] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+        //key_timings[key] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+        key_timings[key]->first = maybe_key_timing->first;
+        key_timings[key]->second = now_ms;
     }
 
     if (key.has_modifier()) {
         auto const unmodded = key.without_mods();
         auto const maybe_key_timing_unmodded = maybe_get_key(unmodded);
         if (maybe_key_timing_unmodded.has_value()) {
-            // TODO: update in place
-            key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+            //key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
+            key_timings[unmodded]->first = maybe_key_timing->first;
+            key_timings[unmodded]->second = now_ms;
         }
     }
 }
