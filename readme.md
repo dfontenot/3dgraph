@@ -3,8 +3,7 @@
 Graph a 3d function using OpenGL.
 
 ## Building
-Ensure SDL3 is installed
+Need a C++20 capable compiler
 
-1. `mkdir build`
-1. `cd build`
-1. `CMAKE_EXPORT_COMPILE_COMMANDS=1 cmake ..`
+Can treat the build helper script like cmake, all args passed to it will be forwarded to cmake
+1. `./run-build.sh`
