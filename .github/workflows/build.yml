@@ -17,4 +17,5 @@ jobs:
         uses: conan-io/setup-conan@v1
       - name: Build
         run: |
-          ./build.sh
+          ./run-build.sh
+        shell: bash
