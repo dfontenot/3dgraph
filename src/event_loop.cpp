@@ -45,7 +45,12 @@ using glm::toMat4;
 using glm::vec3;
 
 constexpr double pi = 3.1415926;
-constexpr double rotation_max_degrees_second = 900.0;
+
+/**
+ * how much to rotate / orbit in any direction
+ * NOTE: manually tuned
+ */
+constexpr double rotation_max_degrees_second = 20.0;
 constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
 constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 
@@ -56,7 +61,7 @@ constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
  * how much to pan the 3d function per frame
  * NOTE: manually tuned
  */
-constexpr GLfloat panning_delta_per_ms = 0.005f;
+constexpr GLfloat panning_delta_per_ms = 0.0005f;
 
 /**
  * how much to change the 3d function z mult per frame
