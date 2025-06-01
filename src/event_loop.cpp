@@ -97,15 +97,18 @@ constexpr initializer_list<SDL_Scancode> monitored_keys = {
 constexpr size_t num_event_timings_maintain = 10;
 
 namespace {
-auto const logger = spdlog::stdout_color_mt("event_loop");
-}
+auto logger = spdlog::stdout_color_mt("event_loop");
+optional<vec3> no_rotational_axis{};
+optional<vec3> x_rotation_axis{x_axis};
+optional<vec3> y_rotation_axis{y_axis};
+} // namespace
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
       function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
-      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f), rotational_axis(nullopt),
-      active_keys(ActiveKeys(monitored_keys)) {
+      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f),
+      rotational_axis(no_rotational_axis), active_keys(ActiveKeys(monitored_keys)) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -269,12 +272,12 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
         if (up_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = 1.0f;
-            rotational_axis = make_optional(y_axis);
+            rotational_axis = y_rotation_axis;
         }
 
         if (down_key_timing) {
             model_modified_ = true;
-            rotational_axis = make_optional(y_axis);
+            rotational_axis = y_rotation_axis;
             rotational_axis_direction = -1.0f;
         }
     }
@@ -283,20 +286,20 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
         if (left_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = -1.0f;
-            rotational_axis = make_optional(x_axis);
+            rotational_axis = x_rotation_axis;
         }
 
         if (right_key_timing) {
             model_modified_ = true;
             rotational_axis_direction = 1.0f;
-            rotational_axis = make_optional(x_axis);
+            rotational_axis = x_rotation_axis;
         }
     }
 }
 
 bool EventLoop::drain_event_queue_should_exit() {
     rotational_axis_direction = 0.0f;
-    rotational_axis = nullopt;
+    rotational_axis = no_rotational_axis;
 
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_EVENT_QUIT) {

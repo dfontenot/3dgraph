@@ -30,7 +30,7 @@ class EventLoop {
     bool model_modified_;
     bool view_modified_;
     float rotational_axis_direction;
-    std::optional<glm::vec3> rotational_axis;
+    std::optional<glm::vec3>& rotational_axis;
     std::optional<MouseLoc> start_click;
 
     /**
