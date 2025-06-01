@@ -43,8 +43,18 @@ target_include_directories(${PROJECT_NAME}
 
 # tests
 enable_testing()
+set(TEST_WITH_COVERAGE ON)
 
 add_executable(${PROJECT_NAME}_test test/key_test.cpp test/active_keys_test.cpp src/active_keys.cpp src/key.cpp)
+
+if(TEST_WITH_COVERAGE)
+  # ref: https://stackoverflow.com/a/78565049
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+    target_compile_options(${PROJECT_NAME}_test INTERFACE --coverage -O0 -g)
+    target_link_options(${PROJECT_NAME}_test INTERFACE --coverage)
+  endif()
+endif()
+
 target_link_libraries(${PROJECT_NAME}_test 
   PRIVATE fmt::fmt
   PRIVATE glm::glm
