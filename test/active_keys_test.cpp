@@ -178,6 +178,6 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     SDL_Delay(1);
 
     EXPECT_TRUE(active_keys.was_key_pressed_since(key, before_press_ms));
-    EXPECT_FALSE(active_keys.was_key_pressed_since(key, SDL_GetTicks()));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(key, SDL_GetTicks()));
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, before_press_ms));
 }

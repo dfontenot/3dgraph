@@ -103,7 +103,7 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         if (!is_key_registered(un_modded)) {
             return;
         }
-        
+
         auto const maybe_un_modded_key = maybe_get_key(un_modded);
         if (!maybe_un_modded_key.has_value()) {
             // this is the first time the key has ever been pressed
@@ -180,7 +180,19 @@ bool ActiveKeys::was_key_pressed_since(const Key &key, uint64_t start_ms) const 
     }
 
     auto const maybe_key_timing = maybe_get_key(key);
-    return maybe_key_timing.has_value() && start_ms <= maybe_key_timing->first;
+    if (!maybe_key_timing.has_value()) {
+        return false;
+    }
+
+    auto const key_timing = *maybe_key_timing;
+    if (!std::get<1>(key_timing)) {
+        // if the key is still being held down then it had to have been pressed
+        // prior to this start time
+        return key_timing.first <= start_ms;
+    }
+    else {
+        return key_timing.first <= start_ms && *key_timing.second >= start_ms;
+    }
 }
 
 bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const {
