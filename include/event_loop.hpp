@@ -55,7 +55,7 @@ public:
     /**
      * returns how long the tick took to run
      */
-    TickResult tick(uint64_t render_time_ns);
+    TickResult process_frame(uint64_t render_time_ns);
 
     EventLoop() = delete;
     EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,

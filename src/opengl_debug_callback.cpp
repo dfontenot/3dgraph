@@ -1,14 +1,14 @@
 #include "opengl_debug_callback.hpp"
 #include "glad/glad.h"
 
-#include <string>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <string>
 #include <unordered_set>
 
 namespace {
-    using std::string;
-    using std::unordered_set;
+using std::string;
+using std::unordered_set;
 
 auto const opengl_debug = spdlog::stdout_color_mt("opengl_debug");
 

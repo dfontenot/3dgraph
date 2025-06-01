@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
         MaxDeque<uint64_t> render_timings(10);
         EventLoop event_loop{model, view, projection, function_params};
         while (true) {
-            auto const tick_result = event_loop.tick(render_timings.get_avg());
+            auto const tick_result = event_loop.process_frame(render_timings.get_avg());
             if (tick_result.should_exit) {
                 return 0;
             }

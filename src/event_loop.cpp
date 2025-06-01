@@ -60,7 +60,7 @@ constexpr GLfloat panning_delta_per_ms = 0.01f;
 /**
  * how much to change the 3d function z mult per frame
  */
-constexpr GLfloat z_mult_delta_per_ms = 2.5f;
+constexpr GLfloat z_mult_delta_per_ms = 0.2f;
 
 constexpr initializer_list<SDL_Scancode> function_param_mutation_keys = {
     SDL_SCANCODE_UP,
@@ -88,6 +88,10 @@ constexpr initializer_list<SDL_Scancode> monitored_keys = {
  * to drain the sdl event queue, in ns
  */
 constexpr size_t num_event_timings_maintain = 10;
+
+namespace {
+auto const logger = spdlog::stdout_color_mt("event_loop");
+}
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
@@ -132,26 +136,36 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
 
         if (maybe_shift_key_timing.has_value()) {
             auto const shift_key_timing = *maybe_shift_key_timing;
-
-            // button is still held down
-            if (!get<1>(shift_key_timing).has_value()) {
-                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
-            }
+            auto const maybe_shift_key_end_ms = get<1>(shift_key_timing);
 
             // button was released before the start time under consideration
-            if (get<1>(shift_key_timing).value() < start_ms) {
+            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
                 return nullopt;
+            }
+
+            // button is still held down
+            if (!maybe_shift_key_end_ms.has_value()) {
+                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
+            }
+            else {
+                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), *maybe_shift_key_end_ms));
             }
         }
         else {
             auto const this_key_timing = *maybe_this_key_timing;
+            auto const maybe_shift_key_end_ms = get<1>(this_key_timing);
 
-            if (!get<1>(this_key_timing).has_value()) {
-                return make_optional(make_tuple(key_only, get<0>(this_key_timing), end_ms));
+            // button was released before the start time under consideration
+            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
+                return nullopt;
             }
 
-            if (get<1>(this_key_timing).value() < start_ms) {
-                return nullopt;
+            // button is still held down
+            if (!maybe_shift_key_end_ms.has_value()) {
+                return make_optional(make_tuple(key_with_shift, get<0>(this_key_timing), end_ms));
+            }
+            else {
+                return make_optional(make_tuple(key_with_shift, get<0>(this_key_timing), *maybe_shift_key_end_ms));
             }
         }
     }
@@ -160,7 +174,7 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
     auto const shift_key_timing = *maybe_shift_key_timing;
     auto const this_key_timing = *maybe_this_key_timing;
 
-    // arbitrary: give shift key precedence if either are still 
+    // arbitrary: give shift key precedence if either are still
     // held down at the end of the frame
     if (!get<1>(shift_key_timing).has_value() && !get<1>(this_key_timing).has_value()) {
         return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
@@ -191,6 +205,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
         if (left_key_timing.has_value()) {
             function_params_modified_ = true;
             auto const panning_movement = (get<2>(*left_key_timing) - get<1>(*left_key_timing)) * panning_delta_per_ms;
+            ::logger->debug("panning {} in negative direction", panning_movement);
             if (get<0>(*left_key_timing).has_shift()) {
                 function_params->y_offset -= panning_movement;
             }
@@ -203,6 +218,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
             function_params_modified_ = true;
             auto const panning_movement =
                 (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
+            ::logger->debug("panning {} in positive direction", panning_movement);
             if (get<0>(*right_key_timing).has_shift()) {
                 function_params->y_offset += panning_movement;
             }
@@ -217,13 +233,15 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
         if (up_key_timing.has_value()) {
             function_params_modified_ = true;
             auto const z_mult_movement = (get<2>(*up_key_timing) - get<1>(*up_key_timing)) * z_mult_delta_per_ms;
+            ::logger->debug("changing z by {} in positive direction", z_mult_movement);
             function_params->z_mult += z_mult_movement;
         }
 
         if (down_key_timing.has_value()) {
             function_params_modified_ = true;
             auto const z_mult_movement = (get<2>(*down_key_timing) - get<1>(*down_key_timing)) * z_mult_delta_per_ms;
-            function_params->z_mult += z_mult_movement;
+            ::logger->debug("changing z by {} in negative direction", z_mult_movement);
+            function_params->z_mult -= z_mult_movement;
         }
     }
 }
@@ -303,9 +321,7 @@ bool EventLoop::drain_event_queue_should_exit() {
     return false;
 }
 
-TickResult EventLoop::tick(uint64_t render_time_ns) {
-    auto const stdout = spdlog::get("stdout");
-
+TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
 
@@ -318,17 +334,13 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
 
     auto drain_start_ns = SDL_GetTicksNS();
     if (drain_start_ns >= end_ticks_ns) {
-        stdout->debug("skipping input polling this tick");
+        ::logger->debug("skipping input polling this tick");
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
         event_poll_timings.add(0);
         SDL_FlushEvents(SDL_EVENT_QUIT + 1, SDL_EVENT_ENUM_PADDING);
         return TickResult{SDL_GetTicks() - start_ticks_ms, false, true};
     }
-
-    // TODO: these variables are not correct
-    // instead need to access keyboard state at the start each time
-    // to determine what actually is pressed / not pressed
 
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
         if (drain_event_queue_should_exit()) {
@@ -356,7 +368,7 @@ TickResult EventLoop::tick(uint64_t render_time_ns) {
         quat const rotation = angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
         quat const new_model_orientation = rotation * current;
 
-        stdout->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
+        ::logger->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
         *model = toMat4(new_model_orientation);
     }
 
