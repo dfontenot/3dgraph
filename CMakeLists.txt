@@ -43,10 +43,12 @@ target_include_directories(${PROJECT_NAME}
 
 # tests
 enable_testing()
-set(TEST_WITH_COVERAGE ON)
+set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 
 add_executable(${PROJECT_NAME}_test test/key_test.cpp test/active_keys_test.cpp src/active_keys.cpp src/key.cpp)
 
+# NOTE: lcov does not like the output of the coverage files
+# coverage is currently broken
 if(TEST_WITH_COVERAGE)
   # ref: https://stackoverflow.com/a/78565049
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
