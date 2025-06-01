@@ -6,7 +6,7 @@ project(3dgraph
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
-#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug CACHE)
 
 find_package(cpptrace REQUIRED)
 find_package(fmt REQUIRED)
