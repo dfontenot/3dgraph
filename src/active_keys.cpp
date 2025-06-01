@@ -82,19 +82,32 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         return;
     }
 
-    // set the start time for this specific key and modifier
     auto const now_ms = SDL_GetTicks();
-    if (!maybe_get_key(key).has_value()) {
+    auto const maybe_key = maybe_get_key(key);
+    if (!maybe_key.has_value()) {
+        // this is the first time the key has ever been pressed
         key_timings[key] = make_optional(make_pair(now_ms, nullopt));
     }
 
     if (key.has_modifier()) {
         // if the regular key itself isn't marked as started, do so now
         auto const un_modded = key.without_mods();
-        if (!maybe_get_key(un_modded).has_value()) {
-            key_timings[un_modded]->first = now_ms;
-            key_timings[un_modded]->second = nullopt;
-            // key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
+        if (!is_key_registered(un_modded)) {
+            return;
+        }
+        
+        auto const maybe_un_modded_key = maybe_get_key(un_modded);
+        if (!maybe_un_modded_key.has_value()) {
+            // this is the first time the key has ever been pressed
+            key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
+        }
+        else {
+            // if the unmodded version of this key has already been released
+            // then overwrite its value
+            if (std::get<1>(*maybe_un_modded_key).has_value()) {
+                key_timings[un_modded]->first = now_ms;
+                key_timings[un_modded]->second = nullopt;
+            }
         }
     }
     else {
@@ -103,6 +116,10 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         // e.g., shift-D was held down at the start and now the shift has been
         // released while the d key is still held down
         auto const shift_modded = key.copy_shifted(true);
+        if (!is_key_registered(shift_modded)) {
+            return;
+        }
+
         auto const maybe_modded = maybe_get_key(shift_modded);
         if (maybe_modded.has_value()) {
             // key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));

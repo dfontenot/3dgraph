@@ -74,6 +74,47 @@ TEST_F(ActiveKeysTest, MaybeGetKey) {
 }
 
 TEST_F(ActiveKeysTest, ReleaseKey) {
+    ActiveKeys active_keys{any_scancode};
+    auto const key = Key(any_scancode);
+
+    // nothing pressed yet
+    EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
+
+    // frame 1: draining sdl event queue and processing key press event
+    active_keys.set_key_pressed(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    auto first_key_press = *active_keys.maybe_get_key(key);
+    auto const first_key_press_start_ms = std::get<0>(first_key_press);
+    EXPECT_EQ(nullopt, std::get<1>(first_key_press));
+
+    // frame 2: draining sdl event queue and processing key press event
+    // key state should be the same
+    SDL_Delay(1);
+    active_keys.set_key_pressed(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_EQ(std::get<0>(*active_keys.maybe_get_key(key)), first_key_press_start_ms);
+    EXPECT_EQ(nullopt, std::get<1>(first_key_press));
+
+    // frame 3: release the key
+    SDL_Delay(1);
+    active_keys.release_key(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    EXPECT_EQ(std::get<0>(*active_keys.maybe_get_key(key)), first_key_press_start_ms);
+    first_key_press = *active_keys.maybe_get_key(key);
+    auto const first_key_ress_end_ms = std::get<1>(first_key_press);
+    EXPECT_GT(first_key_ress_end_ms, first_key_press_start_ms);
+
+    // frame 4: press the key again
+    SDL_Delay(1);
+    active_keys.set_key_pressed(key);
+    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
+    auto second_key_press = *active_keys.maybe_get_key(key);
+    auto const second_key_press_start_ms = std::get<0>(second_key_press);
+    EXPECT_EQ(nullopt, std::get<1>(second_key_press));
+    EXPECT_GT(second_key_press_start_ms, first_key_ress_end_ms);
+}
+
+TEST_F(ActiveKeysTest, ReleaseKeyTrackModifiers) {
     // hold down key, then also hold down a modifier, then release modifier, then release key
     ActiveKeys active_keys{any_scancode};
     auto const key = Key(any_scancode);

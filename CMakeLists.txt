@@ -60,6 +60,8 @@ endif()
 target_link_libraries(${PROJECT_NAME}_test 
   PRIVATE fmt::fmt
   PRIVATE glm::glm
+  # TODO: these are incorrect sourcing a globally installed gtest instead of
+  # the one defined in the conan files
   PRIVATE GTest::gtest
   PRIVATE GTest::gtest_main
   PRIVATE SDL3::SDL3)

@@ -42,6 +42,6 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP
 # TODO: fix this
 #cmake --preset conan-debug ..
 cmake --build .
-ctest
+ctest --output-on-failure
 
 popd

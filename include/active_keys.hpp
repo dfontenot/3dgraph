@@ -38,6 +38,12 @@ public:
     void start_listen_to_key(Key &&key);
     void start_listen_to_key(const Key &key);
     void start_listen_to_key(SDL_Scancode scan_code);
+
+    /**
+     * before first ever key press, monitored keys will have value nullopt
+     * after first press and release, the value stored at the key will be whatever the
+     * duration of the last key press was until the key is pressed again
+     */
     void set_key_pressed(const Key &key);
     void release_key(const Key &key);
     const KeyValue &maybe_get_key(const Key &key) const;
