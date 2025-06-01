@@ -51,7 +51,7 @@ conan install . --lockfile=conan.lock --lockfile-partial --lockfile-out=conan.lo
 
 cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW $@
-cmake --build .
+cmake --build . $@
 ctest --output-on-failure
 
 popd
