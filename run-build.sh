@@ -25,6 +25,7 @@ if [ -f build/CmakeCache.txt ]; then
 
   # not always necessary, but for local dev ensure clean cache
   if [ "$cmake_timestamp" -gt "$cache_timestamp" ] || [ "$conanfile_timestamp" -gt "$cache_timestamp" ]; then
+    # TODO: maybe a cmake --build build --target clean is enough?
     echo "clearing cmake cache"
     rm -rf build
   fi
@@ -41,5 +42,6 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP
 # TODO: fix this
 #cmake --preset conan-debug ..
 cmake --build .
+ctest
 
 popd

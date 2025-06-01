@@ -3,27 +3,39 @@
 #include <gtest/gtest.h>
 #include <unordered_set>
 
-TEST(Key, CtorScancodeOnly) {
-    auto const key = Key(SDL_SCANCODE_D);
+class KeyTest : public ::testing::Test {
+protected:
+    static auto const any_scancode = SDL_SCANCODE_D;
+    static auto const any_other_scancode = SDL_SCANCODE_T;
+    static auto const any_keymod = SDL_KMOD_CTRL;
+};
+
+TEST_F(KeyTest, CtorScancodeOnly) {
+    auto const key = Key(any_scancode);
     EXPECT_FALSE(key.has_modifier());
 }
 
-TEST(Key, CtorWithMod) {
-    auto const key = Key(SDL_SCANCODE_D, SDL_KMOD_ALT);
+TEST_F(KeyTest, CtorWithMod) {
+    auto const key = Key(any_scancode, any_keymod);
     EXPECT_TRUE(key.has_modifier());
     EXPECT_FALSE(key.has_shift());
 }
 
-TEST(Key, Getters) {
-    auto const any_mod = SDL_KMOD_ALT;
-    auto const any_scancode = SDL_SCANCODE_E;
-    auto const key = Key(any_scancode, any_mod);
-    EXPECT_EQ(key.get_key_mod(), any_mod);
-    EXPECT_EQ(key.get_scan_code(), any_scancode);
+TEST_F(KeyTest, Getters) {
+    auto const key = Key(any_scancode, any_keymod);
+    auto const expected_keymod = any_keymod;
+    auto const expected_scancode = any_scancode;
+
+    /*
+     * NOTE: these macros appear to be doing something, only when inside of a TEST_F,
+     * that the linker doesn't like, appears that can't put anything in the
+     * derived test into the assertion macros, have to copy it
+     */
+    EXPECT_EQ(key.get_key_mod(), expected_keymod);
+    EXPECT_EQ(key.get_scan_code(), expected_scancode);
 }
 
-TEST(Key, CopyShifted) {
-    auto const any_scancode = SDL_SCANCODE_E;
+TEST_F(KeyTest, CopyShifted) {
     auto const key_no_shift_mod = Key(any_scancode);
     auto const key_no_shift_mod_also = Key(any_scancode, SDL_KMOD_NONE);
     auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
@@ -33,9 +45,7 @@ TEST(Key, CopyShifted) {
     EXPECT_EQ(key_shifted.copy_shifted(), key_shifted);
 }
 
-TEST(Key, Eq) {
-    auto const any_scancode = SDL_SCANCODE_E;
-    auto const any_other_scancode = SDL_SCANCODE_T;
+TEST_F(KeyTest, Eq) {
     auto const key = Key(any_scancode);
     auto const other_key = Key(any_other_scancode);
     auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
@@ -47,17 +57,15 @@ TEST(Key, Eq) {
     EXPECT_FALSE(key_shifted == key_alt);
 }
 
-TEST(Key, WithoutMods) {
-    auto const any_scancode = SDL_SCANCODE_E;
+TEST_F(KeyTest, WithoutMods) {
     auto const key = Key(any_scancode);
-    auto const key_alt = Key(any_scancode, SDL_KMOD_ALT);
+    auto const key_alt = Key(any_scancode, any_keymod);
 
     EXPECT_EQ(key_alt.without_mods(), key);
     EXPECT_EQ(key.without_mods(), key);
 }
 
-TEST(Key, ShiftModComplement) {
-    auto const any_scancode = SDL_SCANCODE_E;
+TEST_F(KeyTest, ShiftModComplement) {
     auto const key = Key(any_scancode);
     auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
 
@@ -65,14 +73,11 @@ TEST(Key, ShiftModComplement) {
     EXPECT_EQ(key_shifted, key.shift_mod_complement());
 }
 
-TEST(Key, Hash) {
+TEST_F(KeyTest, Hash) {
     using std::unordered_set;
 
     unordered_set<Key, KeyHash> set;
 
-    auto const any_scancode = SDL_SCANCODE_E;
-    auto const any_other_scancode = SDL_SCANCODE_D;
-    auto const any_mod = SDL_KMOD_ALT;
     auto const key = Key(any_scancode);
     EXPECT_FALSE(set.contains(key));
 
@@ -86,7 +91,7 @@ TEST(Key, Hash) {
 
     // ensure keys with different modifiers
     // are differentiated
-    auto const key2 = Key(any_scancode, any_mod);
+    auto const key2 = Key(any_scancode, any_keymod);
     set.insert(key2);
     EXPECT_TRUE(set.contains(key));
     EXPECT_TRUE(set.contains(key2));
