@@ -54,13 +54,15 @@ constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
 /**
  * how much to pan the 3d function per frame
+ * NOTE: manually tuned
  */
-constexpr GLfloat panning_delta_per_ms = 0.01f;
+constexpr GLfloat panning_delta_per_ms = 0.005f;
 
 /**
  * how much to change the 3d function z mult per frame
+ * NOTE: manually tuned
  */
-constexpr GLfloat z_mult_delta_per_ms = 0.2f;
+constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 
 constexpr initializer_list<SDL_Scancode> function_param_mutation_keys = {
     SDL_SCANCODE_UP,
@@ -137,6 +139,7 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
         if (maybe_shift_key_timing.has_value()) {
             auto const shift_key_timing = *maybe_shift_key_timing;
             auto const maybe_shift_key_end_ms = get<1>(shift_key_timing);
+            auto const start_time_ms = std::max(get<0>(shift_key_timing), start_ms);
 
             // button was released before the start time under consideration
             if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
@@ -145,15 +148,16 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
 
             // button is still held down
             if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
+                return make_optional(make_tuple(key_with_shift, start_time_ms, end_ms));
             }
             else {
-                return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), *maybe_shift_key_end_ms));
+                return make_optional(make_tuple(key_with_shift, start_time_ms, *maybe_shift_key_end_ms));
             }
         }
         else {
             auto const this_key_timing = *maybe_this_key_timing;
             auto const maybe_shift_key_end_ms = get<1>(this_key_timing);
+            auto const start_time_ms = std::max(get<0>(this_key_timing), start_ms);
 
             // button was released before the start time under consideration
             if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
@@ -162,10 +166,10 @@ optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_presse
 
             // button is still held down
             if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(key_with_shift, get<0>(this_key_timing), end_ms));
+                return make_optional(make_tuple(key_with_shift, start_time_ms, end_ms));
             }
             else {
-                return make_optional(make_tuple(key_with_shift, get<0>(this_key_timing), *maybe_shift_key_end_ms));
+                return make_optional(make_tuple(key_with_shift, start_time_ms, *maybe_shift_key_end_ms));
             }
         }
     }

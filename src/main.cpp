@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
 
     spdlog::set_level(spdlog::level::debug);
-    auto const stdout = spdlog::stdout_color_mt("stdout");
-    auto const stderr = spdlog::stderr_color_mt("stderr");
+    auto const stdout = spdlog::stdout_color_mt("main");
+    auto const stderr = spdlog::stderr_color_mt("main_err");
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         stderr->error("sdl init failed: {}", SDL_GetError());

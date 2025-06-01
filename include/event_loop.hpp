@@ -41,7 +41,8 @@ class EventLoop {
 
     /**
      * see if the scancode of the key was used at all, and if so see which one was pressed for the longest for
-     * this tick / frame
+     * this frame. the returned start time will always be greater than or equal to the start_ms
+     * argument (so keys still held down on the last frame will be at start_ms).
      * keys that were released after the start time are excluded, and keys that are still currently pressed will
      * report end_ms as their end time
      */
