@@ -88,6 +88,14 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         // this is the first time the key has ever been pressed
         key_timings[key] = make_optional(make_pair(now_ms, nullopt));
     }
+    else {
+        // if this key has been previously released, clear out the old
+        // entry and start a new keypress from this time
+        if (std::get<1>(*maybe_key).has_value()) {
+            key_timings[key]->first = now_ms;
+            key_timings[key]->second = nullopt;
+        }
+    }
 
     if (key.has_modifier()) {
         // if the regular key itself isn't marked as started, do so now
