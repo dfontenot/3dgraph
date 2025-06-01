@@ -18,4 +18,4 @@ jobs:
         uses: conan-io/setup-conan@v1
 
       - name: Build
-        run: bash ${{github.workspace}}/build.sh
+        run: ./build.sh
