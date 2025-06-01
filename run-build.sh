@@ -33,14 +33,24 @@ fi
 
 mkdir -p build
 
-# TODO: unify build type setting across this script and cmakelists.txt
-conan install . --output-folder=build --build=missing -s build_type=Debug
+# TODO: easier and less janky way to do this?
+RELEASE_SPECIFIED=Debug
+for arg in "$@"; do
+  if [[ "$arg" == "-DCMAKE_BUILD_TYPE=Release" ]]; then
+    RELEASE_SPECIFIED=Release
+  elif [[ "$arg" == "-DCMAKE_BUILD_TYPE=Debug" ]]; then
+    RELEASE_SPECIFIED=Debug
+  elif [[ "$arg" == "-DCMAKE_BUILD_TYPE=RelWithDebInfo" ]]; then
+    RELEASE_SPECIFIED=RelWithDebInfo
+  elif [[ "$arg" == "-DCMAKE_BUILD_TYPE=MinSizeRel" ]]; then
+    RELEASE_SPECIFIED=MinSizeRel
+  fi
+done
+
+conan install . --output-folder=build --build=missing -s build_type=$RELEASE_SPECIFIED
 
 cd build
-#cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-# TODO: fix this
-#cmake --preset conan-debug ..
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW $@
 cmake --build .
 ctest --output-on-failure
 
