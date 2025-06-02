@@ -98,17 +98,13 @@ constexpr size_t num_event_timings_maintain = 10;
 
 namespace {
 auto logger = spdlog::stdout_color_mt("event_loop");
-optional<vec3> no_rotational_axis{};
-optional<vec3> x_rotation_axis{x_axis};
-optional<vec3> y_rotation_axis{y_axis};
 } // namespace
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params)
     : model(model), view(view), projection(projection), function_params(function_params),
       function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
-      event_poll_timings(num_event_timings_maintain), rotational_axis_direction(0.0f),
-      rotational_axis(no_rotational_axis), active_keys(ActiveKeys(monitored_keys)) {
+      event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -267,50 +263,43 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     bool const left_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_A, start_ms);
     bool const right_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_D, start_ms);
 
-    // TODO: remove make_optional call each time, modify in place
+    auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
+    quat current(*model);
     if (up_key_timing != down_key_timing) {
         if (up_key_timing) {
             model_modified_ = true;
-            rotational_axis_direction = 1.0f;
-            rotational_axis = y_rotation_axis;
+            quat const rotation = angleAxis(rotations_rads, y_axis);
+            current = rotation * current;
         }
 
         if (down_key_timing) {
             model_modified_ = true;
-            rotational_axis = y_rotation_axis;
-            rotational_axis_direction = -1.0f;
+            quat const rotation = angleAxis(-rotations_rads, y_axis);
+            current = rotation * current;
         }
     }
 
     if (left_key_timing != right_key_timing) {
         if (left_key_timing) {
             model_modified_ = true;
-            rotational_axis_direction = -1.0f;
-            rotational_axis = x_rotation_axis;
+            quat const rotation = angleAxis(-rotations_rads, x_axis);
+            current = rotation * current;
         }
 
         if (right_key_timing) {
             model_modified_ = true;
-            rotational_axis_direction = 1.0f;
-            rotational_axis = x_rotation_axis;
+            quat const rotation = angleAxis(rotations_rads, x_axis);
+            current = rotation * current;
         }
     }
 
-    if (model_modified_ && rotational_axis.has_value()) {
-        quat const current(*model);
-
-        auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
-        quat const rotation = angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
-        quat const new_model_orientation = rotation * current;
-
-        ::logger->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
-        *model = toMat4(new_model_orientation);
+    if (model_modified_) {
+        ::logger->debug("will update model matrix from {0} to {1}", glm::quat_cast(*model), current);
+        *model = toMat4(current);
     }
 }
 
 bool EventLoop::drain_event_queue_should_exit() {
-    rotational_axis_direction = 0.0f;
-    rotational_axis = no_rotational_axis;
 
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_EVENT_QUIT) {
