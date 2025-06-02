@@ -1,8 +1,8 @@
 #include "consts.hpp"
 #include "event_loop.hpp"
 #include "function_params.hpp"
-#include "opengl_debug_callback.hpp"
 #include "glad/glad.h" // have to load glad first
+#include "opengl_debug_callback.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_opengl.h>

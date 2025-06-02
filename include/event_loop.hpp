@@ -50,7 +50,7 @@ class EventLoop {
                                                                                            uint64_t end_ms,
                                                                                            const Key &key) const;
     void process_function_mutation_keys(uint64_t start_ticks_ms);
-    void process_model_mutation_keys(uint64_t start_ticks_ms);
+    void process_model_mutation_keys(uint64_t start_ticks_ms, uint64_t end_ticks_ms);
 
 public:
     /**

@@ -258,7 +258,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     }
 }
 
-void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
+void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) {
     using std::get;
 
     bool const up_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_W, start_ms);
@@ -294,6 +294,17 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms) {
             rotational_axis_direction = 1.0f;
             rotational_axis = x_rotation_axis;
         }
+    }
+
+    if (model_modified_ && rotational_axis.has_value()) {
+        quat const current(*model);
+
+        auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
+        quat const rotation = angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
+        quat const new_model_orientation = rotation * current;
+
+        ::logger->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
+        *model = toMat4(new_model_orientation);
     }
 }
 
@@ -366,23 +377,10 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
         end_ticks_ns = absolute_max_end_ticks_ns - event_poll_timings.get_avg();
     }
 
-    auto const elapsed_millis = SDL_GetTicks() - start_ticks_ms;
-
     // TODO: track this overhead separately and use to compute how much input to process
-    // per tick
+    // per frame
     process_function_mutation_keys(start_ticks_ms);
-    process_model_mutation_keys(start_ticks_ms);
-
-    if (model_modified_ && rotational_axis.has_value()) {
-        quat const current(*model);
-
-        auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(elapsed_millis));
-        quat const rotation = angleAxis(rotations_rads * rotational_axis_direction, rotational_axis.value());
-        quat const new_model_orientation = rotation * current;
-
-        ::logger->debug("will update model matrix from {0} to {1}", current, new_model_orientation);
-        *model = toMat4(new_model_orientation);
-    }
+    process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
 
     return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
 }
