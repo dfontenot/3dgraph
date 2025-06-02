@@ -8,12 +8,12 @@ void main() {
 
     // once per patch
     if (gl_InvocationID == 0) {
-        gl_TessLevelOuter[0] = 3.0;
-        gl_TessLevelOuter[1] = 5.0;
-        gl_TessLevelOuter[2] = 3.0;
-        gl_TessLevelOuter[3] = 5.0;
+        gl_TessLevelOuter[0] = 9.0;
+        gl_TessLevelOuter[1] = 9.0;
+        gl_TessLevelOuter[2] = 9.0;
+        gl_TessLevelOuter[3] = 9.0;
 
         gl_TessLevelInner[0] = 9.0;
-        gl_TessLevelInner[1] = 7.0;
+        gl_TessLevelInner[1] = 9.0;
     }
 }

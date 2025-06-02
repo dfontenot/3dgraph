@@ -31,12 +31,23 @@ public:
     }
 };
 
-class ShaderProgramCompilationError : public WrappedOpenGLError {
+class ShaderProgramError : public WrappedOpenGLError {
 public:
-    ShaderProgramCompilationError(std::string &msg) : WrappedOpenGLError(msg) {
+    ShaderProgramError(std::string &msg) : WrappedOpenGLError(msg) {
     }
-    ShaderProgramCompilationError(char *msg) : WrappedOpenGLError(msg) {
+    ShaderProgramError(char *msg) : WrappedOpenGLError(msg) {
     }
-    ShaderProgramCompilationError(const char *msg) : WrappedOpenGLError(msg) {
+    ShaderProgramError(const char *msg) : WrappedOpenGLError(msg) {
     }
 };
+
+class ShaderProgramCompilationError : public ShaderProgramError {
+public:
+    ShaderProgramCompilationError(std::string &msg) : ShaderProgramError(msg) {
+    }
+    ShaderProgramCompilationError(char *msg) : ShaderProgramError(msg) {
+    }
+    ShaderProgramCompilationError(const char *msg) : ShaderProgramError(msg) {
+    }
+};
+

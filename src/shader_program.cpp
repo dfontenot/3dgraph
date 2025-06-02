@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <format>
 #include <initializer_list>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -25,15 +27,30 @@ using std::cerr;
 using std::endl;
 using std::for_each;
 using std::initializer_list;
+using std::make_optional;
+using std::nullopt;
+using std::optional;
 using std::shared_ptr;
 using std::string;
 using std::stringstream;
+
+namespace {
+optional<GLint> max_tess_level() {
+#if GL_ES
+    return nullopt;
+#else
+    GLint max_level;
+    glGetIntegerv(GL_MAX_TESS_GEN_LEVEL, &max_level);
+    return make_optional(max_level);
+#endif
+}
+} // namespace
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, shared_ptr<mat4> model,
                              shared_ptr<mat4> view, shared_ptr<mat4> projection,
                              shared_ptr<FunctionParams> function_params)
     : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
-      function_params(function_params) {
+      function_params(function_params), max_tessellation_level(::max_tess_level()) {
     using std::make_unique;
 
     assert(program_handle != 0);
@@ -75,6 +92,11 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
     }
 
     for (auto variable_name : uniform_variable_names) {
+        // clean up? very impl specific, might benefit from more general mechanism
+        if (variable_name == tessellation_level_variable_name && !shader_tessellation_enabled()) {
+            continue;
+        }
+
         GLint location = glGetUniformLocation(program_handle, variable_name);
         if (location < 0) {
             string msg = "unable to find uniform ";
@@ -124,10 +146,29 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("update uniforms due to existing error: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError("couldn't update uniforms due to existing error: " +
+                                 gl_get_error_string(current_error));
     }
 
     glUniform1f(uniform_locations[uniform_variable_name], value);
+
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
+        stringstream ss;
+        ss << "error setting uniform " << uniform_variable_name << " " << gl_get_error_string(current_error)
+           << " at location " << uniform_locations[uniform_variable_name] << endl;
+        throw WrappedOpenGLError(ss.str());
+    }
+}
+
+void ShaderProgram::set_uniform_1ui(const GLchar *uniform_variable_name, GLint value) {
+    auto current_error = glGetError();
+
+    if (current_error != GL_NO_ERROR) {
+        throw WrappedOpenGLError("couldn't update uniforms due to existing error: " +
+                                 gl_get_error_string(current_error));
+    }
+
+    glUniform1ui(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
         stringstream ss;
@@ -164,4 +205,21 @@ void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, 
            << " at location " << uniform_locations[uniform_variable_name] << endl;
         throw WrappedOpenGLError(ss.str());
     }
+}
+
+bool ShaderProgram::shader_tessellation_enabled() const {
+    return max_tessellation_level.has_value();
+}
+
+void ShaderProgram::set_tessellation_level(GLint level) {
+    if (! shader_tessellation_enabled()) {
+        return;
+    }
+
+    if (level < min_tessellation_level || level > *max_tessellation_level) {
+        string err = std::format("invalid tessellation level {}", level);
+        throw ShaderProgramError(err);
+    }
+
+    set_uniform_1ui(tessellation_level_variable_name, level);
 }

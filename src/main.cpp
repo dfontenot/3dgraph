@@ -49,6 +49,8 @@ using std::size_t;
 using std::string;
 using std::stringstream;
 
+static constexpr GLint default_tessellation_level = 9;
+
 // source: https://stackoverflow.com/a/19152438/854854
 template <class T, size_t N> ostream &operator<<(ostream &o, const array<T, N> &arr) {
     copy(arr.cbegin(), arr.cend(), ostream_iterator<T>(o, " "));
