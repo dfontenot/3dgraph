@@ -5,10 +5,12 @@
 #include "function_params.hpp"
 #include "key.hpp"
 #include "mouse_loc.hpp"
+#include "tessellation_settings.hpp"
 #include "tick_result.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 #include <cstddef>
@@ -19,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+#include <variant>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -44,49 +47,37 @@ using glm::quat;
 using glm::toMat4;
 using glm::vec3;
 
-constexpr double pi = 3.1415926;
+static const constexpr double pi = 3.1415926;
 
 /**
  * how much to rotate / orbit in any direction
  * NOTE: manually tuned
  */
-constexpr double rotation_max_degrees_second = 20.0;
-constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
-constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
+static const constexpr double rotation_max_degrees_second = 20.0;
+static const constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
+static const constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 
-constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
-constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
+static const constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
+static const constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
 /**
  * how much to pan the 3d function per frame
  * NOTE: manually tuned
  */
-constexpr GLfloat panning_delta_per_ms = 0.0005f;
+static const constexpr GLfloat panning_delta_per_ms = 0.0005f;
 
 /**
  * how much to change the 3d function z mult per frame
  * NOTE: manually tuned
  */
-constexpr GLfloat z_mult_delta_per_ms = 0.001f;
+static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 
-constexpr initializer_list<SDL_Scancode> function_param_mutation_keys = {
-    SDL_SCANCODE_UP,
-    SDL_SCANCODE_DOWN,
-    SDL_SCANCODE_LEFT,
-    SDL_SCANCODE_RIGHT,
-};
-
-constexpr initializer_list<SDL_Scancode> model_mutation_keys = {
-    SDL_SCANCODE_W,
-    SDL_SCANCODE_A,
-    SDL_SCANCODE_S,
-    SDL_SCANCODE_D,
-};
-
-// TODO: constexpr combine these
-constexpr initializer_list<SDL_Scancode> monitored_keys = {
-    SDL_SCANCODE_W,  SDL_SCANCODE_A,    SDL_SCANCODE_S,    SDL_SCANCODE_D,
-    SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT,
+static const constexpr initializer_list<Keyish> monitored_keys = {
+    Keyish{SDL_SCANCODE_W},    Keyish{SDL_SCANCODE_A},
+    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
+    Keyish{SDL_SCANCODE_UP},   Keyish{SDL_SCANCODE_DOWN},
+    Keyish{SDL_SCANCODE_LEFT}, Keyish{SDL_SCANCODE_RIGHT},
+    Keyish{SDLK_PLUS},         Keyish{SDLK_MINUS},
 };
 
 /**
@@ -101,10 +92,11 @@ auto logger = spdlog::stdout_color_mt("event_loop");
 } // namespace
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
-                     shared_ptr<FunctionParams> function_params)
+                     shared_ptr<FunctionParams> function_params, shared_ptr<TessellationSettings> tessellation_settings)
     : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false), model_modified_(false), start_click(nullopt),
-      event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)) {
+      function_params_modified_(false), view_modified_(false), model_modified_(false),
+      tessellation_settings_modified_(false), start_click(nullopt), event_poll_timings(num_event_timings_maintain),
+      active_keys(ActiveKeys(monitored_keys)), tessellation_settings(tessellation_settings) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -372,4 +364,8 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
 
     return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
+}
+
+bool EventLoop::tessellation_settings_modified() const {
+    return tessellation_settings_modified_;
 }

@@ -34,23 +34,11 @@ using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
-namespace {
-optional<GLint> max_tess_level() {
-#if GL_ES
-    return nullopt;
-#else
-    GLint max_level;
-    glGetIntegerv(GL_MAX_TESS_GEN_LEVEL, &max_level);
-    return make_optional(max_level);
-#endif
-}
-} // namespace
-
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, shared_ptr<mat4> model,
                              shared_ptr<mat4> view, shared_ptr<mat4> projection,
                              shared_ptr<FunctionParams> function_params)
     : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
-      function_params(function_params), max_tessellation_level(::max_tess_level()) {
+      function_params(function_params), max_tessellation_level(get_max_tessellation_level()) {
     using std::make_unique;
 
     assert(program_handle != 0);

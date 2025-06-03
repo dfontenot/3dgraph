@@ -2,10 +2,12 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 #include <initializer_list>
 #include <optional>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using std::initializer_list;
@@ -33,10 +35,19 @@ ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
     }
 }
 
-ActiveKeys::ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes) {
+ActiveKeys::ActiveKeys(initializer_list<SDL_Scancode> scan_codes) {
     for (auto const scan_code : scan_codes) {
         monitored_keys.push_back(scan_code);
         auto const key = Key(scan_code);
+        key_timings.insert({key, nullopt});
+        key_timings.insert({key.copy_shifted(), nullopt});
+    }
+}
+
+ActiveKeys::ActiveKeys(initializer_list<Keyish> keys_to_monitor) {
+    for (auto const keyish : keys_to_monitor) {
+        auto const key = Key(keyish);
+        monitored_keys.push_back(key.get_scan_code());
         key_timings.insert({key, nullopt});
         key_timings.insert({key.copy_shifted(), nullopt});
     }

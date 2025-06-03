@@ -1,12 +1,17 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
+#include <variant>
+
+using Keyish = std::variant<SDL_Scancode, SDL_Keycode>;
 
 class KeyHash;
 
 class Key {
     SDL_Scancode scan_code;
+    SDL_Keycode key_code;
     SDL_Keymod key_mod;
 
     friend bool operator==(const Key &lhs, const Key &rhs);
@@ -14,14 +19,15 @@ class Key {
 
 public:
     Key() = delete;
-    Key(SDL_Scancode scan_code) : scan_code(scan_code), key_mod(SDL_KMOD_NONE) {
-    }
-
-    Key(SDL_Scancode scan_code, SDL_Keymod key_mod) : scan_code(scan_code), key_mod(key_mod) {
-    }
+    explicit Key(SDL_Scancode scan_code);
+    explicit Key(SDL_Scancode scan_code, SDL_Keymod key_mod);
+    explicit constexpr Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod);
+    explicit Key(SDL_Keycode key_code);
+    Key(Keyish const &keyish);
 
     SDL_Scancode get_scan_code() const;
     SDL_Keymod get_key_mod() const;
+    SDL_Keycode get_key_code() const;
     bool has_modifier() const;
     bool has_shift() const;
 

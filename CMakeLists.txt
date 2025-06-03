@@ -19,7 +19,18 @@ find_package(spdlog REQUIRED)
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 
 # main executable
-add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader_program.cpp src/glad.c src/gl_inspect.cpp src/event_loop.cpp src/opengl_debug_callback.cpp src/active_keys.cpp src/key.cpp)
+add_executable(${PROJECT_NAME}
+  src/active_keys.cpp
+  src/event_loop.cpp
+  src/glad.c
+  src/gl_inspect.cpp
+  src/key.cpp
+  src/main.cpp
+  src/opengl_debug_callback.cpp
+  src/shader.cpp
+  src/shader_program.cpp
+  src/tessellation_settings.cpp
+)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
@@ -45,7 +56,12 @@ target_include_directories(${PROJECT_NAME}
 enable_testing()
 set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 
-add_executable(${PROJECT_NAME}_test test/key_test.cpp test/active_keys_test.cpp src/active_keys.cpp src/key.cpp)
+add_executable(${PROJECT_NAME}_test
+  test/active_keys_test.cpp
+  src/active_keys.cpp
+  src/key.cpp
+  test/key_test.cpp
+)
 
 # NOTE: lcov does not like the output of the coverage files
 # coverage is currently broken

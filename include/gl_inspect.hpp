@@ -2,6 +2,7 @@
 
 #include "glad/glad.h"
 #include <string>
+#include <optional>
 
 /**
  * @brief similar to glu
@@ -20,3 +21,8 @@ std::string gl_get_error_string(GLenum err);
  * @return string rep of the error
  */
 std::string gl_get_error_string();
+
+/**
+ * @return get max tessellation level, or nullopt on unsupported
+ */
+std::optional<GLint> get_max_tessellation_level();

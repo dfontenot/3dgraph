@@ -3,8 +3,8 @@
 #include "function_params.hpp"
 #include "glad/glad.h" // have to load glad first
 #include "opengl_debug_callback.hpp"
+#include "tessellation_settings.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_opengl.h>
 
 #include <SDL3/SDL_timer.h>
@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
         auto projection =
             make_shared<mat4>(perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f));
         auto function_params = make_shared<FunctionParams>();
+        auto tessellation_settings = make_shared<TessellationSettings>();
 
         auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
@@ -158,7 +159,7 @@ int main(int argc, char *argv[]) {
         program.release();
 
         MaxDeque<uint64_t> render_timings(10);
-        EventLoop event_loop{model, view, projection, function_params};
+        EventLoop event_loop{model, view, projection, function_params, tessellation_settings};
         while (true) {
             auto const tick_result = event_loop.process_frame(render_timings.get_avg());
             if (tick_result.should_exit) {

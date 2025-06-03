@@ -2,11 +2,13 @@
 
 #include "key.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <cstdint>
 #include <initializer_list>
 #include <optional>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 // TODO: refactor to make private
@@ -28,6 +30,7 @@ public:
      * if a key with a modifier is specified, it will only listen to that exact key
      */
     ActiveKeys(std::initializer_list<Key> keys_to_monitor);
+    ActiveKeys(std::initializer_list<std::variant<SDL_Scancode, SDL_Keycode>> keys_to_monitor);
     ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes);
 
     /**

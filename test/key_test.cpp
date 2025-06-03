@@ -1,13 +1,17 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 #include <unordered_set>
+#include <variant>
 
 class KeyTest : public ::testing::Test {
 protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;
     static auto const any_keymod = SDL_KMOD_CTRL;
+    static auto const any_keycode = SDLK_D;
 };
 
 TEST_F(KeyTest, CtorScancodeOnly) {
@@ -21,10 +25,23 @@ TEST_F(KeyTest, CtorWithMod) {
     EXPECT_FALSE(key.has_shift());
 }
 
+TEST_F(KeyTest, CtorWithAllCodes) {
+    auto const e_key_scan_code = Key(SDL_SCANCODE_E);
+    auto const e_key_key_code = Key(SDLK_E);
+    EXPECT_EQ(e_key_key_code, e_key_scan_code);
+}
+
+TEST_F(KeyTest, CtorFromVariant) {
+    Keyish const scan_code_variant{SDL_SCANCODE_E};
+    Keyish const key_code_variant{SDLK_E};
+    EXPECT_EQ(scan_code_variant, key_code_variant);
+}
+
 TEST_F(KeyTest, Getters) {
     auto const key = Key(any_scancode, any_keymod);
     auto const expected_keymod = any_keymod;
     auto const expected_scancode = any_scancode;
+    auto const expected_keycode = any_keycode;
 
     /*
      * NOTE: these macros appear to be doing something, only when inside of a TEST_F,
@@ -33,6 +50,7 @@ TEST_F(KeyTest, Getters) {
      */
     EXPECT_EQ(key.get_key_mod(), expected_keymod);
     EXPECT_EQ(key.get_scan_code(), expected_scancode);
+    EXPECT_EQ(key.get_key_code(), expected_keycode);
 }
 
 TEST_F(KeyTest, CopyShifted) {

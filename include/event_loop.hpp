@@ -6,6 +6,7 @@
 #include "key.hpp"
 #include "max_deque.hpp"
 #include "mouse_loc.hpp"
+#include "tessellation_settings.hpp"
 #include "tick_result.hpp"
 #include <SDL3/SDL.h>
 #include <cstdint>
@@ -22,6 +23,7 @@ class EventLoop {
     std::shared_ptr<glm::mat4> view;
     std::shared_ptr<glm::mat4> projection;
     std::shared_ptr<FunctionParams> function_params;
+    std::shared_ptr<TessellationSettings> tessellation_settings;
     MaxDeque<uint64_t> event_poll_timings;
     ActiveKeys active_keys;
 
@@ -29,6 +31,7 @@ class EventLoop {
     bool function_params_modified_;
     bool model_modified_;
     bool view_modified_;
+    bool tessellation_settings_modified_;
     std::optional<MouseLoc> start_click;
 
     /**
@@ -52,13 +55,14 @@ class EventLoop {
 
 public:
     /**
-     * returns how long the tick took to run
+     * @return how long the frame took to run
      */
     TickResult process_frame(uint64_t render_time_ns);
 
     EventLoop() = delete;
     EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
-              std::shared_ptr<FunctionParams> function_params);
+              std::shared_ptr<FunctionParams> function_params,
+              std::shared_ptr<TessellationSettings> tessellation_settings);
 
     /**
      * if the view (zoom, pan, etc.) was changed in any way during the tick
@@ -74,4 +78,6 @@ public:
      * if the parameters of the 3D function that is being displayed were changed during the tick
      */
     bool function_params_modified() const;
+
+    bool tessellation_settings_modified() const;
 };

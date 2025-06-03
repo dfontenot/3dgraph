@@ -1,20 +1,54 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <cstddef>
 #include <functional>
+#include <variant>
 
 using std::size_t;
+using std::variant;
 
 bool operator==(const Key &lhs, const Key &rhs) {
-    return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod;
+    return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod && lhs.key_code == rhs.key_code;
 }
 
 size_t KeyHash::operator()(const Key &key) const {
     size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.scan_code);
     size_t key_mod_hash = std::hash<SDL_Keymod>{}(key.key_mod);
     return scan_code_hash ^ (key_mod_hash << 1);
+}
+
+Key::Key(SDL_Scancode scan_code)
+    : scan_code(scan_code), key_mod(SDL_KMOD_NONE), key_code(SDL_GetKeyFromScancode(scan_code, SDL_KMOD_NONE, true)) {
+}
+
+Key::Key(SDL_Scancode scan_code, SDL_Keymod key_mod)
+    : scan_code(scan_code), key_mod(key_mod), key_code(SDL_GetKeyFromScancode(scan_code, key_mod, true)) {
+}
+
+Key::Key(SDL_Keycode key_code) {
+    this->key_code = key_code;
+    this->scan_code = SDL_GetScancodeFromKey(key_code, &key_mod);
+}
+
+constexpr Key::Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod)
+    : scan_code(scan_code), key_code(key_code), key_mod(key_mod) {
+}
+
+Key::Key(Keyish const &keyish) {
+    using std::holds_alternative;
+
+    if (holds_alternative<SDL_Scancode>(keyish)) {
+        this->scan_code = std::get<SDL_Scancode>(keyish);
+        this->key_mod = SDL_KMOD_NONE;
+        this->key_code = SDL_GetKeyFromScancode(this->scan_code, this->key_mod, true);
+    }
+    else {
+        this->key_code = std::get<SDL_Keycode>(keyish);
+        this->scan_code = SDL_GetScancodeFromKey(this->key_code, &key_mod);
+    }
 }
 
 SDL_Scancode Key::get_scan_code() const {
@@ -52,4 +86,8 @@ Key Key::shift_mod_complement() const {
     else {
         return Key(scan_code, SDL_KMOD_SHIFT);
     }
+}
+
+SDL_Keycode Key::get_key_code() const {
+    return key_code;
 }

@@ -2,6 +2,7 @@
 
 #include "glad/glad.h"
 
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -9,6 +10,7 @@
 using std::runtime_error;
 using std::string;
 using std::stringstream;
+using std::make_optional;
 
 string shader_type_to_string(GLenum shader_type) {
     if (shader_type == GL_VERTEX_SHADER) {
@@ -65,4 +67,14 @@ string gl_get_error_string(GLenum err) {
 
 string gl_get_error_string() {
     return gl_get_error_string(glGetError());
+}
+
+std::optional<GLint> get_max_tessellation_level() {
+#if GL_ES
+    return nullopt;
+#else
+    GLint max_level;
+    glGetIntegerv(GL_MAX_TESS_GEN_LEVEL, &max_level);
+    return make_optional(max_level);
+#endif
 }
