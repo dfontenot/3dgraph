@@ -7,13 +7,26 @@ class TessellationSettings {
     bool hardware_tessellation_supported;
 
 public:
+    /**
+     * prereq: must have opengl initialized before calling
+     */
     TessellationSettings();
-    TessellationSettings(GLint tessellation_level);
+    TessellationSettings(GLuint tessellation_level);
 
     /**
      * @return true if the level is possible
      */
-    bool set_level(GLint new_level);
+    bool set_level(GLuint new_level);
+
+    /**
+     * @return true if the new level is possible
+     */
+    bool increment_level();
+
+    /**
+     * @return true if the new level is possible
+     */
+    bool decrement_level();
 
     /**
      * @return the current tessellation level

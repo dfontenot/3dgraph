@@ -48,9 +48,14 @@ class ShaderProgram {
 public:
     ShaderProgram() = delete;
     // TODO: more ergonomic ways of constructing this class
+
+    /**
+     * prereq: must have opengl initialized before calling
+     */
     ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shaders, std::shared_ptr<glm::mat4> model,
                   std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
-                  std::shared_ptr<FunctionParams> function_params);
+                  std::shared_ptr<FunctionParams> function_params,
+                  std::shared_ptr<TessellationSettings> tessellation_settings);
     ~ShaderProgram();
 
     void use();

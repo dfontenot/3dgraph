@@ -7,7 +7,6 @@
 #include <initializer_list>
 #include <optional>
 #include <utility>
-#include <variant>
 #include <vector>
 
 using std::initializer_list;
@@ -208,5 +207,10 @@ bool ActiveKeys::was_key_pressed_since(const Key &key, uint64_t start_ms) const 
 
 bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const {
     auto const key = Key(scan_code);
+    return was_key_pressed_since(key, start_ms) || was_key_pressed_since(key.shift_mod_complement(), start_ms);
+}
+
+bool ActiveKeys::was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const {
+    auto const key = Key(key_code);
     return was_key_pressed_since(key, start_ms) || was_key_pressed_since(key.shift_mod_complement(), start_ms);
 }

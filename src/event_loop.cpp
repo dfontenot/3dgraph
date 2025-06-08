@@ -21,7 +21,6 @@
 #include <memory>
 #include <optional>
 #include <tuple>
-#include <variant>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -72,12 +71,15 @@ static const constexpr GLfloat panning_delta_per_ms = 0.0005f;
  */
 static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 
+/**
+ * how long in between tess level changes to allow
+ */
+static const constexpr uint64_t msec_between_tess_level_changes = 500;
+
 static const constexpr initializer_list<Keyish> monitored_keys = {
-    Keyish{SDL_SCANCODE_W},    Keyish{SDL_SCANCODE_A},
-    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
-    Keyish{SDL_SCANCODE_UP},   Keyish{SDL_SCANCODE_DOWN},
-    Keyish{SDL_SCANCODE_LEFT}, Keyish{SDL_SCANCODE_RIGHT},
-    Keyish{SDLK_PLUS},         Keyish{SDLK_MINUS},
+    Keyish{SDL_SCANCODE_W},  Keyish{SDL_SCANCODE_A},    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
+    Keyish{SDL_SCANCODE_UP}, Keyish{SDL_SCANCODE_DOWN}, Keyish{SDL_SCANCODE_LEFT}, Keyish{SDL_SCANCODE_RIGHT},
+    Keyish{SDLK_PLUS},       Keyish{SDLK_MINUS},
 };
 
 /**
@@ -96,7 +98,8 @@ EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<m
     : model(model), view(view), projection(projection), function_params(function_params),
       function_params_modified_(false), view_modified_(false), model_modified_(false),
       tessellation_settings_modified_(false), start_click(nullopt), event_poll_timings(num_event_timings_maintain),
-      active_keys(ActiveKeys(monitored_keys)), tessellation_settings(tessellation_settings) {
+      active_keys(ActiveKeys(monitored_keys)), tessellation_settings(tessellation_settings),
+      last_tessellation_change_at_msec(nullopt) {
 }
 
 bool EventLoop::function_params_modified() const {
@@ -111,9 +114,8 @@ bool EventLoop::model_modified() const {
     return model_modified_;
 }
 
-optional<tuple<Key, uint64_t, uint64_t>> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms,
-                                                                                        uint64_t end_ms,
-                                                                                        const Key &key) const {
+optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
+                                                                   const Key &key) const {
     using std::get;
 
     // TODO this is a bit of a leaky abstraction because eventloop knows that activekeys only
@@ -246,6 +248,29 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     }
 }
 
+void EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms) {
+    if (last_tessellation_change_at_msec.has_value() &&
+        *last_tessellation_change_at_msec + msec_between_tess_level_changes > start_ticks_ms) {
+        // not long enough since last tessellation level change occurred
+        return;
+    }
+
+    bool const plus_key_timing = active_keys.was_key_pressed_since(SDLK_PLUS, start_ticks_ms);
+    bool const minus_key_timing = active_keys.was_key_pressed_since(SDLK_MINUS, start_ticks_ms);
+
+    if (plus_key_timing != minus_key_timing) {
+        if (plus_key_timing) {
+            tessellation_settings_modified_ = true;
+            tessellation_settings->increment_level();
+        }
+
+        if (minus_key_timing) {
+            tessellation_settings_modified_ = true;
+            tessellation_settings->decrement_level();
+        }
+    }
+}
+
 void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) {
     using std::get;
 
@@ -362,6 +387,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     // per frame
     process_function_mutation_keys(start_ticks_ms);
     process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
+    process_tessellation_mutation_keys(start_ticks_ms);
 
     return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
 }

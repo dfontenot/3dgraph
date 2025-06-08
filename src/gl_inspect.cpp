@@ -8,10 +8,10 @@
 #include <stdexcept>
 #include <string>
 
+using std::make_optional;
 using std::runtime_error;
 using std::string;
 using std::stringstream;
-using std::make_optional;
 
 string shader_type_to_string(GLenum shader_type) {
     if (shader_type == GL_VERTEX_SHADER) {

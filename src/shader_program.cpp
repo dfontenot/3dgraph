@@ -19,6 +19,7 @@
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "shader_program.hpp"
+#include "tessellation_settings.hpp"
 
 using glm::mat4;
 using glm::value_ptr;
@@ -27,18 +28,16 @@ using std::cerr;
 using std::endl;
 using std::for_each;
 using std::initializer_list;
-using std::make_optional;
-using std::nullopt;
-using std::optional;
 using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
 ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, shared_ptr<mat4> model,
                              shared_ptr<mat4> view, shared_ptr<mat4> projection,
-                             shared_ptr<FunctionParams> function_params)
+                             shared_ptr<FunctionParams> function_params,
+                             shared_ptr<TessellationSettings> tessellation_settings)
     : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
-      function_params(function_params) {
+      function_params(function_params), tessellation_settings(tessellation_settings) {
     using std::make_unique;
 
     assert(program_handle != 0);

@@ -17,6 +17,8 @@
 #include <glm/vec3.hpp>
 #include <optional>
 
+using KeyAtTime = std::tuple<Key, uint64_t, uint64_t>;
+
 class EventLoop {
     SDL_Event evt;
     std::shared_ptr<glm::mat4> model;
@@ -32,6 +34,7 @@ class EventLoop {
     bool model_modified_;
     bool view_modified_;
     bool tessellation_settings_modified_;
+    std::optional<uint64_t> last_tessellation_change_at_msec;
     std::optional<MouseLoc> start_click;
 
     /**
@@ -47,11 +50,11 @@ class EventLoop {
      * keys that were released after the start time are excluded, and keys that are still currently pressed will
      * report end_ms as their end time
      */
-    std::optional<std::tuple<Key, uint64_t, uint64_t>> which_key_variant_was_pressed_since(uint64_t start_ms,
-                                                                                           uint64_t end_ms,
-                                                                                           const Key &key) const;
+    std::optional<KeyAtTime> which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
+                                                                 const Key &key) const;
     void process_function_mutation_keys(uint64_t start_ticks_ms);
     void process_model_mutation_keys(uint64_t start_ticks_ms, uint64_t end_ticks_ms);
+    void process_tessellation_mutation_keys(uint64_t start_ticks_ms);
 
 public:
     /**

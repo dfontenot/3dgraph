@@ -146,8 +146,12 @@ int main(int argc, char *argv[]) {
         auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
 
-        ShaderProgram program{
-            {vertex_shader, tsc_shader, tes_shader, fragment_shader}, model, view, projection, function_params};
+        ShaderProgram program{{vertex_shader, tsc_shader, tes_shader, fragment_shader},
+                              model,
+                              view,
+                              projection,
+                              function_params,
+                              tessellation_settings};
 
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 

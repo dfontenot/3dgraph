@@ -56,6 +56,7 @@ public:
      */
     bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
     bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
+    bool was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const;
 
     /**
      * sync the state with SDL_GetKeyboardState
