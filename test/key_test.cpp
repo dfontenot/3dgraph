@@ -1,10 +1,7 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_oldnames.h>
-#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 #include <unordered_set>
-#include <variant>
 
 class KeyTest : public ::testing::Test {
 protected:

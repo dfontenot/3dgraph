@@ -3,7 +3,7 @@
 #include "glad/glad.h"
 
 class TessellationSettings {
-    GLint tessellation_level;
+    GLuint tessellation_level;
     bool hardware_tessellation_supported;
 
 public:
@@ -18,7 +18,7 @@ public:
     /**
      * @return the current tessellation level
      */
-    GLint get_level() const;
+    GLuint get_level() const;
 
     /**
      * @return if hardware tessellation is supported

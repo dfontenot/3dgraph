@@ -54,6 +54,7 @@ Key::Key(Keyish const &keyish) {
 SDL_Scancode Key::get_scan_code() const {
     return scan_code;
 }
+
 SDL_Keymod Key::get_key_mod() const {
     return key_mod;
 }

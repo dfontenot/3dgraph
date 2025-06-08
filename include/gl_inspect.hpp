@@ -25,4 +25,4 @@ std::string gl_get_error_string();
 /**
  * @return get max tessellation level, or nullopt on unsupported
  */
-std::optional<GLint> get_max_tessellation_level();
+std::optional<GLuint> get_max_tessellation_level();

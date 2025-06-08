@@ -2,6 +2,7 @@
 
 #include "glad/glad.h"
 
+#include <cassert>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -69,12 +70,14 @@ string gl_get_error_string() {
     return gl_get_error_string(glGetError());
 }
 
-std::optional<GLint> get_max_tessellation_level() {
+std::optional<GLuint> get_max_tessellation_level() {
 #if GL_ES
     return nullopt;
 #else
     GLint max_level;
     glGetIntegerv(GL_MAX_TESS_GEN_LEVEL, &max_level);
-    return make_optional(max_level);
+
+    assert(max_level > 0);
+    return make_optional(static_cast<GLuint>(max_level));
 #endif
 }

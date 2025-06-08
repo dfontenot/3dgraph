@@ -149,7 +149,7 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     }
 }
 
-void ShaderProgram::set_uniform_1ui(const GLchar *uniform_variable_name, GLint value) {
+void ShaderProgram::set_uniform_1ui(const GLchar *uniform_variable_name, GLuint value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {

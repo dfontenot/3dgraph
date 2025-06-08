@@ -42,7 +42,7 @@ class ShaderProgram {
     std::shared_ptr<TessellationSettings> tessellation_settings;
 
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
-    void set_uniform_1ui(const GLchar *uniform_variable_name, GLint value);
+    void set_uniform_1ui(const GLchar *uniform_variable_name, GLuint value);
     void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> value);
 
 public:

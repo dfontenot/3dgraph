@@ -12,14 +12,10 @@ static constexpr const GLint default_tessellation_level = 9;
 static constexpr const GLint max_software_tessellation_level = 128;
 
 namespace {
-static const optional<GLint> max_tessellation_level = get_max_tessellation_level();
-bool tessellation_level_ok(GLint requested_level) {
+static const optional<GLuint> max_tessellation_level = get_max_tessellation_level();
+bool tessellation_level_ok(GLuint requested_level) {
     if ((max_tessellation_level.has_value() && requested_level > *max_tessellation_level) ||
         (!max_tessellation_level.has_value() && requested_level > max_software_tessellation_level)) {
-        return false;
-    }
-
-    if (requested_level <= 0) {
         return false;
     }
 
@@ -54,7 +50,7 @@ bool TessellationSettings::set_level(GLint new_level) {
     return true;
 }
 
-GLint TessellationSettings::get_level() const {
+GLuint TessellationSettings::get_level() const {
     return tessellation_level;
 }
 
