@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
+#include <iostream>
 #include <variant>
 
 using Keyish = std::variant<SDL_Scancode, SDL_Keycode>;
@@ -16,6 +17,7 @@ class Key {
 
     friend bool operator==(const Key &lhs, const Key &rhs);
     friend KeyHash;
+    friend std::ostream& operator<<(std::ostream& stream, const Key& key);
 
 public:
     Key() = delete;

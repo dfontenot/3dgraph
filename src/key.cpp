@@ -5,10 +5,16 @@
 #include <SDL3/SDL_scancode.h>
 #include <cstddef>
 #include <functional>
+#include <iostream>
 #include <variant>
 
 using std::size_t;
 using std::variant;
+
+std::ostream& operator<<(std::ostream& stream, const Key& key) {
+    stream << "{ Key: " << key.scan_code << " " << key.key_mod << " " << key.key_code << " }";
+    return stream;
+}
 
 bool operator==(const Key &lhs, const Key &rhs) {
     return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod && lhs.key_code == rhs.key_code;

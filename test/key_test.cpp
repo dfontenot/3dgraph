@@ -1,5 +1,7 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 #include <unordered_set>
 
@@ -38,6 +40,13 @@ TEST_F(KeyTest, CtorFromVariant) {
     const Key key_from_key_code{key_code_variant};
 
     EXPECT_EQ(key_from_scan_code, key_from_key_code);
+}
+
+TEST_F(KeyTest, FromKeyCodeHasCorrectMod) {
+    const Key from_key_code{SDLK_PLUS};
+    const Key from_scan_code{SDL_SCANCODE_EQUALS, SDL_KMOD_SHIFT};
+
+    EXPECT_EQ(from_scan_code, from_key_code);
 }
 
 TEST_F(KeyTest, Getters) {
