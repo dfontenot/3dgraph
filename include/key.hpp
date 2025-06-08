@@ -1,8 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
+#include <format>
 #include <iostream>
 #include <variant>
 
@@ -18,6 +17,7 @@ class Key {
     friend bool operator==(const Key &lhs, const Key &rhs);
     friend KeyHash;
     friend std::ostream& operator<<(std::ostream& stream, const Key& key);
+    friend std::formatter<Key>;
 
 public:
     Key() = delete;

@@ -1,11 +1,10 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
+#include "sdl_test.hpp"
 #include <gtest/gtest.h>
 #include <unordered_set>
 
-class KeyTest : public ::testing::Test {
+class KeyTest : public SDLTest {
 protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;

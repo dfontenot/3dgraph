@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_BUILD_TYPE Debug)
 
 find_package(cpptrace REQUIRED)
-find_package(fmt REQUIRED)
 find_package(glm REQUIRED)
 find_package(GTest REQUIRED)
 find_package(opengl_system REQUIRED)
@@ -20,6 +19,7 @@ set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 
 # main executable
 add_executable(${PROJECT_NAME}
+  include/formatters.hpp
   src/active_keys.cpp
   src/event_loop.cpp
   src/glad.c
@@ -42,7 +42,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE OPENGL_DEBUG)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace
-  PRIVATE fmt::fmt
   PRIVATE glm::glm
   PRIVATE opengl::opengl
   PRIVATE SDL3::SDL3
@@ -57,9 +56,10 @@ enable_testing()
 set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 
 add_executable(${PROJECT_NAME}_test
-  test/active_keys_test.cpp
+  include/formatters.hpp
   src/active_keys.cpp
   src/key.cpp
+  test/active_keys_test.cpp
   test/key_test.cpp
 )
 
@@ -74,7 +74,6 @@ if(TEST_WITH_COVERAGE)
 endif()
 
 target_link_libraries(${PROJECT_NAME}_test 
-  PRIVATE fmt::fmt
   PRIVATE glm::glm
   # TODO: these are incorrect sourcing a globally installed gtest instead of
   # the one defined in the conan files
@@ -84,6 +83,7 @@ target_link_libraries(${PROJECT_NAME}_test
 target_compile_features(${PROJECT_NAME}_test PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME}_test
   PRIVATE ${3dgraph_SOURCE_DIR}/include
+  PRIVATE ${3dgraph_SOURCE_DIR}/test/include
 )
 
 include(GoogleTest)

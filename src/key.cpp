@@ -11,10 +11,20 @@
 using std::size_t;
 using std::variant;
 
-std::ostream& operator<<(std::ostream& stream, const Key& key) {
-    stream << "{ Key: " << key.scan_code << " " << key.key_mod << " " << key.key_code << " }";
+std::ostream &operator<<(std::ostream &stream, const Key &key) {
+    stream << "{ Key: scan " << key.scan_code << " mod " << key.key_mod << " key " << key.key_code << " }";
     return stream;
 }
+
+template <> struct std::formatter<Key> {
+    template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
+        return std::format_to(ctx.out(), "{ Key scan {0} mod {1} key {2} }", obj.scan_code, obj.key_mod, obj.key_code);
+    }
+};
 
 bool operator==(const Key &lhs, const Key &rhs) {
     return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod && lhs.key_code == rhs.key_code;

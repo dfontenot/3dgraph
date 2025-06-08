@@ -1,7 +1,6 @@
 #include "event_loop.hpp"
 #include "active_keys.hpp"
 #include "consts.hpp"
-#include "formatters.hpp"
 #include "function_params.hpp"
 #include "key.hpp"
 #include "mouse_loc.hpp"

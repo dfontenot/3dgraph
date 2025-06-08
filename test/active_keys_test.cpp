@@ -3,28 +3,18 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_timer.h>
+#include "sdl_test.hpp"
 #include <gtest/gtest.h>
 #include <optional>
-#include <stdexcept>
 #include <utility>
 
 using std::nullopt;
 
-class ActiveKeysTest : public ::testing::Test {
+class ActiveKeysTest : public SDLTest {
 protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;
     static auto const any_keymod = SDL_KMOD_CTRL;
-
-    void SetUp() override {
-        if (!SDL_Init(SDL_INIT_EVENTS)) {
-            throw std::runtime_error("could not init sdl");
-        }
-    }
-
-    void TearDown() override {
-        SDL_Quit();
-    }
 };
 
 TEST_F(ActiveKeysTest, StartListenToKey) {
