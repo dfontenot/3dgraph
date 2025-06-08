@@ -4,7 +4,6 @@ glm/1.0.1
 gtest/1.16.0
 opengl/system
 sdl/3.2.14
-spdlog/1.15.3
 
 [generators]
 CMakeDeps
@@ -24,4 +23,3 @@ sdl/*:xinerama=False
 sdl/*:iconv=False
 sdl/*:wayland=False
 sdl/*:pulseaudio=False
-spdlog/*:use_std_format=True

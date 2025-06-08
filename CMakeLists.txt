@@ -8,6 +8,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_BUILD_TYPE Debug)
 
+include(FetchContent)
+
+# workaround for https://github.com/conan-io/conan-center-index/issues/25185
+FetchContent_Declare(spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog
+  GIT_SHALLOW 1
+  GIT_TAG v1.15.3
+)
+
+# see https://github.com/gabime/spdlog/blob/5532231bbc31bbdf95ac15febdac0413ee1d07ad/CMakeLists.txt#L28
+set(SPDLOG_USE_STD_FORMAT ON)
+FetchContent_MakeAvailable(spdlog)
+
 find_package(cpptrace REQUIRED)
 find_package(glm REQUIRED)
 find_package(GTest REQUIRED)
@@ -19,7 +32,6 @@ set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 
 # main executable
 add_executable(${PROJECT_NAME}
-  include/formatters.hpp
   src/active_keys.cpp
   src/event_loop.cpp
   src/glad.c
@@ -31,6 +43,8 @@ add_executable(${PROJECT_NAME}
   src/shader_program.cpp
   src/tessellation_settings.cpp
 )
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
@@ -56,12 +70,13 @@ enable_testing()
 set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 
 add_executable(${PROJECT_NAME}_test
-  include/formatters.hpp
   src/active_keys.cpp
   src/key.cpp
   test/active_keys_test.cpp
   test/key_test.cpp
 )
+
+target_precompile_headers(${PROJECT_NAME}_test PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")
 
 # NOTE: lcov does not like the output of the coverage files
 # coverage is currently broken
