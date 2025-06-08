@@ -37,12 +37,12 @@ GLint tessellation_level_or_throw(GLint requested_level) {
 
 TessellationSettings::TessellationSettings()
     : tessellation_level(default_tessellation_level),
-      hardward_tessellation_supported(max_tessellation_level.has_value()) {
+      hardware_tessellation_supported(max_tessellation_level.has_value()) {
 }
 
 TessellationSettings::TessellationSettings(GLint tessellation_level)
     : tessellation_level(tessellation_level_or_throw(tessellation_level)),
-      hardward_tessellation_supported(max_tessellation_level.has_value()) {
+      hardware_tessellation_supported(max_tessellation_level.has_value()) {
 }
 
 bool TessellationSettings::set_level(GLint new_level) {
@@ -54,6 +54,10 @@ bool TessellationSettings::set_level(GLint new_level) {
     return true;
 }
 
-constexpr TessellationSettings::operator GLuint() const {
+GLint TessellationSettings::get_level() const {
     return tessellation_level;
+}
+
+bool TessellationSettings::is_hardware_tessellation_supported() const {
+    return hardware_tessellation_supported;
 }

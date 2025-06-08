@@ -38,7 +38,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
                              shared_ptr<mat4> view, shared_ptr<mat4> projection,
                              shared_ptr<FunctionParams> function_params)
     : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
-      function_params(function_params), max_tessellation_level(get_max_tessellation_level()) {
+      function_params(function_params) {
     using std::make_unique;
 
     assert(program_handle != 0);
@@ -81,7 +81,8 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
 
     for (auto variable_name : uniform_variable_names) {
         // clean up? very impl specific, might benefit from more general mechanism
-        if (variable_name == tessellation_level_variable_name && !shader_tessellation_enabled()) {
+        if (variable_name == tessellation_level_variable_name &&
+            !tessellation_settings->is_hardware_tessellation_supported()) {
             continue;
         }
 
@@ -195,19 +196,14 @@ void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, 
     }
 }
 
-bool ShaderProgram::shader_tessellation_enabled() const {
-    return max_tessellation_level.has_value();
+void ShaderProgram::update_tessellation_settings() {
+    set_uniform_1ui(tessellation_level_variable_name, tessellation_settings->get_level());
 }
 
-void ShaderProgram::set_tessellation_level(GLint level) {
-    if (! shader_tessellation_enabled()) {
-        return;
-    }
-
-    if (level < min_tessellation_level || level > *max_tessellation_level) {
-        string err = std::format("invalid tessellation level {}", level);
-        throw ShaderProgramError(err);
-    }
-
-    set_uniform_1ui(tessellation_level_variable_name, level);
+void ShaderProgram::set_initial_uniforms() {
+    update_function_params();
+    update_model();
+    update_view();
+    update_projection();
+    update_tessellation_settings();
 }

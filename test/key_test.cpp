@@ -32,9 +32,15 @@ TEST_F(KeyTest, CtorWithAllCodes) {
 }
 
 TEST_F(KeyTest, CtorFromVariant) {
+    // choosing key has consistent keyboard placement in qwerty and azerty
     Keyish const scan_code_variant{SDL_SCANCODE_E};
     Keyish const key_code_variant{SDLK_E};
-    EXPECT_EQ(scan_code_variant, key_code_variant);
+    EXPECT_NE(scan_code_variant, key_code_variant);
+
+    const Key key_from_scan_code{scan_code_variant};
+    const Key key_from_key_code{key_code_variant};
+
+    EXPECT_EQ(key_from_scan_code, key_from_key_code);
 }
 
 TEST_F(KeyTest, Getters) {

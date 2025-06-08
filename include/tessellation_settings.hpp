@@ -4,7 +4,7 @@
 
 class TessellationSettings {
     GLint tessellation_level;
-    bool hardward_tessellation_supported;
+    bool hardware_tessellation_supported;
 
 public:
     TessellationSettings();
@@ -14,5 +14,14 @@ public:
      * @return true if the level is possible
      */
     bool set_level(GLint new_level);
-    constexpr operator GLuint() const;
+
+    /**
+     * @return the current tessellation level
+     */
+    GLint get_level() const;
+
+    /**
+     * @return if hardware tessellation is supported
+     */
+    bool is_hardware_tessellation_supported() const;
 };

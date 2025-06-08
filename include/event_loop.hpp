@@ -79,5 +79,8 @@ public:
      */
     bool function_params_modified() const;
 
+    /**
+     * was a change in tessellation level requested during this frame?
+     */
     bool tessellation_settings_modified() const;
 };

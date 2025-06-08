@@ -152,10 +152,7 @@ int main(int argc, char *argv[]) {
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
 
         program.use();
-        program.update_function_params();
-        program.update_model();
-        program.update_view();
-        program.update_projection();
+        program.set_initial_uniforms();
         program.release();
 
         MaxDeque<uint64_t> render_timings(10);
@@ -184,6 +181,10 @@ int main(int argc, char *argv[]) {
 
             if (event_loop.model_modified()) {
                 program.update_model();
+            }
+
+            if (event_loop.tessellation_settings_modified()) {
+                program.update_tessellation_settings();
             }
 
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);

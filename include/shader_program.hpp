@@ -4,16 +4,13 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 
 #include <glm/mat4x4.hpp>
 
 #include "function_params.hpp"
 #include "glad/glad.h"
 #include "shader.hpp"
-
-// manually tuned
-static constexpr GLint min_tessellation_level = 5;
+#include "tessellation_settings.hpp"
 
 class ShaderProgram {
     // uniforms
@@ -36,18 +33,17 @@ class ShaderProgram {
     // all positions
 
     GLuint program_handle;
-    std::optional<GLint> max_tessellation_level;
     std::vector<std::shared_ptr<Shader>> attached_shaders;
     std::unordered_map<const GLchar *, GLint> uniform_locations;
     std::shared_ptr<glm::mat4> model;
     std::shared_ptr<glm::mat4> view;
     std::shared_ptr<glm::mat4> projection;
     std::shared_ptr<FunctionParams> function_params;
+    std::shared_ptr<TessellationSettings> tessellation_settings;
 
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
     void set_uniform_1ui(const GLchar *uniform_variable_name, GLint value);
     void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> value);
-    bool shader_tessellation_enabled() const;
 
 public:
     ShaderProgram() = delete;
@@ -60,9 +56,10 @@ public:
     void use();
     void release();
 
+    void set_initial_uniforms();
     void update_function_params();
     void update_model();
     void update_view();
     void update_projection();
-    void set_tessellation_level(GLint level);
+    void update_tessellation_settings();
 };
