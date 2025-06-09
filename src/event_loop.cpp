@@ -73,7 +73,7 @@ static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 /**
  * how long in between tess level changes to allow
  */
-static const constexpr uint64_t msec_between_tess_level_changes = 500;
+static const constexpr uint64_t msec_between_tess_level_changes = 700;
 
 static const constexpr initializer_list<Keyish> monitored_keys = {
     Keyish{SDL_SCANCODE_W},  Keyish{SDL_SCANCODE_A},    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
@@ -322,7 +322,7 @@ bool EventLoop::drain_event_queue_should_exit() {
             return true;
         }
         else if (evt.type == SDL_EVENT_KEY_UP) {
-            active_keys.release_key(Key(evt.key.scancode, evt.key.mod));
+            active_keys.release_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
         }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
             if (evt.key.key == SDLK_Q) {
@@ -333,7 +333,7 @@ bool EventLoop::drain_event_queue_should_exit() {
                 continue;
             }
 
-            active_keys.set_key_pressed(Key(evt.key.scancode, evt.key.mod));
+            active_keys.set_key_pressed(Key(evt.key.scancode, evt.key.key, evt.key.mod));
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);

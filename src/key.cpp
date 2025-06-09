@@ -62,10 +62,6 @@ Key::Key(SDL_Keycode key_code) {
     this->scan_code = SDL_GetScancodeFromKey(key_code, &key_mod);
 }
 
-constexpr Key::Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod)
-    : scan_code(scan_code), key_code(key_code), key_mod(key_mod) {
-}
-
 Key::Key(Keyish const &keyish) {
     using std::holds_alternative;
 
@@ -78,18 +74,6 @@ Key::Key(Keyish const &keyish) {
         this->key_code = std::get<SDL_Keycode>(keyish);
         this->scan_code = SDL_GetScancodeFromKey(this->key_code, &key_mod);
     }
-}
-
-SDL_Scancode Key::get_scan_code() const {
-    return scan_code;
-}
-
-SDL_Keymod Key::get_key_mod() const {
-    return key_mod;
-}
-
-bool Key::has_modifier() const {
-    return key_mod != SDL_KMOD_NONE;
 }
 
 Key Key::copy_shifted(bool only_this_mod) const {
@@ -105,10 +89,6 @@ Key Key::without_mods() const {
     return Key(scan_code);
 }
 
-bool Key::has_shift() const {
-    return key_mod == SDL_KMOD_LSHIFT || key_mod == SDL_KMOD_RSHIFT || key_mod == SDL_KMOD_SHIFT;
-}
-
 Key Key::shift_mod_complement() const {
     if (has_modifier()) {
         return Key(scan_code);
@@ -118,10 +98,3 @@ Key Key::shift_mod_complement() const {
     }
 }
 
-SDL_Keycode Key::get_key_code() const {
-    return key_code;
-}
-
-bool Key::is_scancode_shift() const {
-    return scan_code == SDL_SCANCODE_LSHIFT || scan_code == SDL_SCANCODE_RSHIFT;
-}
