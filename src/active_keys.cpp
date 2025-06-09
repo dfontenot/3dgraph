@@ -48,7 +48,10 @@ ActiveKeys::ActiveKeys(initializer_list<Keyish> keys_to_monitor) {
         auto const key = Key(keyish);
         monitored_keys.push_back(key.get_scan_code());
         key_timings.insert({key, nullopt});
-        key_timings.insert({key.copy_shifted(), nullopt});
+
+        if (!key.has_modifier()) {
+            key_timings.insert({key.copy_shifted(), nullopt});
+        }
     }
 }
 
@@ -107,6 +110,10 @@ void ActiveKeys::set_key_pressed(const Key &key) {
         }
     }
 
+    /*
+     * TODO: fix this handling of shift modded keys as it doesn't take
+     * into account scan codes of LSHIFT and RSHIFT by themselves
+     */
     if (key.has_modifier()) {
         // if the regular key itself isn't marked as started, do so now
         auto const un_modded = key.without_mods();

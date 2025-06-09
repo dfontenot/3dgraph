@@ -32,6 +32,7 @@ public:
     SDL_Keycode get_key_code() const;
     bool has_modifier() const;
     bool has_shift() const;
+    bool is_scancode_shift() const;
 
     /**
      * new copy of this key but with the shift modifier applied

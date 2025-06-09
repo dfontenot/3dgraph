@@ -26,13 +26,26 @@ template <> struct std::formatter<Key> {
     }
 };
 
+/**
+ * for the purposes of this application, equality does not mean strict
+ * equality, just means if the keys are equivalent
+ */
 bool operator==(const Key &lhs, const Key &rhs) {
-    return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod && lhs.key_code == rhs.key_code;
+    // TODO: fix the check if both are shifted isn't exactly correct as one could have
+    // other modifiers applied as well
+    return ((lhs.is_scancode_shift() && rhs.is_scancode_shift()) || lhs.scan_code == rhs.scan_code) &&
+           ((lhs.has_shift() && rhs.has_shift()) || lhs.key_mod == rhs.key_mod);
 }
 
+/**
+ * for the purposes of this application, equivalent keys will hash to the same value
+ */
 size_t KeyHash::operator()(const Key &key) const {
-    size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.scan_code);
-    size_t key_mod_hash = std::hash<SDL_Keymod>{}(key.key_mod);
+    const SDL_Scancode equivalent_scan_code = key.is_scancode_shift() ? SDL_SCANCODE_LSHIFT : key.scan_code;
+    const SDL_Keymod equivalent_key_mod = key.has_shift() ? SDL_KMOD_SHIFT : key.key_mod;
+
+    size_t scan_code_hash = std::hash<SDL_Scancode>{}(equivalent_scan_code);
+    size_t key_mod_hash = std::hash<SDL_Keymod>{}(equivalent_key_mod);
     return scan_code_hash ^ (key_mod_hash << 1);
 }
 
@@ -93,7 +106,7 @@ Key Key::without_mods() const {
 }
 
 bool Key::has_shift() const {
-    return key_mod == SDL_KMOD_LSHIFT || key_mod == SDL_KMOD_RSHIFT;
+    return key_mod == SDL_KMOD_LSHIFT || key_mod == SDL_KMOD_RSHIFT || key_mod == SDL_KMOD_SHIFT;
 }
 
 Key Key::shift_mod_complement() const {
@@ -107,4 +120,8 @@ Key Key::shift_mod_complement() const {
 
 SDL_Keycode Key::get_key_code() const {
     return key_code;
+}
+
+bool Key::is_scancode_shift() const {
+    return scan_code == SDL_SCANCODE_LSHIFT || scan_code == SDL_SCANCODE_RSHIFT;
 }
