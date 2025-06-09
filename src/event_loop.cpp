@@ -201,6 +201,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
 
     // xor
+    function_params_modified_ = false;
     if (left_key_timing.has_value() != right_key_timing.has_value()) {
 
         if (left_key_timing.has_value()) {
@@ -248,6 +249,8 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
 }
 
 void EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms) {
+    tessellation_settings_modified_ = false;
+
     if (last_tessellation_change_at_msec.has_value() &&
         *last_tessellation_change_at_msec + msec_between_tess_level_changes > start_ticks_ms) {
         // not long enough since last tessellation level change occurred
@@ -281,6 +284,8 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
 
     auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
     quat current(*model);
+
+    model_modified_ = false;
     if (up_key_timing != down_key_timing) {
         if (up_key_timing) {
             model_modified_ = true;
