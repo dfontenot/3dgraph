@@ -284,13 +284,13 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     if (up_key_timing != down_key_timing) {
         if (up_key_timing) {
             model_modified_ = true;
-            quat const rotation = angleAxis(rotations_rads, y_axis);
+            quat const rotation = angleAxis(rotations_rads, x_axis);
             current = rotation * current;
         }
 
         if (down_key_timing) {
             model_modified_ = true;
-            quat const rotation = angleAxis(-rotations_rads, y_axis);
+            quat const rotation = angleAxis(-rotations_rads, x_axis);
             current = rotation * current;
         }
     }
@@ -298,13 +298,13 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     if (left_key_timing != right_key_timing) {
         if (left_key_timing) {
             model_modified_ = true;
-            quat const rotation = angleAxis(-rotations_rads, x_axis);
+            quat const rotation = angleAxis(-rotations_rads, y_axis);
             current = rotation * current;
         }
 
         if (right_key_timing) {
             model_modified_ = true;
-            quat const rotation = angleAxis(rotations_rads, x_axis);
+            quat const rotation = angleAxis(rotations_rads, y_axis);
             current = rotation * current;
         }
     }
