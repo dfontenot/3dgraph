@@ -55,6 +55,7 @@ class EventLoop {
     void process_function_mutation_keys(uint64_t start_ticks_ms);
     void process_model_mutation_keys(uint64_t start_ticks_ms, uint64_t end_ticks_ms);
     void process_tessellation_mutation_keys(uint64_t start_ticks_ms);
+    void process_view_mutation_events(bool scrolled_toward_user);
 
 public:
     /**

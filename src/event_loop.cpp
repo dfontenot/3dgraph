@@ -43,6 +43,7 @@ using glm::angleAxis;
 using glm::mat4;
 using glm::quat;
 using glm::toMat4;
+using glm::translate;
 using glm::vec3;
 
 static const constexpr double pi = 3.1415926;
@@ -57,6 +58,13 @@ static const constexpr double rotation_rad_millis = rotation_max_rad_second / 10
 
 static const constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
 static const constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
+
+/**
+ * how much to zoom per scroll wheel click / notch? (whatever that is called)
+ */
+static const constexpr float zoom_amount_scroll_wheel = 0.5f;
+static const constexpr vec3 zoom_out = vec3(0.0f, 0.0f, -zoom_amount_scroll_wheel);
+static const constexpr vec3 zoom_in = vec3(0.0f, 0.0f, zoom_amount_scroll_wheel);
 
 /**
  * how much to pan the 3d function per frame
@@ -320,6 +328,19 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     }
 }
 
+void EventLoop::process_view_mutation_events(bool scrolled_toward_user) {
+    view_modified_ = true;
+
+    if (scrolled_toward_user) {
+        // zoom out
+        *view = translate(*view, zoom_out);
+    }
+    else {
+        // zoom in
+        *view = translate(*view, zoom_in);
+    }
+}
+
 bool EventLoop::drain_event_queue_should_exit() {
 
     while (SDL_PollEvent(&evt)) {
@@ -346,6 +367,9 @@ bool EventLoop::drain_event_queue_should_exit() {
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             start_click = nullopt;
         }
+        else if (evt.type == SDL_EVENT_MOUSE_WHEEL) {
+            process_view_mutation_events(evt.wheel.integer_y < 0);
+        }
         else if (start_click.has_value() && evt.type == SDL_EVENT_MOUSE_MOTION) {
             // MouseLoc current(evt.motion.x, evt.motion.y);
         }
@@ -355,6 +379,8 @@ bool EventLoop::drain_event_queue_should_exit() {
 }
 
 TickResult EventLoop::process_frame(uint64_t render_time_ns) {
+    view_modified_ = false;
+
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
 
@@ -389,6 +415,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
 
     // TODO: track this overhead separately and use to compute how much input to process
     // per frame
+    
     process_function_mutation_keys(start_ticks_ms);
     process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
     process_tessellation_mutation_keys(start_ticks_ms);
