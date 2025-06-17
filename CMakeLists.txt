@@ -5,7 +5,7 @@ project(3dgraph
   LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_BUILD_TYPE Debug)
 
 include(FetchContent)
@@ -42,6 +42,7 @@ add_executable(${PROJECT_NAME}
   src/shader.cpp
   src/shader_program.cpp
   src/tessellation_settings.cpp
+  src/es/cpu_tessellation.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")
@@ -72,8 +73,10 @@ set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 add_executable(${PROJECT_NAME}_test
   src/active_keys.cpp
   src/key.cpp
+  src/es/cpu_tessellation.cpp
   test/active_keys_test.cpp
   test/key_test.cpp
+  test/es/cpu_tessellation_test.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME}_test PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")

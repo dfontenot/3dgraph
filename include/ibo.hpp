@@ -5,8 +5,6 @@
 #include "glad/glad.h"
 
 struct Ibo {
-    GLuint val;
-
     constexpr operator GLuint() const {
         return val;
     }
@@ -49,5 +47,6 @@ struct Ibo {
     }
 
 private:
-    static constexpr GLsizei num_create = 1;
+    static constexpr const GLsizei num_create = 1;
+    GLuint val;
 };
