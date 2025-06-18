@@ -2,19 +2,22 @@
 #include "glad/glad.h"
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cmath>
 #include <iterator>
 #include <ranges>
 #include <vector>
 
+using std::size_t;
 using std::vector;
 using std::ranges::iota_view;
 using std::ranges::views::cartesian_product;
 
 /**
-* @brief makes a lattice mesh in 3 dimensions (plane)
-* order of points will be bottom left corner to top left corner, then towards right side
-* points in order x0, y0, z0, x1, y1, z1, ...
-*/
+ * @brief makes a lattice mesh in 3 dimensions (plane)
+ * order of points will be bottom left corner to top left corner, then towards right side
+ * points in order x0, y0, z0, x1, y1, z1, ...
+ */
 vector<GLfloat> make_lattice(size_t tessellation_amount) {
     using std::get;
     using std::ranges::for_each;
@@ -40,4 +43,30 @@ vector<GLfloat> make_lattice(size_t tessellation_amount) {
 
     std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(lattice));
     return lattice;
+}
+
+/**
+ * assumes points will be 3 sequential floats following
+ * layout from make_lattice
+ */
+vector<GLuint> lattice_points_list(size_t tessellation_amount) {
+    const auto count = static_cast<size_t>(pow(static_cast<double>(tessellation_amount - 1), 2.0));
+    vector<GLuint> indices_list;
+    indices_list.reserve(count);
+
+    // two adjacent CCW triangles
+    const vector<GLuint> two_triangles_pattern{0, 4, 5, 0, 0, 5, 1, 0};
+
+    const iota_view times{(size_t)0, count};
+
+    // clang-format off
+    auto result = times | std::views::transform([&two_triangles_pattern](size_t idx) {
+        return two_triangles_pattern 
+            | std::views::transform([idx](auto idx_) { return idx + idx_; })
+            | std::ranges::to<vector>();
+    }) | std::views::join;
+    // clang-format on
+
+    std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(indices_list));
+    return indices_list;
 }

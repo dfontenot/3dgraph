@@ -9,3 +9,5 @@
  * @ return a flat GLfloat array
  */
 std::vector<GLfloat> make_lattice(std::size_t tessellation_amount);
+
+std::vector<GLuint> lattice_points_list(std::size_t tessellation_amount);

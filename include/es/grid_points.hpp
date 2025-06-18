@@ -9,7 +9,7 @@
 class GridPoints {
     std::shared_ptr<Ibo> ibo;
     std::vector<GLfloat> triangles_points;
-    std::vector<GLuint> points_order;
+    std::vector<GLuint> indices;
     std::size_t tessellation_amount;
 
 public:

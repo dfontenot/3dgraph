@@ -1,4 +1,5 @@
 #include "es/cpu_tessellation.hpp"
+#include <cmath>
 #include <gtest/gtest.h>
 
 TEST(CPUTessellation, InspectLattice) {
@@ -23,4 +24,14 @@ TEST(CPUTessellation, InspectLattice) {
     // top right point
     EXPECT_FLOAT_EQ(0.5f, *(lattice.cend() - 3));
     EXPECT_FLOAT_EQ(0.5f, *(lattice.cend() - 2));
+}
+
+TEST(CPUTessellation, IBOPoints) {
+    auto const any_tessellation_amount = 4;
+    auto const points_per_square = 8;
+    const auto expected_subdivision_count =
+        static_cast<size_t>(pow(static_cast<double>(any_tessellation_amount - 1), 2.0));
+
+    auto const lattice_points_for_ibo = lattice_points_list(any_tessellation_amount);
+    EXPECT_EQ(lattice_points_for_ibo.size(), expected_subdivision_count * points_per_square);
 }
