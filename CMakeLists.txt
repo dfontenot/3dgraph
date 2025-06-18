@@ -45,7 +45,9 @@ add_executable(${PROJECT_NAME}
   src/es/cpu_tessellation.cpp
 )
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")
+target_precompile_headers(${PROJECT_NAME}
+  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
+)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
@@ -79,7 +81,9 @@ add_executable(${PROJECT_NAME}_test
   test/es/cpu_tessellation_test.cpp
 )
 
-target_precompile_headers(${PROJECT_NAME}_test PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp")
+target_precompile_headers(${PROJECT_NAME}_test
+  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
+)
 
 # NOTE: lcov does not like the output of the coverage files
 # coverage is currently broken
