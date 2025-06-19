@@ -3,6 +3,17 @@ name: Build and run tests
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**/*.cpp"
+      - "src/**.c"
+      - "include/**/*.hpp"
+      - "include/**/*.h"
+      - "CMakeLists.txt"
+      - "conanfile.txt"
+      - "conan.lock"
+      - "test/**/*.cpp"
+      - "test/**/*.hpp"
+      - "run-build.sh"
 
 jobs:
   build:

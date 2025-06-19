@@ -43,8 +43,6 @@ add_executable(${PROJECT_NAME}
   src/shader.cpp
   src/shader_program.cpp
   src/tessellation_settings.cpp
-  src/es/cpu_tessellation.cpp
-  src/es/grid_points.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME}
@@ -65,8 +63,48 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE opengl::opengl
   PRIVATE SDL3::SDL3
   PRIVATE spdlog::spdlog)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_include_directories(${PROJECT_NAME}
+  PRIVATE ${3dgraph_SOURCE_DIR}/include
+)
+
+# opengl es 3.0 build
+add_executable(${PROJECT_NAME}_es
+  src/active_keys.cpp
+  src/event_loop.cpp
+  src/glad.c
+  src/gl_inspect.cpp
+  src/key.cpp
+  src/main.cpp
+  src/opengl_debug_callback.cpp
+  src/shader.cpp
+  src/shader_program.cpp
+  src/tessellation_settings.cpp
+  src/es/cpu_tessellation.cpp
+  src/es/grid_points.cpp
+)
+
+target_precompile_headers(${PROJECT_NAME}_es
+  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
+)
+
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_FORCE_SWIZZLE)
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_SWIZZLE_XYZW)
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_MESSAGES=GLM_ENABLE)
+
+# custom defines for src/
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE OPENGL_DEBUG)
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE OPENGL_ES)
+
+target_link_libraries(${PROJECT_NAME}_es
+  PRIVATE cpptrace::cpptrace
+  PRIVATE glm::glm
+  PRIVATE opengl::opengl
+  PRIVATE SDL3::SDL3
+  PRIVATE spdlog::spdlog)
+target_compile_features(${PROJECT_NAME}_es PRIVATE cxx_std_23)
+target_include_directories(${PROJECT_NAME}_es
   PRIVATE ${3dgraph_SOURCE_DIR}/include
 )
 
@@ -104,7 +142,7 @@ target_link_libraries(${PROJECT_NAME}_test
   PRIVATE GTest::gtest
   PRIVATE GTest::gtest_main
   PRIVATE SDL3::SDL3)
-target_compile_features(${PROJECT_NAME}_test PRIVATE cxx_std_20)
+target_compile_features(${PROJECT_NAME}_test PRIVATE cxx_std_23)
 target_include_directories(${PROJECT_NAME}_test
   PRIVATE ${3dgraph_SOURCE_DIR}/include
   PRIVATE ${3dgraph_SOURCE_DIR}/test/include
