@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.24)
 project(3dgraph
   VERSION 1.0
   DESCRIPTION "a very basic opengl render"
@@ -15,6 +15,7 @@ FetchContent_Declare(spdlog
   GIT_REPOSITORY https://github.com/gabime/spdlog
   GIT_SHALLOW 1
   GIT_TAG v1.15.3
+  OVERRIDE_FIND_PACKAGE
 )
 
 # see https://github.com/gabime/spdlog/blob/5532231bbc31bbdf95ac15febdac0413ee1d07ad/CMakeLists.txt#L28
