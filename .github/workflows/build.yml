@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: switch to gcc-14 on linux # ref: https://stackoverflow.com/a/67791068
-        if: matrix.configurations.os == "ubuntu-latest"
+        if: ${{ matrix.configurations.os == 'ubuntu-latest' }}
         run: |
           sudo apt install gcc-14 g++-14
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
