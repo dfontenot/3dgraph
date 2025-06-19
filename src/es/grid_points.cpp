@@ -18,8 +18,6 @@ GridPoints::GridPoints(size_t tessellation_amount)
     : ibo(make_shared<Ibo>()), triangles_points(make_lattice(tessellation_amount)),
       indices(lattice_points_list(tessellation_amount)), tessellation_amount(tessellation_amount) {
 
-    // assign to points_order
-
     ibo->bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 

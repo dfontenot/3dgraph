@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# NOTE: this file is more of a convenience for building locally
+# this project will build w/o this script using regular cmake commands
+
 # source: https://github.com/conan-io/examples2/blob/main/tutorial/consuming_packages/simple_cmake_project/run_example.sh
 set -e
 set -x
