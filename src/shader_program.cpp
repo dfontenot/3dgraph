@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -27,6 +26,7 @@ using glm::value_ptr;
 using std::cerr;
 using std::endl;
 using std::for_each;
+using std::format;
 using std::initializer_list;
 using std::shared_ptr;
 using std::string;
@@ -40,11 +40,13 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
       function_params(function_params), tessellation_settings(tessellation_settings) {
     using std::make_unique;
 
+    // preconditions
     assert(program_handle != 0);
 
     auto current_error = glGetError();
     if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("precondition failed to init shader program: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError(
+            format("precondition failed to init shader program: {}", gl_get_error_string(current_error)));
     }
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(),
@@ -62,7 +64,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
         glGetProgramInfoLog(program_handle, to_allocate, nullptr, linker_log.get());
 
         if (linked == GL_FALSE) {
-            throw ShaderProgramCompilationError(linker_log.get());
+            throw ShaderProgramLinkerError(linker_log.get());
         }
         else {
             cerr << linker_log.get() << endl;
@@ -75,7 +77,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
     glUseProgram(program_handle);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("program issue: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError(format("program issue: {}", gl_get_error_string(current_error)));
     }
 
     for (auto variable_name : uniform_variable_names) {
@@ -87,8 +89,7 @@ ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, share
 
         GLint location = glGetUniformLocation(program_handle, variable_name);
         if (location < 0) {
-            string msg = "unable to find uniform ";
-            throw WrappedOpenGLError(msg + variable_name);
+            throw WrappedOpenGLError(format("unable to find uniform {}", variable_name));
         }
 
         uniform_locations[variable_name] = location;
@@ -110,13 +111,14 @@ void ShaderProgram::use() {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("cannot use program due to existing error: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError(
+            format("cannot use program due to existing error: {}", gl_get_error_string(current_error)));
     }
 
     glUseProgram(program_handle);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        throw WrappedOpenGLError("error using the shader program: " + gl_get_error_string(current_error));
+        throw WrappedOpenGLError(format("error using the shader program: {}", gl_get_error_string(current_error)));
     }
 }
 
@@ -134,17 +136,15 @@ void ShaderProgram::set_uniform_1f(const GLchar *uniform_variable_name, GLfloat 
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("couldn't update uniforms due to existing error: " +
-                                 gl_get_error_string(current_error));
+        throw WrappedOpenGLError(
+            format("couldn't update uniforms due to existing error: {}", gl_get_error_string(current_error)));
     }
 
     glUniform1f(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        stringstream ss;
-        ss << "error setting uniform " << uniform_variable_name << " " << gl_get_error_string(current_error)
-           << " at location " << uniform_locations[uniform_variable_name] << endl;
-        throw WrappedOpenGLError(ss.str());
+        throw WrappedOpenGLError(format("error setting uniform {0} {1} at location {2}", uniform_variable_name,
+                                        gl_get_error_string(current_error), uniform_locations[uniform_variable_name]));
     }
 }
 
@@ -152,17 +152,15 @@ void ShaderProgram::set_uniform_1ui(const GLchar *uniform_variable_name, GLuint 
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
-        throw WrappedOpenGLError("couldn't update uniforms due to existing error: " +
-                                 gl_get_error_string(current_error));
+        throw WrappedOpenGLError(
+            format("couldn't update uniforms due to existing error: {}", gl_get_error_string(current_error)));
     }
 
     glUniform1ui(uniform_locations[uniform_variable_name], value);
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        stringstream ss;
-        ss << "error setting uniform " << uniform_variable_name << " " << gl_get_error_string(current_error)
-           << " at location " << uniform_locations[uniform_variable_name] << endl;
-        throw WrappedOpenGLError(ss.str());
+        throw WrappedOpenGLError(format("error setting uniform {0} {1} at location {2}", uniform_variable_name,
+                                        gl_get_error_string(current_error), uniform_locations[uniform_variable_name]));
     }
 }
 
@@ -188,10 +186,8 @@ void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, 
     glUniformMatrix4fv(uniform_locations[uniform_variable_name], 1, GL_FALSE, value_ptr(*value));
 
     if ((current_error = glGetError()) != GL_NO_ERROR) {
-        stringstream ss;
-        ss << "error setting uniform matrix " << uniform_variable_name << " " << gl_get_error_string(current_error)
-           << " at location " << uniform_locations[uniform_variable_name] << endl;
-        throw WrappedOpenGLError(ss.str());
+        throw WrappedOpenGLError(format("error setting uniform {0} {1} at location {2}", uniform_variable_name,
+                                        gl_get_error_string(current_error), uniform_locations[uniform_variable_name]));
     }
 }
 

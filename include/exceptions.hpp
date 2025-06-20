@@ -1,8 +1,9 @@
 #pragma once
 
 #include "gl_inspect.hpp"
-
 #include "glad/glad.h"
+
+#include <format>
 #include <stdexcept>
 #include <string>
 
@@ -18,16 +19,31 @@ public:
     }
 };
 
-class ShaderCompilationError : public WrappedOpenGLError {
+class ShaderError : public WrappedOpenGLError {
 public:
-    ShaderCompilationError(std::string &msg, GLenum shader_type)
-        : WrappedOpenGLError(shader_type_to_string(shader_type) + " " + msg) {
+    ShaderError(std::string &msg, GLenum shader_type)
+        : WrappedOpenGLError(std::format("{0} {1}", shader_type_to_string(shader_type), msg)) {
     }
-    ShaderCompilationError(char *msg, GLenum shader_type)
-        : WrappedOpenGLError(shader_type_to_string(shader_type) + " " + msg) {
+    ShaderError(std::string &&msg, GLenum shader_type)
+        : WrappedOpenGLError(std::format("{0} {1}", shader_type_to_string(shader_type), msg)) {
     }
-    ShaderCompilationError(const char *msg, GLenum shader_type)
-        : WrappedOpenGLError(shader_type_to_string(shader_type) + " " + msg) {
+    ShaderError(char *msg, GLenum shader_type)
+        : WrappedOpenGLError(std::format("{0} {1}", shader_type_to_string(shader_type), msg)) {
+    }
+    ShaderError(const char *msg, GLenum shader_type)
+        : WrappedOpenGLError(std::format("{0} {1}", shader_type_to_string(shader_type), msg)) {
+    }
+};
+
+class ShaderCompilationError : public ShaderError {
+public:
+    ShaderCompilationError(std::string &msg, GLenum shader_type) : ShaderError(msg, shader_type) {
+    }
+    ShaderCompilationError(std::string &&msg, GLenum shader_type) : ShaderError(msg, shader_type) {
+    }
+    ShaderCompilationError(char *msg, GLenum shader_type) : ShaderError(msg, shader_type) {
+    }
+    ShaderCompilationError(const char *msg, GLenum shader_type) : ShaderError(msg, shader_type) {
     }
 };
 
@@ -35,19 +51,23 @@ class ShaderProgramError : public WrappedOpenGLError {
 public:
     ShaderProgramError(std::string &msg) : WrappedOpenGLError(msg) {
     }
+    ShaderProgramError(std::string &&msg) : WrappedOpenGLError(msg) {
+    }
     ShaderProgramError(char *msg) : WrappedOpenGLError(msg) {
     }
     ShaderProgramError(const char *msg) : WrappedOpenGLError(msg) {
     }
 };
 
-class ShaderProgramCompilationError : public ShaderProgramError {
+class ShaderProgramLinkerError : public ShaderProgramError {
 public:
-    ShaderProgramCompilationError(std::string &msg) : ShaderProgramError(msg) {
+    ShaderProgramLinkerError(std::string &msg) : ShaderProgramError(msg) {
     }
-    ShaderProgramCompilationError(char *msg) : ShaderProgramError(msg) {
+    ShaderProgramLinkerError(std::string &&msg) : ShaderProgramError(msg) {
     }
-    ShaderProgramCompilationError(const char *msg) : ShaderProgramError(msg) {
+    ShaderProgramLinkerError(char *msg) : ShaderProgramError(msg) {
+    }
+    ShaderProgramLinkerError(const char *msg) : ShaderProgramError(msg) {
     }
 };
 

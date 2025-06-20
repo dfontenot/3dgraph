@@ -12,14 +12,15 @@
 #include <cpptrace/from_current.hpp>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <memory>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <sstream>
 #include <string>
 
@@ -40,8 +41,15 @@ using std::make_shared;
 using std::size_t;
 using std::string;
 using std::stringstream;
+using std::filesystem::path;
 
-static constexpr GLint default_tessellation_level = 9;
+static constexpr const GLint default_tessellation_level = 9;
+
+#ifdef OPENGL_ES
+static constexpr const bool is_opengl_es = true;
+#else
+static constexpr const bool is_opengl_es = false;
+#endif
 
 int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
@@ -92,7 +100,7 @@ int main(int argc, char *argv[]) {
     GLint major, minor;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
-    if (major < 4 || minor < 1) {
+    if ((is_opengl_es && major < 3) || (!is_opengl_es && (major < 4 || minor < 1))) {
         stderr->error("invalid opengl version");
         return 1;
     }
@@ -109,15 +117,10 @@ int main(int argc, char *argv[]) {
 
     glViewport(0, 0, window_w, window_h);
 
+#ifndef OPENGL_ES
     glEnable(GL_LINE_SMOOTH);
-
-#if __APPLE__
-    // macOS only supports a line width of 1.0
-    // see: https://www.reddit.com/r/opengl/comments/at1az3/comment/egy4keo
-    glLineWidth(1.0f);
-#else
-    glLineWidth(1.5f);
 #endif
+    glLineWidth(1.0f);
 
     auto current_error = glGetError();
     if (current_error != GL_NO_ERROR) {

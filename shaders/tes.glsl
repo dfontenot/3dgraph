@@ -13,6 +13,8 @@ float map(float value, float min1, float max1, float min2, float max2) {
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
+
+// function params
 uniform float u_z_mult;
 // out vec4 tes_color;
 
