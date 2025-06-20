@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cassert>
 #include <format>
-#include <initializer_list>
 #include <iostream>
 #include <memory>
+#include <ranges>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -32,12 +32,7 @@ using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
-ShaderProgram::ShaderProgram(initializer_list<shared_ptr<Shader>> shaders, shared_ptr<mat4> model,
-                             shared_ptr<mat4> view, shared_ptr<mat4> projection,
-                             shared_ptr<FunctionParams> function_params,
-                             shared_ptr<TessellationSettings> tessellation_settings)
-    : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view), projection(projection),
-      function_params(function_params), tessellation_settings(tessellation_settings) {
+void ShaderProgram::link_shaders() {
     using std::make_unique;
 
     // preconditions

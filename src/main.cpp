@@ -1,34 +1,39 @@
-#include "consts.hpp"
-#include "event_loop.hpp"
-#include "function_params.hpp"
 #include "glad/glad.h" // have to load glad first
-#include "opengl_debug_callback.hpp"
-#include "tessellation_settings.hpp"
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
 
-#include <SDL3/SDL_timer.h>
-#include <SDL3/SDL_video.h>
-#include <cpptrace/from_current.hpp>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <initializer_list>
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
+#include <cpptrace/from_current.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-#include <memory>
-#include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <sstream>
-#include <string>
+#include <spdlog/spdlog.h>
 
+#include "consts.hpp"
 #include "create_array.hpp"
+#include "event_loop.hpp"
+#include "function_params.hpp"
 #include "max_deque.hpp"
+#include "opengl_debug_callback.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
+#include "tessellation_settings.hpp"
 #include "vertices.hpp"
+
+#ifdef OPENGL_ES
+#include "es/cpu_tessellation.hpp"
+#include "es/grid_points.hpp"
+#endif
 
 using glm::mat4;
 using glm::perspective;
@@ -37,7 +42,9 @@ using glm::rotate;
 using glm::translate;
 using glm::vec3;
 
+using std::initializer_list;
 using std::make_shared;
+using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::stringstream;
@@ -65,15 +72,17 @@ int main(int argc, char *argv[]) {
 
     SDL_GL_LoadLibrary(nullptr);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-#ifdef OPENGL_ES
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-#else
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
+
+    if (is_opengl_es) {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    }
+    else {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    }
 
     auto const window = SDL_CreateWindow("opengl render test", window_w, window_h, SDL_WINDOW_OPENGL);
 
@@ -117,9 +126,9 @@ int main(int argc, char *argv[]) {
 
     glViewport(0, 0, window_w, window_h);
 
-#ifndef OPENGL_ES
-    glEnable(GL_LINE_SMOOTH);
-#endif
+    if (!is_opengl_es) {
+        glEnable(GL_LINE_SMOOTH);
+    }
     glLineWidth(1.0f);
 
     auto current_error = glGetError();
@@ -136,19 +145,28 @@ int main(int argc, char *argv[]) {
         auto function_params = make_shared<FunctionParams>();
         auto tessellation_settings = make_shared<TessellationSettings>();
 
-        auto vertex_shader = make_shader("vertex.glsl", GL_VERTEX_SHADER);
-        auto tsc_shader = make_shader("tsc.glsl", GL_TESS_CONTROL_SHADER);
-        auto tes_shader = make_shader("tes.glsl", GL_TESS_EVALUATION_SHADER);
-        auto fragment_shader = make_shader("fragment.glsl", GL_FRAGMENT_SHADER);
+        // TODO: clean this up
+#ifdef OPENGL_ES
+        const path es_shader_base_path = "shaders/es";
+        auto vertex_shader = make_shared<Shader>(es_shader_base_path / "vertex.glsl", GL_VERTEX_SHADER);
+        auto fragment_shader = make_shared<Shader>(es_shader_base_path / "fragment.glsl", GL_FRAGMENT_SHADER);
+        initializer_list<std::shared_ptr<Shader>> the_shaders{vertex_shader, fragment_shader};
+#else
+        auto vertex_shader = make_shared<Shader>("vertex.glsl", GL_VERTEX_SHADER);
+        auto tsc_shader = make_shared<Shader>("tsc.glsl", GL_TESS_CONTROL_SHADER);
+        auto tes_shader = make_shared<Shader>("tes.glsl", GL_TESS_EVALUATION_SHADER);
+        auto fragment_shader = make_shared<Shader>("fragment.glsl", GL_FRAGMENT_SHADER);
+        initializer_list<std::shared_ptr<Shader>> the_shaders{vertex_shader, tsc_shader, tes_shader, fragment_shader};
+#endif
 
-        ShaderProgram program{{vertex_shader, tsc_shader, tes_shader, fragment_shader},
-                              model,
-                              view,
-                              projection,
-                              function_params,
-                              tessellation_settings};
+        ShaderProgram program{the_shaders, model, view, projection, function_params, tessellation_settings};
 
+        // TODO: new abstraction to handle VAO only for opengl 4.1 and VAO + IBO for opengl ES
+#ifdef OPENGL_ES
+        Vertices verts{make_lattice(default_tessellation_level)};
+#else
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0)};
+#endif
 
         program.use();
         program.set_initial_uniforms();

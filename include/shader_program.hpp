@@ -1,7 +1,7 @@
 #pragma once
 
-#include <initializer_list>
 #include <memory>
+#include <ranges>
 #include <unordered_map>
 #include <vector>
 
@@ -45,17 +45,23 @@ class ShaderProgram {
     void set_uniform_1ui(const GLchar *uniform_variable_name, GLuint value);
     void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> value);
 
+    void link_shaders();
+
 public:
     ShaderProgram() = delete;
-    // TODO: more ergonomic ways of constructing this class
-
     /**
      * prereq: must have opengl initialized before calling
      */
-    ShaderProgram(std::initializer_list<std::shared_ptr<Shader>> shaders, std::shared_ptr<glm::mat4> model,
-                  std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
-                  std::shared_ptr<FunctionParams> function_params,
-                  std::shared_ptr<TessellationSettings> tessellation_settings);
+    template <std::ranges::input_range R>
+        requires std::convertible_to<std::ranges::range_value_t<R>, std::shared_ptr<Shader>>
+    ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view,
+                  std::shared_ptr<glm::mat4> projection, std::shared_ptr<FunctionParams> function_params,
+                  std::shared_ptr<TessellationSettings> tessellation_settings)
+        : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view),
+          projection(projection), function_params(function_params), tessellation_settings(tessellation_settings) {
+        link_shaders();
+    }
+
     ~ShaderProgram();
 
     void use();

@@ -3,7 +3,6 @@
 #include "glad/glad.h"
 
 #include <filesystem>
-#include <memory>
 #include <string>
 
 class ShaderProgram;
@@ -26,4 +25,3 @@ public:
     friend class ShaderProgram;
 };
 
-std::shared_ptr<Shader> make_shader(const char *source_fn, GLenum shader_type);

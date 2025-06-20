@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <memory>
 #include <string>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -14,7 +13,6 @@
 
 using std::format;
 using std::make_unique;
-using std::shared_ptr;
 using std::string;
 using std::filesystem::current_path;
 using std::filesystem::path;
@@ -113,9 +111,4 @@ Shader::Shader(const char *source_fn, GLenum shader_type)
 
 Shader::~Shader() {
     glDeleteShader(shader_handle);
-}
-
-shared_ptr<Shader> make_shader(const char *source_fn, GLenum shader_type) {
-    using std::make_shared;
-    return make_shared<Shader>(source_fn, shader_type);
 }
