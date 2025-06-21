@@ -1,42 +1,53 @@
 #pragma once
+
 #include "exceptions.hpp"
 #include "gl_inspect.hpp"
+#include "glad/glad.h"
 #include "vao.hpp"
 #include "vbo.hpp"
 
-#include "glad/glad.h"
-#include <array>
+#include <concepts>
 #include <format>
 #include <memory>
 
-template <std::size_t N, std::size_t POINTS_PER_VERTEX = 3> class Vertices {
-    static_assert(N > 0);
-    static_assert(POINTS_PER_VERTEX > 0);
+template <typename T>
+concept HasDataPointerAccess = requires(T obj) {
+    { obj.data() } -> std::same_as<GLfloat *>;
+    { obj.size() } -> std::same_as<std::size_t>;
+};
 
+class Vertices {
     static constexpr const GLuint vertex_attrib_location = 0; // where the vertex data is stored
     static constexpr const GLboolean is_normalized = GL_FALSE;
     static constexpr const GLsizei stride = 0;
     static constexpr const GLsizei num_create = 1;
     static constexpr const GLvoid *first_component_offset = nullptr;
 
+    /** raw data size, not count of verts */
+    std::size_t size;
+    std::size_t points_per_vertex;
     std::shared_ptr<Vao> vao;
     std::shared_ptr<Vbo> vbo;
 
 public:
     Vertices() = delete;
-    Vertices(const std::array<GLfloat, N> &data) : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()) {
+
+    template <HasDataPointerAccess Data>
+    Vertices(Data &&data, std::size_t points_per_vertex)
+        : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()), points_per_vertex(points_per_vertex),
+          size(data.size()) {
         vao->bind();
         vbo->bind();
 
-        glBufferData(GL_ARRAY_BUFFER, N * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
         auto current_error = glGetError();
         if (current_error != GL_NO_ERROR) {
             throw WrappedOpenGLError(std::format("cannot send vertex data: {}", gl_get_error_string(current_error)));
         }
 
         glEnableVertexAttribArray(vertex_attrib_location);
-        glVertexAttribPointer(vertex_attrib_location, POINTS_PER_VERTEX, GL_FLOAT, is_normalized, stride,
-                              first_component_offset);
+        glVertexAttribPointer(vertex_attrib_location, static_cast<GLint>(points_per_vertex), GL_FLOAT, is_normalized,
+                              stride, first_component_offset);
 
         if ((current_error = glGetError()) != GL_NO_ERROR) {
             throw WrappedOpenGLError(
@@ -52,15 +63,7 @@ public:
     Vertices &operator=(const Vertices &) noexcept = delete;
     Vertices &operator=(Vertices &&) noexcept = default;
 
-    std::shared_ptr<Vao> get_vao() const noexcept {
-        return vao;
-    }
-
-    std::shared_ptr<Vbo> get_vbo() const noexcept {
-        return vbo;
-    }
-
-    constexpr std::size_t get_vert_count() const noexcept {
-        return N / POINTS_PER_VERTEX;
-    }
+    std::shared_ptr<Vao> get_vao() const noexcept;
+    std::shared_ptr<Vbo> get_vbo() const noexcept;
+    std::size_t get_vert_count() const noexcept;
 };

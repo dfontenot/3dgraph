@@ -43,6 +43,7 @@ add_executable(${PROJECT_NAME}
   src/shader.cpp
   src/shader_program.cpp
   src/tessellation_settings.cpp
+  src/vertices.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME}
@@ -80,6 +81,7 @@ add_executable(${PROJECT_NAME}_es
   src/shader.cpp
   src/shader_program.cpp
   src/tessellation_settings.cpp
+  src/vertices.cpp
   src/es/cpu_tessellation.cpp
   src/es/grid_points.cpp
 )
