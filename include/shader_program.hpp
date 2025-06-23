@@ -3,6 +3,7 @@
 #include <memory>
 #include <ranges>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <glm/mat4x4.hpp>
@@ -49,15 +50,20 @@ class ShaderProgram {
 
 public:
     ShaderProgram() = delete;
+    ShaderProgram(ShaderProgram const &) = delete; // TODO relax this
+    ShaderProgram(ShaderProgram &&) = default;
+    ShaderProgram &operator=(const ShaderProgram &rhs) = delete; // TODO relax this
+    ShaderProgram &operator=(ShaderProgram &&rhs) noexcept = default;
+
     /**
      * prereq: must have opengl initialized before calling
      */
     template <std::ranges::input_range R>
         requires std::convertible_to<std::ranges::range_value_t<R>, std::shared_ptr<Shader>>
-    ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view,
-                  std::shared_ptr<glm::mat4> projection, std::shared_ptr<FunctionParams> function_params,
-                  std::shared_ptr<TessellationSettings> tessellation_settings)
-        : program_handle(glCreateProgram()), attached_shaders(shaders), model(model), view(view),
+    ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
+                  std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
+                  std::shared_ptr<TessellationSettings> const &tessellation_settings)
+        : program_handle(glCreateProgram()), attached_shaders(std::forward<R>(shaders)), model(model), view(view),
           projection(projection), function_params(function_params), tessellation_settings(tessellation_settings) {
         link_shaders();
     }
