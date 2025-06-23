@@ -37,6 +37,7 @@ add_executable(${PROJECT_NAME}
   src/event_loop.cpp
   src/glad.c
   src/gl_inspect.cpp
+  src/grid.cpp
   src/key.cpp
   src/main.cpp
   src/opengl_debug_callback.cpp
@@ -44,6 +45,8 @@ add_executable(${PROJECT_NAME}
   src/shader_program.cpp
   src/tessellation_settings.cpp
   src/vertices.cpp
+  src/es/cpu_tessellation.cpp
+  src/es/grid_points.cpp
 )
 
 target_precompile_headers(${PROJECT_NAME}
@@ -75,6 +78,7 @@ add_executable(${PROJECT_NAME}_es
   src/event_loop.cpp
   src/glad.c
   src/gl_inspect.cpp
+  src/grid.cpp
   src/key.cpp
   src/main.cpp
   src/opengl_debug_callback.cpp

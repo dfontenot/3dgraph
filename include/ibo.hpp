@@ -4,6 +4,8 @@
 #include "gl_inspect.hpp"
 #include "glad/glad.h"
 
+#include <format>
+
 struct Ibo {
     constexpr operator GLuint() const {
         return val;
@@ -13,6 +15,11 @@ struct Ibo {
         glGenBuffers(num_create, &val);
     }
 
+    Ibo(Ibo &&) = default;
+    Ibo(Ibo const &) = delete;
+    Ibo &operator=(const Ibo &) noexcept = delete;
+    Ibo &operator=(Ibo &&) noexcept = default;
+
     ~Ibo() {
         glDeleteBuffers(num_create, &val);
     }
@@ -20,13 +27,13 @@ struct Ibo {
     void bind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
-            throw WrappedOpenGLError("cannot to bind IBO due to existing error " + std::to_string(val) + ": " +
-                                     gl_get_error_string(err));
+            throw WrappedOpenGLError(
+                std::format("cannot to bind IBO due to existing error {0}: {1}", val, gl_get_error_string(err)));
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, val);
         if ((err = glGetError()) != GL_NO_ERROR) {
-            throw WrappedOpenGLError("failed to bind IBO " + std::to_string(val) + ": " + gl_get_error_string(err));
+            throw WrappedOpenGLError(std::format("failed to bind IBO {0}: {1}", val, gl_get_error_string(err)));
         }
     }
 
@@ -36,13 +43,13 @@ struct Ibo {
     void unbind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
-            throw WrappedOpenGLError("cannot to unbind IBO due to existing error " + std::to_string(val) + ": " +
-                                     gl_get_error_string(err));
+            throw WrappedOpenGLError(
+                std::format("failed to unbind IBO due to existing error {0}: {1}", val, gl_get_error_string(err)));
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         if ((err = glGetError()) != GL_NO_ERROR) {
-            throw WrappedOpenGLError("failed to unbind IBO " + std::to_string(val) + ": " + gl_get_error_string(err));
+            throw WrappedOpenGLError(std::format("failed to unbind IBO {0}: {1}", val, gl_get_error_string(err)));
         }
     }
 

@@ -21,6 +21,7 @@
         https://glad.dav1d.de/#profile=core&language=c&specification=gl&loader=on&api=gl%3D4.1&api=gles2%3D3.0&extensions=GL_EXT_debug_label&extensions=GL_EXT_debug_marker&extensions=GL_KHR_debug
 */
 
+// NOLINTBEGIN
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1819,4 +1820,4 @@ int gladLoadGLES2Loader(GLADloadproc load) {
 	load_GL_KHR_debug(load);
 	return GLVersion.major != 0 || GLVersion.minor != 0;
 }
-
+// NOLINTEND

@@ -4,6 +4,7 @@
 #include "exceptions.hpp"
 #include "gl_inspect.hpp"
 #include "ibo.hpp"
+#include "vao.hpp"
 
 #include <cstddef>
 #include <format>
@@ -14,7 +15,7 @@ using std::make_shared;
 using std::shared_ptr;
 using std::size_t;
 
-GridPoints::GridPoints(size_t tessellation_amount)
+GridPoints::GridPoints(size_t tessellation_amount, shared_ptr<Vao> const &vao)
     : ibo(make_shared<Ibo>()), triangles_points(make_lattice(tessellation_amount)),
       indices(lattice_points_list(tessellation_amount)), tessellation_amount(tessellation_amount) {
 
@@ -35,4 +36,12 @@ shared_ptr<Ibo> GridPoints::get_ibo() const noexcept {
 
 std::size_t GridPoints::get_tessellation_amount() const noexcept {
     return tessellation_amount;
+}
+
+std::shared_ptr<Vao> GridPoints::get_vao() const noexcept {
+    return vao;
+}
+
+std::size_t GridPoints::get_indices_count() const noexcept {
+    return indices.size();
 }

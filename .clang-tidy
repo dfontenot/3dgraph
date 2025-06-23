@@ -1,0 +1,1 @@
+Checks: '-*,modernize-*,clang-analyzer-*,portability-*,performance-*,cert-*,cppcoreguidelines-*,bugprone-*,-modernize-use-trailing-return-type,-bugprone-assignment-in-if-condition'

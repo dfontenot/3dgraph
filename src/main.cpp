@@ -21,19 +21,17 @@
 
 #include "consts.hpp"
 #include "create_array.hpp"
+#include "es/cpu_tessellation.hpp"
+#include "es/grid_points.hpp"
 #include "event_loop.hpp"
 #include "function_params.hpp"
+#include "grid.hpp"
 #include "max_deque.hpp"
 #include "opengl_debug_callback.hpp"
 #include "shader.hpp"
 #include "shader_program.hpp"
 #include "tessellation_settings.hpp"
 #include "vertices.hpp"
-
-#ifdef OPENGL_ES
-#include "es/cpu_tessellation.hpp"
-#include "es/grid_points.hpp"
-#endif
 
 using glm::mat4;
 using glm::perspective;
@@ -106,7 +104,7 @@ int main(int argc, char *argv[]) {
     stdout->info("shading language version: {}",
                  reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
-    GLint major, minor;
+    GLint major, minor = -1;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     if ((is_opengl_es && major < 3) || (!is_opengl_es && (major < 4 || minor < 1))) {
@@ -159,20 +157,26 @@ int main(int argc, char *argv[]) {
         initializer_list<std::shared_ptr<Shader>> the_shaders{vertex_shader, tsc_shader, tes_shader, fragment_shader};
 #endif
 
-        ShaderProgram program{the_shaders, model, view, projection, function_params, tessellation_settings};
+        auto const program =
+            make_shared<ShaderProgram>(the_shaders, model, view, projection, function_params, tessellation_settings);
+        // ShaderProgram program{the_shaders, model, view, projection, function_params, tessellation_settings};
 
         // TODO: new abstraction to handle VAO only for opengl 4.1 and VAO + IBO for opengl ES
 #ifdef OPENGL_ES
         Vertices verts{make_lattice(default_tessellation_level), (size_t)2};
 #else
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0),
                        (size_t)3};
 #endif
 
-        program.use();
-        program.set_initial_uniforms();
-        program.release();
+        Grid grid{std::move(verts), program};
 
+        program->use();
+        program->set_initial_uniforms();
+        program->release();
+
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
         MaxDeque<uint64_t> render_timings(10);
         EventLoop event_loop{model, view, projection, function_params, tessellation_settings};
         while (true) {
@@ -185,37 +189,36 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
+            if (event_loop.anything_modifed()) {
+                program->use();
+
+                if (event_loop.function_params_modified()) {
+                    program->update_function_params();
+                }
+
+                if (event_loop.view_modified()) {
+                    program->update_view();
+                }
+
+                if (event_loop.model_modified()) {
+                    program->update_model();
+                }
+
+                if (event_loop.tessellation_settings_modified()) {
+                    program->update_tessellation_settings();
+                }
+
+                program->release();
+            }
+
             auto const start_render_tick = SDL_GetTicksNS();
-            verts.get_vao()->bind();
-            program.use();
-
-            if (event_loop.function_params_modified()) {
-                program.update_function_params();
-            }
-
-            if (event_loop.view_modified()) {
-                program.update_view();
-            }
-
-            if (event_loop.model_modified()) {
-                program.update_model();
-            }
-
-            if (event_loop.tessellation_settings_modified()) {
-                program.update_tessellation_settings();
-            }
+            grid.render();
 
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-            glPatchParameteri(GL_PATCH_VERTICES, 4);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glDrawArrays(GL_PATCHES, 0, 4);
-
-            verts.get_vao()->unbind();
-            program.release();
-
             SDL_GL_SwapWindow(window);
+
             render_timings.add(SDL_GetTicksNS() - start_render_tick);
 
             if (max_sleep_ms_per_tick > tick_result.elapsed_ticks_ms) {

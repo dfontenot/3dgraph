@@ -9,6 +9,7 @@
 #include <concepts>
 #include <format>
 #include <memory>
+#include <utility>
 
 template <typename T>
 concept HasDataPointerAccess = requires(T obj) {
@@ -35,11 +36,12 @@ public:
     template <HasDataPointerAccess Data>
     Vertices(Data &&data, std::size_t points_per_vertex)
         : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()), points_per_vertex(points_per_vertex),
-          size(data.size()) {
+          size(std::forward<Data>(data).size()) {
         vao->bind();
         vbo->bind();
 
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, std::forward<Data>(data).size() * sizeof(GLfloat),
+                     std::forward<Data>(data).data(), GL_STATIC_DRAW);
         auto current_error = glGetError();
         if (current_error != GL_NO_ERROR) {
             throw WrappedOpenGLError(std::format("cannot send vertex data: {}", gl_get_error_string(current_error)));

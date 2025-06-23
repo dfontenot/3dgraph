@@ -71,20 +71,25 @@ public:
     /**
      * if the view (zoom, pan, etc.) was changed in any way during the tick
      */
-    bool view_modified() const;
+    bool view_modified() const noexcept;
 
     /**
      * if the model orientation (orbit) was changed in any way during the tick
      */
-    bool model_modified() const;
+    bool model_modified() const noexcept;
 
     /**
      * if the parameters of the 3D function that is being displayed were changed during the tick
      */
-    bool function_params_modified() const;
+    bool function_params_modified() const noexcept;
 
     /**
      * was a change in tessellation level requested during this frame?
      */
-    bool tessellation_settings_modified() const;
+    bool tessellation_settings_modified() const noexcept;
+
+    /**
+    * was anything changed during the last frame?
+    */
+    bool anything_modifed() const noexcept;
 };

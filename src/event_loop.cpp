@@ -18,6 +18,7 @@
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <initializer_list>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <tuple>
 
@@ -38,6 +39,7 @@ using std::optional;
 using std::shared_ptr;
 using std::size_t;
 using std::tuple;
+using std::numbers::pi_v;
 
 using glm::angleAxis;
 using glm::mat4;
@@ -46,14 +48,12 @@ using glm::toMat4;
 using glm::translate;
 using glm::vec3;
 
-static const constexpr double pi = 3.1415926;
-
 /**
  * how much to rotate / orbit in any direction
  * NOTE: manually tuned
  */
 static const constexpr double rotation_max_degrees_second = 20.0;
-static const constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi / 180.0);
+static const constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi_v<double> / 180.0);
 static const constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 
 static const constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
@@ -109,15 +109,15 @@ EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<m
       last_tessellation_change_at_msec(nullopt) {
 }
 
-bool EventLoop::function_params_modified() const {
+bool EventLoop::function_params_modified() const noexcept {
     return function_params_modified_;
 }
 
-bool EventLoop::view_modified() const {
+bool EventLoop::view_modified() const noexcept {
     return view_modified_;
 }
 
-bool EventLoop::model_modified() const {
+bool EventLoop::model_modified() const noexcept {
     return model_modified_;
 }
 
@@ -415,7 +415,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
 
     // TODO: track this overhead separately and use to compute how much input to process
     // per frame
-    
+
     process_function_mutation_keys(start_ticks_ms);
     process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
     process_tessellation_mutation_keys(start_ticks_ms);
@@ -423,6 +423,10 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
 }
 
-bool EventLoop::tessellation_settings_modified() const {
+bool EventLoop::tessellation_settings_modified() const noexcept {
     return tessellation_settings_modified_;
+}
+
+bool EventLoop::anything_modifed() const noexcept {
+    return function_params_modified_ || view_modified_ || model_modified_ || tessellation_settings_modified_;
 }
