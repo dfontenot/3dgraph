@@ -8,20 +8,23 @@
 class ShaderProgram;
 
 class Shader {
-    static constexpr const GLsizei number_of_sources = 1; // only supporting 1 source per shader type
-    static constexpr const GLint *source_lengths = nullptr;     // can be set to 0 since source ends with a null terminator
+    static constexpr const GLsizei number_of_sources = 1;   // only supporting 1 source per shader type
+    static constexpr const GLint *source_lengths = nullptr; // can be set to 0 since source ends with a null terminator
 
-    const GLuint shader_handle;
+    GLuint shader_handle;
+    GLenum shader_type;
 
 public:
-    const GLenum shader_type;
-
     Shader() = delete;
+    Shader(Shader const &) = delete; // TODO relax this
+    Shader(Shader &&) = default;
+
     Shader(const char *source_fn, GLenum shader_type);
     Shader(const std::string &source_fn, GLenum shader_type);
     Shader(const std::filesystem::path &source_path, GLenum shader_type);
     ~Shader();
 
+    [[nodiscard]] GLenum get_shader_type() const noexcept;
+
     friend class ShaderProgram;
 };
-

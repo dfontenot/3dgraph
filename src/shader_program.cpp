@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include "exceptions.hpp"
 #include "function_params.hpp"
@@ -32,6 +34,10 @@ using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
+namespace {
+auto logger = spdlog::stdout_color_mt("shader_program");
+} // namespace
+
 void ShaderProgram::link_shaders() {
     using std::make_unique;
 
@@ -44,17 +50,20 @@ void ShaderProgram::link_shaders() {
             format("precondition failed to init shader program: {}", gl_get_error_string(current_error)));
     }
 
+    logger->debug("will link {} shaders", attached_shaders.size());
+
     for_each(attached_shaders.cbegin(), attached_shaders.cend(),
              [&](const shared_ptr<Shader> &shader) { glAttachShader(program_handle, shader->shader_handle); });
 
     glLinkProgram(program_handle);
 
-    GLint linked;
+    GLint linked = -1;
     glGetProgramiv(program_handle, GL_LINK_STATUS, &linked);
 
-    GLsizei to_allocate;
+    GLsizei to_allocate = -1;
     glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &to_allocate);
     if (to_allocate > 1) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
         auto linker_log = make_unique<GLchar[]>(to_allocate);
         glGetProgramInfoLog(program_handle, to_allocate, nullptr, linker_log.get());
 
@@ -62,7 +71,7 @@ void ShaderProgram::link_shaders() {
             throw ShaderProgramLinkerError(linker_log.get());
         }
         else {
-            cerr << linker_log.get() << endl;
+            logger->error(linker_log.get());
         }
     }
 
@@ -171,7 +180,7 @@ void ShaderProgram::update_projection() {
     set_uniform_matrix_4fv(projection_uniform_variable_name, projection);
 }
 
-void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, shared_ptr<mat4> value) {
+void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, shared_ptr<mat4> const &value) {
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {

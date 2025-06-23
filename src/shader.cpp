@@ -25,9 +25,13 @@ static constexpr const bool is_opengl_es = false;
 
 namespace {
 
+auto const logger = spdlog::stderr_color_mt("shader");
 auto const err = spdlog::stderr_color_mt("shader_err");
 
 // source: https://stackoverflow.com/a/2602060/854854
+/**
+* precondition: the file must exist and be readable
+*/
 string read_file(const string &source_fn) {
     using std::ifstream;
     using std::istreambuf_iterator;
@@ -60,17 +64,26 @@ void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei num
         throw WrappedOpenGLError(format("precondition failed in shader ctor: {}", gl_get_error_string(current_error)));
     }
 
-    string shader_source = read_file(source_path);
+    ::logger->debug("reading shader file {}", source_path.string());
+    if (!std::filesystem::exists(source_path)) {
+        throw ShaderError(format("no such file {}", source_path.string()), shader_type);
+    }
+    else if (std::filesystem::is_directory(source_path)) {
+        throw ShaderError(format("{} is a directory", source_path.string()), shader_type);
+    }
+
+    string shader_source = ::read_file(source_path);
     auto shader_handle_data = shader_source.data();
     glShaderSource(shader_handle, number_of_sources, static_cast<GLchar **>(&shader_handle_data), source_lengths);
     glCompileShader(shader_handle);
 
-    GLint compiled;
+    GLint compiled = -1;
     glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &compiled);
 
-    GLsizei log_bytes_to_allocate;
+    GLsizei log_bytes_to_allocate = -1;
     glGetShaderiv(shader_handle, GL_INFO_LOG_LENGTH, &log_bytes_to_allocate);
     if (log_bytes_to_allocate > 1) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
         auto compilation_err_str = make_unique<GLchar[]>(log_bytes_to_allocate);
         glGetShaderInfoLog(shader_handle, log_bytes_to_allocate, nullptr, compilation_err_str.get());
 
@@ -93,7 +106,8 @@ Shader::Shader(const path &source_path, GLenum shader_type)
         throw ShaderError("must specify path relative to shaders directory", shader_type);
     }
     else {
-        ::do_shader_compilation(shader_handle, shader_type, number_of_sources, source_lengths, current_path() / "shaders" / source_path);
+        ::do_shader_compilation(shader_handle, shader_type, number_of_sources, source_lengths,
+                                current_path() / "shaders" / source_path);
     }
 }
 
@@ -111,4 +125,8 @@ Shader::Shader(const char *source_fn, GLenum shader_type)
 
 Shader::~Shader() {
     glDeleteShader(shader_handle);
+}
+
+GLenum Shader::get_shader_type() const noexcept {
+    return shader_type;
 }

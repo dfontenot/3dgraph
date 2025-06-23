@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <ranges>
 #include <unordered_map>
@@ -23,18 +24,17 @@ class ShaderProgram {
     static constexpr const GLchar *projection_uniform_variable_name = "u_projection";
     static constexpr const GLchar *tessellation_level_variable_name = "u_tess_level";
 
-    // all names
-    // the attribution position of the uniform is its position in this array
-    static constexpr const GLchar *uniform_variable_names[]{
-        offset_x_uniform_variable_name,   offset_y_uniform_variable_name, z_mult_uniform_variable_name,
-        model_uniform_variable_name,      view_uniform_variable_name,     projection_uniform_variable_name,
-        tessellation_level_variable_name,
-    };
-
-    // all positions
+    /** all uniform names that appear in any shaders
+     * the attribution position of the uniform is its position in this array
+     */
+    static constexpr std::array const uniform_variable_names{
+        offset_x_uniform_variable_name,  offset_y_uniform_variable_name, z_mult_uniform_variable_name,
+        model_uniform_variable_name,     view_uniform_variable_name,     projection_uniform_variable_name,
+        tessellation_level_variable_name};
 
     GLuint program_handle;
     std::vector<std::shared_ptr<Shader>> attached_shaders;
+
     std::unordered_map<const GLchar *, GLint> uniform_locations;
     std::shared_ptr<glm::mat4> model;
     std::shared_ptr<glm::mat4> view;
@@ -44,7 +44,7 @@ class ShaderProgram {
 
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
     void set_uniform_1ui(const GLchar *uniform_variable_name, GLuint value);
-    void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> value);
+    void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> const &value);
 
     void link_shaders();
 
