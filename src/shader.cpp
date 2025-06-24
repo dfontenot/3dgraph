@@ -114,10 +114,10 @@ Shader::Shader(const path &source_path, GLenum shader_type)
     }
 }
 
-Shader::Shader(const string &source_fn, GLenum shader_type) : Shader(path{source_fn}, shader_type) {
+Shader::Shader(const string &source_fn, GLenum shader_type) : Shader(path{"shaders"} / path{source_fn}, shader_type) {
 }
 
-Shader::Shader(const char *source_fn, GLenum shader_type) : Shader(path{source_fn}, shader_type) {
+Shader::Shader(const char *source_fn, GLenum shader_type) : Shader(path{"shaders"} / path{source_fn}, shader_type) {
 }
 
 Shader::~Shader() {
