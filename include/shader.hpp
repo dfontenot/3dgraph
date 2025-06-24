@@ -1,9 +1,13 @@
 #pragma once
 
 #include "glad/glad.h"
+#include "spdlog/logger.h"
 
 #include <filesystem>
 #include <string>
+
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 class ShaderProgram;
 
@@ -11,6 +15,8 @@ class Shader {
     static constexpr const GLsizei number_of_sources = 1;   // only supporting 1 source per shader type
     static constexpr const GLint *source_lengths = nullptr; // can be set to 0 since source ends with a null terminator
 
+    std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> err;
     GLuint shader_handle;
     GLenum shader_type;
 

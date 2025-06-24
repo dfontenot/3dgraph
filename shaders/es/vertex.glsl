@@ -2,6 +2,7 @@
 
 // xy plane only
 layout(location = 0) in vec2 position;
+out highp vec2 uv;
 
 // ref: https://gist.github.com/companje/29408948f1e8be54dd5733a74ca49bb9
 float map(float value, float min1, float max1, float min2, float max2) {
@@ -13,7 +14,7 @@ float skip_zero(float x) {
     if (x > eps || x < -eps) {
         return x;
     }
-    else if (x >= 0) {
+    else if (x >= 0.0) {
         return eps;
     }
     else {
@@ -33,8 +34,9 @@ uniform mat4 u_projection;
 uniform float u_z_mult;
 
 void main() {
-    const float z =
-        map(sin(10.0 * (pow(interpolated.x, 2) + pow(interpolated.y, 2))) / skip_zero(u_z_mult), -1.0, 1.0, -0.5, 0.5);
+    uv = vec2(map(position.x, -1.0, 1.0, 0.0, 1.0), map(position.y, -1.0, 1.0, 0.0, 1.0));
+    float z =
+        map(sin(10.0 * (pow(position.x, 2.0) + pow(position.y, 2.0))) / skip_zero(u_z_mult), -1.0, 1.0, -0.5, 0.5);
 
-    gl_Position = vec4(position.x + u_offset_x, position.y + u_offset_y, z, 1.0f);
+    gl_Position = u_projection * u_view * u_model * vec4(position.x + u_offset_x, position.y + u_offset_y, z, 1.0f);
 }

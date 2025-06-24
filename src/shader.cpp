@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <memory>
 #include <string>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -13,6 +14,7 @@
 
 using std::format;
 using std::make_unique;
+using std::shared_ptr;
 using std::string;
 using std::filesystem::current_path;
 using std::filesystem::path;
@@ -25,13 +27,10 @@ static constexpr const bool is_opengl_es = false;
 
 namespace {
 
-auto const logger = spdlog::stderr_color_mt("shader");
-auto const err = spdlog::stderr_color_mt("shader_err");
-
 // source: https://stackoverflow.com/a/2602060/854854
 /**
-* precondition: the file must exist and be readable
-*/
+ * precondition: the file must exist and be readable
+ */
 string read_file(const string &source_fn) {
     using std::ifstream;
     using std::istreambuf_iterator;
@@ -49,7 +48,8 @@ string read_file(const string &source_fn) {
 }
 
 void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei number_of_sources,
-                           const GLint *source_lengths, const path &source_path) {
+                           const GLint *source_lengths, const path &source_path,
+                           const shared_ptr<spdlog::logger> &logger, const shared_ptr<spdlog::logger> &err) {
     // preconditions
 
     // TODO: relax this restriction with ES 3.2 or GL_EXT_tessellation_shader
@@ -64,7 +64,7 @@ void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei num
         throw WrappedOpenGLError(format("precondition failed in shader ctor: {}", gl_get_error_string(current_error)));
     }
 
-    ::logger->debug("reading shader file {}", source_path.string());
+    logger->debug("reading shader file {}", source_path.string());
     if (!std::filesystem::exists(source_path)) {
         throw ShaderError(format("no such file {}", source_path.string()), shader_type);
     }
@@ -88,8 +88,8 @@ void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei num
         glGetShaderInfoLog(shader_handle, log_bytes_to_allocate, nullptr, compilation_err_str.get());
 
         if (compiled == GL_TRUE) {
-            ::err->warn("encountered error when compiling {0} shader: {1}", shader_type_to_string(shader_type),
-                        compilation_err_str.get());
+            err->warn("encountered error when compiling {0} shader: {1}", shader_type_to_string(shader_type),
+                      compilation_err_str.get());
         }
         else {
             throw ShaderCompilationError(compilation_err_str.get(), shader_type);
@@ -101,26 +101,23 @@ void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei num
 } // namespace
 
 Shader::Shader(const path &source_path, GLenum shader_type)
-    : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
+    : shader_type(shader_type), shader_handle(glCreateShader(shader_type)),
+      logger(spdlog::stderr_color_mt(format("shader {}", shader_type_to_string(shader_type)))),
+      err(spdlog::stderr_color_mt(format("shader_err {}", shader_type_to_string(shader_type)))) {
     if (source_path.is_absolute()) {
         throw ShaderError("must specify path relative to shaders directory", shader_type);
     }
     else {
+        // TODO: a lot of sanitization here
         ::do_shader_compilation(shader_handle, shader_type, number_of_sources, source_lengths,
-                                current_path() / "shaders" / source_path);
+                                current_path() / source_path, logger, err);
     }
 }
 
-Shader::Shader(const string &source_fn, GLenum shader_type)
-    : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
-    path source_path = current_path() / "shaders" / source_fn;
-    ::do_shader_compilation(shader_handle, shader_type, number_of_sources, source_lengths, source_path);
+Shader::Shader(const string &source_fn, GLenum shader_type) : Shader(path{source_fn}, shader_type) {
 }
 
-Shader::Shader(const char *source_fn, GLenum shader_type)
-    : shader_type(shader_type), shader_handle(glCreateShader(shader_type)) {
-    path source_path = current_path() / "shaders" / source_fn;
-    ::do_shader_compilation(shader_handle, shader_type, number_of_sources, source_lengths, source_path);
+Shader::Shader(const char *source_fn, GLenum shader_type) : Shader(path{source_fn}, shader_type) {
 }
 
 Shader::~Shader() {
