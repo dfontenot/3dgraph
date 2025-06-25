@@ -6,6 +6,7 @@
 #include "vao.hpp"
 #include "vbo.hpp"
 
+#include <iostream>
 #include <concepts>
 #include <format>
 #include <memory>
@@ -29,6 +30,9 @@ class Vertices {
     std::size_t points_per_vertex;
     std::shared_ptr<Vao> vao;
     std::shared_ptr<Vbo> vbo;
+
+    friend std::ostream &operator<<(std::ostream &stream, const Vertices &key);
+    friend std::formatter<Vertices>;
 
 public:
     Vertices() = delete;
@@ -65,7 +69,7 @@ public:
     Vertices &operator=(const Vertices &) noexcept = delete;
     Vertices &operator=(Vertices &&) noexcept = default;
 
-    std::shared_ptr<Vao> get_vao() const noexcept;
-    std::shared_ptr<Vbo> get_vbo() const noexcept;
-    std::size_t get_vert_count() const noexcept;
+    [[nodiscard]] std::shared_ptr<Vao> get_vao() const noexcept;
+    [[nodiscard]] std::shared_ptr<Vbo> get_vbo() const noexcept;
+    [[nodiscard]] std::size_t get_vert_count() const noexcept;
 };

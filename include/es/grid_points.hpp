@@ -2,23 +2,31 @@
 
 #include "ibo.hpp"
 #include "vao.hpp"
+#include "vbo.hpp"
 
 #include <cstddef>
+#include <format>
+#include <iostream>
 #include <memory>
 #include <vector>
 
 class GridPoints {
     std::shared_ptr<Vao> vao;
+    std::shared_ptr<Vbo> vbo;
     std::shared_ptr<Ibo> ibo;
     std::vector<GLfloat> triangles_points;
     std::vector<GLuint> indices;
     std::size_t tessellation_amount;
 
-public:
-    GridPoints(std::size_t tessellation_amount, std::shared_ptr<Vao> const& vao);
+    friend std::ostream &operator<<(std::ostream &stream, const GridPoints &key);
+    friend std::formatter<GridPoints>;
 
-    std::shared_ptr<Ibo> get_ibo() const noexcept;
-    std::shared_ptr<Vao> get_vao() const noexcept;
-    std::size_t get_tessellation_amount() const noexcept;
-    std::size_t get_indices_count() const noexcept;
+public:
+    GridPoints(std::size_t tessellation_amount);
+
+    [[nodiscard]] std::shared_ptr<Ibo> get_ibo() const noexcept;
+    [[nodiscard]] std::shared_ptr<Vao> get_vao() const noexcept;
+    [[nodiscard]] std::shared_ptr<Vao> get_vbo() const noexcept;
+    [[nodiscard]] std::size_t get_tessellation_amount() const noexcept;
+    [[nodiscard]] std::size_t get_indices_count() const noexcept;
 };

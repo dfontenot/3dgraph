@@ -4,6 +4,7 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <cstddef>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <variant>

@@ -27,5 +27,6 @@ public:
         : verts(std::move(grid_points)), program(shader_program) {
     }
 
+    // NOLINTNEXTLINE(modernize-use-nodiscard)
     uint64_t render() const;
 };

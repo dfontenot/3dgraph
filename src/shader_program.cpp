@@ -204,5 +204,8 @@ void ShaderProgram::set_initial_uniforms() {
     update_model();
     update_view();
     update_projection();
+
+#ifndef OPENGL_ES
     update_tessellation_settings();
+#endif
 }

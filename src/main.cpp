@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 
         // TODO: new abstraction to handle VAO only for opengl 4.1 and VAO + IBO for opengl ES
 #ifdef OPENGL_ES
-        Vertices verts{make_lattice(default_tessellation_level), (size_t)2};
+        GridPoints verts{default_tessellation_level};
 #else
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
         Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0),

@@ -1,5 +1,7 @@
-#include "es/grid_points.hpp"
+#include "glad/glad.h"
+
 #include "es/cpu_tessellation.hpp"
+#include "es/grid_points.hpp"
 
 #include "exceptions.hpp"
 #include "gl_inspect.hpp"
@@ -15,12 +17,31 @@ using std::make_shared;
 using std::shared_ptr;
 using std::size_t;
 
-GridPoints::GridPoints(size_t tessellation_amount, shared_ptr<Vao> const &vao)
-    : ibo(make_shared<Ibo>()), triangles_points(make_lattice(tessellation_amount)),
-      indices(lattice_points_list(tessellation_amount)), tessellation_amount(tessellation_amount) {
+std::ostream &operator<<(std::ostream &stream, const GridPoints &grid_points) {
+    stream << " { GridPoints: triangle_count " << (grid_points.triangles_points.size() / 3) << " tessellation amount "
+           << grid_points.tessellation_amount << "}";
+    return stream;
+}
+
+template <> struct std::formatter<GridPoints> {
+    template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(const GridPoints &obj, FormatContext &ctx) const {
+        return std::format_to(ctx.out(), "{ GridPoints triangle_count {0} tessellation amount {1} }",
+                              obj.triangles_points.size() / 3, obj.tessellation_amount);
+    }
+};
+
+GridPoints::GridPoints(size_t tessellation_amount)
+    : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()), ibo(make_shared<Ibo>()),
+      triangles_points(make_lattice(tessellation_amount)), indices(lattice_points_list(tessellation_amount)),
+      tessellation_amount(tessellation_amount) {
 
     ibo->bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLuint)), indices.data(),
+                 GL_STATIC_DRAW);
 
     auto current_error = glGetError();
     if (current_error != GL_NO_ERROR) {
