@@ -60,6 +60,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_MESSAGES=GLM_ENABLE)
 
 # custom defines for src/
 target_compile_definitions(${PROJECT_NAME} PRIVATE OPENGL_DEBUG)
+# ref: https://stackoverflow.com/a/72330784
+target_compile_definitions(${PROJECT_NAME} PRIVATE "DEBUG_BUILD=$<IF:$<CONFIG:Debug>,1,0>")
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace

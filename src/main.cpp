@@ -2,12 +2,14 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <string>
 
+#include "spdlog/cfg/env.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
 #include <cpptrace/from_current.hpp>
@@ -40,6 +42,7 @@ using glm::rotate;
 using glm::translate;
 using glm::vec3;
 
+using std::getenv;
 using std::initializer_list;
 using std::make_shared;
 using std::shared_ptr;
@@ -56,12 +59,39 @@ static constexpr const bool is_opengl_es = true;
 static constexpr const bool is_opengl_es = false;
 #endif
 
+void set_log_level() {
+    const auto spdlog_env_var = getenv("SPDLOG_LEVEL");
+    const auto log_level_env_var = getenv("LOG_LEVEL");
+
+    if (spdlog_env_var == nullptr) {
+        if (log_level_env_var == nullptr) {
+            // fallback log level
+#ifdef DEBUG_BUILD
+#if DEBUG_BUILD == 1
+            spdlog::set_level(spdlog::level::debug);
+#else
+            spdlog::set_level(spdlog::level::warn);
+#endif
+#else
+            spdlog::set_level(spdlog::level::info);
+#endif
+        }
+        else {
+            spdlog::cfg::load_env_levels("LOG_LEVEL");
+        }
+    }
+    else {
+        spdlog::cfg::load_env_levels();
+    }
+}
+
 int main(int argc, char *argv[]) {
     atexit(SDL_Quit);
 
-    spdlog::set_level(spdlog::level::debug);
     auto const stdout = spdlog::stdout_color_mt("main");
     auto const stderr = spdlog::stderr_color_mt("main_err");
+
+    set_log_level();
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         stderr->error("sdl init failed: {}", SDL_GetError());
