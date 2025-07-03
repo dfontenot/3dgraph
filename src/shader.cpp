@@ -100,6 +100,21 @@ void do_shader_compilation(GLuint shader_handle, GLenum shader_type, GLsizei num
 }
 } // namespace
 
+std::ostream &operator<<(std::ostream &stream, const Shader &shader) {
+    stream << "{ Shader " << shader_type_to_string(shader.shader_type) << " }";
+    return stream;
+}
+
+template <> struct std::formatter<Shader> {
+    template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(const Shader &obj, FormatContext &ctx) const {
+        return std::format_to(ctx.out(), "{ Shader {} }", shader_type_to_string(obj.shader_type));
+    }
+};
+
 Shader::Shader(const path &source_path, GLenum shader_type)
     : shader_type(shader_type), shader_handle(glCreateShader(shader_type)),
       logger(spdlog::stderr_color_mt(format("shader {}", shader_type_to_string(shader_type)))),

@@ -8,6 +8,8 @@
 #include <vector>
 
 #include <glm/mat4x4.hpp>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include "function_params.hpp"
 #include "glad/glad.h"
@@ -42,6 +44,9 @@ class ShaderProgram {
     std::shared_ptr<FunctionParams> function_params;
     std::shared_ptr<TessellationSettings> tessellation_settings;
 
+    std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> err;
+
     void set_uniform_1f(const GLchar *uniform_variable_name, GLfloat value);
     void set_uniform_1ui(const GLchar *uniform_variable_name, GLuint value);
     void set_uniform_matrix_4fv(const GLchar *uniform_variable_name, std::shared_ptr<glm::mat4> const &value);
@@ -64,7 +69,8 @@ public:
                   std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
                   std::shared_ptr<TessellationSettings> const &tessellation_settings)
         : program_handle(glCreateProgram()), attached_shaders(std::forward<R>(shaders)), model(model), view(view),
-          projection(projection), function_params(function_params), tessellation_settings(tessellation_settings) {
+          projection(projection), function_params(function_params), tessellation_settings(tessellation_settings),
+          logger(spdlog::stderr_color_mt("shader_program")), err(spdlog::stderr_color_mt("shader_program_err")) {
         link_shaders();
     }
 

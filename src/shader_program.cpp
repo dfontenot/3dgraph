@@ -34,10 +34,6 @@ using std::shared_ptr;
 using std::string;
 using std::stringstream;
 
-namespace {
-auto logger = spdlog::stdout_color_mt("shader_program");
-} // namespace
-
 void ShaderProgram::link_shaders() {
     using std::make_unique;
 
@@ -104,10 +100,12 @@ void ShaderProgram::link_shaders() {
 
 ShaderProgram::~ShaderProgram() {
     auto detach_shader = [&](const shared_ptr<Shader> &shader) {
+        //logger->trace("detaching shader {}", *shader);
         glDetachShader(program_handle, shader->shader_handle);
     };
 
     for_each(attached_shaders.cbegin(), attached_shaders.cend(), detach_shader);
+    logger->trace("deleting shader program");
     glDeleteProgram(program_handle);
 }
 

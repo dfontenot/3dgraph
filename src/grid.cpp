@@ -12,6 +12,7 @@ using std::holds_alternative;
 uint64_t Grid::render() const {
     using std::get;
 
+    // TODO: convert to std::visit
     auto const start_nsec = SDL_GetTicksNS();
     if (holds_alternative<Vertices>(verts)) {
         auto const &verts_ = get<Vertices>(verts);

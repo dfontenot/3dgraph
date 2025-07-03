@@ -23,7 +23,7 @@ template <> struct std::formatter<Key> {
     }
 
     template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ Key scan {0} mod {1} key {2} }", obj.scan_code, obj.key_mod, obj.key_code);
+        return std::format_to(ctx.out(), "{ Key: scan {0} mod {1} key {2} }", obj.scan_code, obj.key_mod, obj.key_code);
     }
 };
 

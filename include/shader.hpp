@@ -4,9 +4,10 @@
 #include "spdlog/logger.h"
 
 #include <filesystem>
+#include <iostream>
+#include <format>
 #include <string>
 
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 class ShaderProgram;
@@ -19,6 +20,9 @@ class Shader {
     std::shared_ptr<spdlog::logger> err;
     GLuint shader_handle;
     GLenum shader_type;
+
+    friend std::ostream &operator<<(std::ostream &stream, const Shader &shader);
+    friend std::formatter<Shader>;
 
 public:
     Shader() = delete;
