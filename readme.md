@@ -1,9 +1,12 @@
 # 3dgraph
 
-Graph a 3d function using OpenGL. Requires OpenGL 4.1 for hardware tessellation.
+Graph a 3d function using OpenGL or OpenGL ES. 
+
+## OpenGL requirements
+Requires OpenGL 4.1 for hardware tessellation, or OpenGL ES 3.0 (software tessellation) for the es build.
 
 ## Building
-Need a C++23 capable compiler (at least GCC14)
+Need a C++23 capable compiler (at least GCC14), cmake, and [conan package manager](https://conan.io)
 
 Can treat the build helper script like cmake, all args passed to it will be forwarded to cmake
 1. `./run-build.sh`
