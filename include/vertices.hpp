@@ -22,7 +22,6 @@ class Vertices {
     static constexpr const GLuint vertex_attrib_location = 0; // where the vertex data is stored
     static constexpr const GLboolean is_normalized = GL_FALSE;
     static constexpr const GLsizei stride = 0;
-    static constexpr const GLsizei num_create = 1;
     static constexpr const GLvoid *first_component_offset = nullptr;
 
     /** raw data size, not count of verts */

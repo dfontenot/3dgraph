@@ -29,22 +29,43 @@ template <> struct std::formatter<GridPoints> {
     }
 
     template <typename FormatContext> auto format(const GridPoints &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ GridPoints triangle_count {0} tessellation amount {1} }",
+        return std::format_to(ctx.out(), "{ GridPoints: triangle_count {0} tessellation amount {1} }",
                               obj.triangles_points.size() / 3, obj.tessellation_amount);
     }
 };
 
 GridPoints::GridPoints(size_t tessellation_amount)
-    : vao(std::make_shared<Vao>()), vbo(std::make_shared<Vbo>()), ibo(make_shared<Ibo>()),
+    : vao(make_shared<Vao>()), vbo(make_shared<Vbo>()), ibo(make_shared<Ibo>()),
       triangles_points(make_lattice(tessellation_amount)), indices(lattice_points_list(tessellation_amount)),
       tessellation_amount(tessellation_amount) {
+
+    // TODO: clean up the copy-paste between this and Vertices ctor
+    vao->bind();
+    vbo->bind();
+
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(triangles_points.size() * sizeof(GLfloat)),
+                 triangles_points.data(), GL_STATIC_DRAW);
+    auto current_error = glGetError();
+    if (current_error != GL_NO_ERROR) {
+        throw WrappedOpenGLError(format("cannot send vertex data: {}", gl_get_error_string(current_error)));
+    }
+
+    glEnableVertexAttribArray(vertex_attrib_location);
+    glVertexAttribPointer(vertex_attrib_location, points_per_vertex, GL_FLOAT, is_normalized, stride,
+                          first_component_offset);
+
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
+        throw WrappedOpenGLError(format("cannot set vertex data attribs: {}", gl_get_error_string(current_error)));
+    }
+
+    vbo->unbind();
+    vao->unbind();
 
     ibo->bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLuint)), indices.data(),
                  GL_STATIC_DRAW);
 
-    auto current_error = glGetError();
-    if (current_error != GL_NO_ERROR) {
+    if ((current_error = glGetError()) != GL_NO_ERROR) {
         throw WrappedOpenGLError(format("cannot setup ibo: {}", gl_get_error_string(current_error)));
     }
 

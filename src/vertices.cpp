@@ -18,7 +18,7 @@ template <> struct std::formatter<Vertices> {
     }
 
     template <typename FormatContext> auto format(const Vertices &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ Vertices size {0} points per vertex {1} }", obj.size, obj.points_per_vertex);
+        return std::format_to(ctx.out(), "{ Vertices: size {0} points per vertex {1} }", obj.size, obj.points_per_vertex);
     }
 };
 
