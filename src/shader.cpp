@@ -117,8 +117,8 @@ template <> struct std::formatter<Shader> {
 
 Shader::Shader(const path &source_path, GLenum shader_type)
     : shader_type(shader_type), shader_handle(glCreateShader(shader_type)),
-      logger(spdlog::stderr_color_mt(format("shader {}", shader_type_to_string(shader_type)))),
-      err(spdlog::stderr_color_mt(format("shader_err {}", shader_type_to_string(shader_type)))) {
+      logger(spdlog::stderr_color_mt(format("shader_{}", shader_type_to_string(shader_type)))),
+      err(spdlog::stderr_color_mt(format("shader_{}_err", shader_type_to_string(shader_type)))) {
     if (source_path.is_absolute()) {
         throw ShaderError("must specify path relative to shaders directory", shader_type);
     }

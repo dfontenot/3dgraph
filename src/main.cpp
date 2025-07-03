@@ -86,7 +86,6 @@ void set_log_level() {
 }
 
 int main(int argc, char *argv[]) {
-    atexit(SDL_Quit);
 
     auto const stdout = spdlog::stdout_color_mt("main");
     auto const stderr = spdlog::stderr_color_mt("main_err");
@@ -95,6 +94,11 @@ int main(int argc, char *argv[]) {
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         stderr->error("sdl init failed: {}", SDL_GetError());
+        return 1;
+    }
+
+    if (std::atexit(SDL_Quit) != 0) {
+        stderr->error("failed to register SDL_Quit exit handler");
         return 1;
     }
 
@@ -134,7 +138,8 @@ int main(int argc, char *argv[]) {
     stdout->info("shading language version: {}",
                  reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
-    GLint major, minor = -1;
+    GLint major = -1;
+    GLint minor = -1;
     glGetIntegerv(GL_MAJOR_VERSION, &major);
     glGetIntegerv(GL_MINOR_VERSION, &minor);
     if ((is_opengl_es && major < 3) || (!is_opengl_es && (major < 4 || minor < 1))) {
@@ -166,9 +171,11 @@ int main(int argc, char *argv[]) {
     }
 
     CPPTRACE_TRY {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
         auto model = make_shared<mat4>(rotate(mat4(1.0f), radians(-90.0f), vec3(1.0f, 0.0f, 0.0f)));
         auto view = make_shared<mat4>(translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f)));
         auto projection =
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
             make_shared<mat4>(perspective(radians(50.0f), (float)window_w / (float)window_h, 0.01f, 10.00f));
         auto function_params = make_shared<FunctionParams>();
         auto tessellation_settings = make_shared<TessellationSettings>();
@@ -241,11 +248,12 @@ int main(int argc, char *argv[]) {
                 program->release();
             }
 
-            auto const start_render_tick = SDL_GetTicksNS();
-            grid.render();
-
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+            auto const start_render_tick = SDL_GetTicksNS();
+            grid.render();
+            program->release();
 
             SDL_GL_SwapWindow(window);
 

@@ -100,7 +100,7 @@ void ShaderProgram::link_shaders() {
 
 ShaderProgram::~ShaderProgram() {
     auto detach_shader = [&](const shared_ptr<Shader> &shader) {
-        //logger->trace("detaching shader {}", *shader);
+        // logger->trace("detaching shader {}", *shader);
         glDetachShader(program_handle, shader->shader_handle);
     };
 
@@ -110,6 +110,10 @@ ShaderProgram::~ShaderProgram() {
 }
 
 void ShaderProgram::use() {
+    if (in_use) {
+        return;
+    }
+
     auto current_error = glGetError();
 
     if (current_error != GL_NO_ERROR) {
@@ -122,10 +126,21 @@ void ShaderProgram::use() {
     if ((current_error = glGetError()) != GL_NO_ERROR) {
         throw WrappedOpenGLError(format("error using the shader program: {}", gl_get_error_string(current_error)));
     }
+
+    in_use = true;
 }
 
 void ShaderProgram::release() {
+    if (! in_use) {
+        return;
+    }
+
     glUseProgram(0);
+    in_use = false;
+}
+
+bool ShaderProgram::is_in_use() const {
+    return in_use;
 }
 
 void ShaderProgram::update_function_params() {

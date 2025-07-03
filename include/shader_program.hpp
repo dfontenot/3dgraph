@@ -35,6 +35,7 @@ class ShaderProgram {
         tessellation_level_variable_name};
 
     GLuint program_handle;
+    bool in_use;
     std::vector<std::shared_ptr<Shader>> attached_shaders;
 
     std::unordered_map<const GLchar *, GLint> uniform_locations;
@@ -68,14 +69,16 @@ public:
     ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
                   std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
                   std::shared_ptr<TessellationSettings> const &tessellation_settings)
-        : program_handle(glCreateProgram()), attached_shaders(std::forward<R>(shaders)), model(model), view(view),
-          projection(projection), function_params(function_params), tessellation_settings(tessellation_settings),
-          logger(spdlog::stderr_color_mt("shader_program")), err(spdlog::stderr_color_mt("shader_program_err")) {
+        : program_handle(glCreateProgram()), in_use(false), attached_shaders(std::forward<R>(shaders)), model(model),
+          view(view), projection(projection), function_params(function_params),
+          tessellation_settings(tessellation_settings), logger(spdlog::stderr_color_mt("shader_program")),
+          err(spdlog::stderr_color_mt("shader_program_err")) {
         link_shaders();
     }
 
     ~ShaderProgram();
 
+    [[nodiscard]] bool is_in_use() const;
     void use();
     void release();
 
