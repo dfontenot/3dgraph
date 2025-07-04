@@ -1,6 +1,11 @@
 #include "es/cpu_tessellation.hpp"
+
 #include <cmath>
+#include <vector>
+
 #include <gtest/gtest.h>
+
+using std::vector;
 
 /** grid, 2 dimensions only */
 constexpr const auto vertex_dims = 2;
@@ -92,7 +97,7 @@ TEST(CPUTessellation, TessellationLevelThree) {
 
     GLfloat const increment = 1.0f / static_cast<GLfloat>(num_divisions);
     // ordering of tessellated points: start on bottom left go up 1 col at a time
-    
+
     // left-most col
     EXPECT_FLOAT_EQ(-0.5f, lattice[0]);
     EXPECT_FLOAT_EQ(-0.5f, lattice[1]);
@@ -170,11 +175,23 @@ TEST(CPUTessellation, InspectLatticeCorners) {
     EXPECT_FLOAT_EQ(0.5f, *(lattice.cend() - 1));
 }
 
-TEST(CPUTessellation, IBOPoints) {
+TEST(CPUTessellation, LatticePointsZero) {
+    const vector<GLuint> expected_ibo{0};
+    auto const lattice_points_for_ibo = lattice_points_list(0);
+    EXPECT_EQ(expected_ibo, lattice_points_for_ibo);
+}
+
+TEST(CPUTessellation, LatticePointsOne) {
+    const vector<GLuint> expected_ibo{0, 4, 5, 0, 5, 1};
+    auto const lattice_points_for_ibo = lattice_points_list(1);
+    EXPECT_EQ(expected_ibo, lattice_points_for_ibo);
+}
+
+TEST(CPUTessellation, LatticePoints) {
     auto const any_tessellation_amount = 4;
     auto const points_per_square = 6;
-    const auto expected_subdivision_count =
-        static_cast<size_t>(pow(static_cast<double>(any_tessellation_amount - 1), 2.0));
+    auto const expected_subdivision_count =
+        static_cast<size_t>(pow(static_cast<double>(any_tessellation_amount), 2.0));
 
     auto const lattice_points_for_ibo = lattice_points_list(any_tessellation_amount);
     EXPECT_EQ(lattice_points_for_ibo.size(), expected_subdivision_count * points_per_square);

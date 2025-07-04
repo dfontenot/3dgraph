@@ -64,7 +64,14 @@ vector<GLfloat> make_lattice(size_t tessellation_amount) {
  * layout from make_lattice
  */
 vector<GLuint> lattice_points_list(size_t tessellation_amount) {
-    const auto count = static_cast<size_t>(pow(static_cast<double>(tessellation_amount - 1), 2.0));
+    assert(tessellation_amount >= 0);
+
+    if (tessellation_amount == 0) {
+        vector<GLuint> indices{0};
+        return indices;
+    }
+
+    const auto count = static_cast<size_t>(pow(static_cast<double>(tessellation_amount), 2.0));
     vector<GLuint> indices_list;
     indices_list.reserve(count);
 

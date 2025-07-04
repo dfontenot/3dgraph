@@ -51,7 +51,7 @@ using std::string;
 using std::stringstream;
 using std::filesystem::path;
 
-static constexpr const GLint default_tessellation_level = 2;
+static constexpr const GLint default_tessellation_level = 1;
 
 #ifdef OPENGL_ES
 static constexpr const bool is_opengl_es = true;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_LoadLibrary(nullptr);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
-    if (is_opengl_es) {
+    if constexpr (is_opengl_es) {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
