@@ -37,10 +37,10 @@ uint64_t Grid::render() const {
         ibo->bind();
         program->use();
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(verts_.get_indices_count()), GL_UNSIGNED_INT, nullptr);
 
-        ibo->unbind();
+        //ibo->unbind();
         vao->unbind();
         program->release();
     }
