@@ -323,7 +323,7 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     }
 
     if (model_modified_) {
-        ::logger->debug("will update model matrix from {0} to {1}", glm::quat_cast(*model), current);
+        ::logger->debug("will update model quat to {0}, {1}, {2}, {3}", current.w, current.x, current.y, current.z);
         *model = toMat4(current);
     }
 }

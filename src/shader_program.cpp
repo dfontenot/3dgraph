@@ -100,7 +100,6 @@ void ShaderProgram::link_shaders() {
 
 ShaderProgram::~ShaderProgram() {
     auto detach_shader = [&](const shared_ptr<Shader> &shader) {
-        // logger->trace("detaching shader {}", *shader);
         glDetachShader(program_handle, shader->shader_handle);
     };
 

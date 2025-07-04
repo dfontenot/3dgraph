@@ -49,10 +49,6 @@ add_executable(${PROJECT_NAME}
   src/es/grid_points.cpp
 )
 
-target_precompile_headers(${PROJECT_NAME}
-  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
-)
-
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_FORCE_SWIZZLE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_SWIZZLE_XYZW)
@@ -92,10 +88,6 @@ add_executable(${PROJECT_NAME}_es
   src/es/grid_points.cpp
 )
 
-target_precompile_headers(${PROJECT_NAME}_es
-  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
-)
-
 target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_FORCE_SWIZZLE)
 target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_SWIZZLE_XYZW)
@@ -127,10 +119,6 @@ add_executable(${PROJECT_NAME}_test
   test/active_keys_test.cpp
   test/key_test.cpp
   test/es/cpu_tessellation_test.cpp
-)
-
-target_precompile_headers(${PROJECT_NAME}_test
-  PRIVATE "${3dgraph_SOURCE_DIR}/include/formatters.hpp"
 )
 
 # NOTE: lcov does not like the output of the coverage files

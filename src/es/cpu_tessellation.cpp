@@ -35,7 +35,7 @@ vector<GLfloat> make_lattice(size_t tessellation_amount) {
         | std::views::transform([scaling](auto pt) { 
             auto const x = static_cast<GLfloat>(get<0>(pt)) * scaling - 0.5f;
             auto const y = static_cast<GLfloat>(get<1>(pt)) * scaling - 0.5f;
-            const vector<GLfloat> point{x, y}; // let shader calculate 3d function
+            vector<GLfloat> point{x, y}; // let shader calculate 3d function
             return point;
         })
         | std::views::join;
