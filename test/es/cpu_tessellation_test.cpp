@@ -1,6 +1,8 @@
 #include "es/cpu_tessellation.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <ranges>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -190,9 +192,14 @@ TEST(CPUTessellation, LatticePointsOne) {
 TEST(CPUTessellation, LatticePoints) {
     auto const any_tessellation_amount = 4;
     auto const points_per_square = 6;
-    auto const expected_subdivision_count =
-        static_cast<size_t>(pow(static_cast<double>(any_tessellation_amount), 2.0));
+    /** the number of squares in the lattice */
+    auto const expected_subdivision_count = static_cast<size_t>(pow(static_cast<double>(any_tessellation_amount), 2.0));
 
     auto const lattice_points_for_ibo = lattice_points_list(any_tessellation_amount);
     EXPECT_EQ(lattice_points_for_ibo.size(), expected_subdivision_count * points_per_square);
+
+    /** how many individual vertices will there be in the lattice */
+    auto const expected_num_points = static_cast<GLuint>(pow(static_cast<double>(any_tessellation_amount + 1), 2.0));
+    EXPECT_TRUE(std::ranges::all_of(lattice_points_for_ibo,
+                                    [expected_num_points](auto idx) { return idx < expected_num_points; }));
 }
