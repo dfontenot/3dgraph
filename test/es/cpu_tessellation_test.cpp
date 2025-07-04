@@ -182,7 +182,7 @@ TEST(CPUTessellation, LatticePointsZero) {
 }
 
 TEST(CPUTessellation, LatticePointsOne) {
-    const vector<GLuint> expected_ibo{0, 4, 5, 0, 5, 1};
+    const vector<GLuint> expected_ibo{0, 2, 3, 0, 3, 1};
     auto const lattice_points_for_ibo = lattice_points_list(1);
     EXPECT_EQ(expected_ibo, lattice_points_for_ibo);
 }

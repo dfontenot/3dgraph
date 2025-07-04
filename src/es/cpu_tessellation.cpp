@@ -1,13 +1,19 @@
 #include "es/cpu_tessellation.hpp"
+
 #include "glad/glad.h"
+
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
 #include <cmath>
+#include <cstddef>
 #include <iterator>
+#include <limits>
 #include <ranges>
+#include <stdexcept>
 #include <vector>
 
+using std::domain_error;
+using std::numeric_limits;
 using std::size_t;
 using std::vector;
 using std::ranges::iota_view;
@@ -24,7 +30,7 @@ constexpr const auto vertex_dims = 2;
  * tessellation level 0 = 1 point
  * tessellation level 1 = 1 square
  */
-vector<GLfloat> make_lattice(size_t tessellation_amount) {
+vector<GLfloat> make_lattice(GLuint tessellation_amount) {
     using std::get;
     using std::ranges::for_each;
 
@@ -38,6 +44,10 @@ vector<GLfloat> make_lattice(size_t tessellation_amount) {
 
     const size_t tessellation_amount_ = tessellation_amount + 1;
     const size_t total_size = tessellation_amount_ * tessellation_amount_ * vertex_dims;
+    if (total_size > numeric_limits<GLuint>::max()) {
+        throw domain_error("tessellation amount is too large to be indexed by GLuint");
+    }
+
     const GLfloat scaling = 1.0f / static_cast<GLfloat>(tessellation_amount);
 
     vector<GLfloat> lattice;
@@ -63,7 +73,7 @@ vector<GLfloat> make_lattice(size_t tessellation_amount) {
  * assumes points will be 3 sequential floats following
  * layout from make_lattice
  */
-vector<GLuint> lattice_points_list(size_t tessellation_amount) {
+vector<GLuint> lattice_points_list(GLuint tessellation_amount) {
     assert(tessellation_amount >= 0);
 
     if (tessellation_amount == 0) {
@@ -72,11 +82,17 @@ vector<GLuint> lattice_points_list(size_t tessellation_amount) {
     }
 
     const auto count = static_cast<size_t>(pow(static_cast<double>(tessellation_amount), 2.0));
+
+    if (count > numeric_limits<GLuint>::max()) {
+        throw domain_error("tessellation amount is too large to be indexed by GLuint");
+    }
+
     vector<GLuint> indices_list;
     indices_list.reserve(count);
 
     // two adjacent CCW triangles
-    const vector<GLuint> two_triangles_pattern{0, 4, 5, 0, 5, 1};
+    const vector<GLuint> two_triangles_pattern{0, tessellation_amount + 1, tessellation_amount + 2,
+                                               0, tessellation_amount + 2, 1};
 
     const iota_view times{(size_t)0, count};
 

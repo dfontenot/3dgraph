@@ -51,7 +51,7 @@ using std::string;
 using std::stringstream;
 using std::filesystem::path;
 
-static constexpr const GLint default_tessellation_level = 1;
+static constexpr const GLint default_tessellation_level = 9;
 
 #ifdef OPENGL_ES
 static constexpr const bool is_opengl_es = true;
