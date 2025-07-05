@@ -50,6 +50,7 @@ using std::size_t;
 using std::string;
 using std::stringstream;
 using std::to_array;
+using std::vector;
 using std::filesystem::path;
 
 static constexpr const GLint default_tessellation_level = 9;
@@ -182,21 +183,21 @@ int main(int argc, char *argv[]) {
         auto tessellation_settings = make_shared<TessellationSettings>();
 
         // TODO: clean this up
-#ifdef OPENGL_ES
-        const path es_shader_base_path = "shaders/es";
-        auto vertex_shader = make_shared<Shader>(es_shader_base_path / "vertex.glsl", GL_VERTEX_SHADER);
-        auto fragment_shader = make_shared<Shader>(es_shader_base_path / "fragment.glsl", GL_FRAGMENT_SHADER);
-        array the_shaders{vertex_shader, fragment_shader};
-#else
-        auto vertex_shader = make_shared<Shader>("vertex.glsl", GL_VERTEX_SHADER);
-        auto tsc_shader = make_shared<Shader>("tsc.glsl", GL_TESS_CONTROL_SHADER);
-        auto tes_shader = make_shared<Shader>("tes.glsl", GL_TESS_EVALUATION_SHADER);
-        auto fragment_shader = make_shared<Shader>("fragment.glsl", GL_FRAGMENT_SHADER);
-        array the_shaders{vertex_shader, tsc_shader, tes_shader, fragment_shader};
-#endif
+        vector<shared_ptr<Shader>> the_shaders;
+        if constexpr (is_opengl_es) {
+            const path es_shader_base_path = "shaders/es";
+            the_shaders.push_back(make_shared<Shader>(es_shader_base_path / "vertex.glsl", GL_VERTEX_SHADER));
+            the_shaders.push_back(make_shared<Shader>(es_shader_base_path / "fragment.glsl", GL_FRAGMENT_SHADER));
+        }
+        else {
+            the_shaders.push_back(make_shared<Shader>("vertex.glsl", GL_VERTEX_SHADER));
+            the_shaders.push_back(make_shared<Shader>("tsc.glsl", GL_TESS_CONTROL_SHADER));
+            the_shaders.push_back(make_shared<Shader>("tes.glsl", GL_TESS_EVALUATION_SHADER));
+            the_shaders.push_back(make_shared<Shader>("fragment.glsl", GL_FRAGMENT_SHADER));
+        }
 
-        auto const program =
-            make_shared<ShaderProgram>(the_shaders, model, view, projection, function_params, tessellation_settings);
+        auto const program = make_shared<ShaderProgram>(std::move(the_shaders), model, view, projection,
+                                                        function_params, tessellation_settings);
 
         // TODO: new abstraction to handle VAO only for opengl 4.1 and VAO + IBO for opengl ES
 #ifdef OPENGL_ES

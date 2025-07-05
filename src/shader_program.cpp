@@ -6,6 +6,7 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -33,6 +34,7 @@ using std::initializer_list;
 using std::shared_ptr;
 using std::string;
 using std::stringstream;
+using std::vector;
 
 void ShaderProgram::link_shaders() {
     using std::make_unique;
@@ -98,6 +100,16 @@ void ShaderProgram::link_shaders() {
     glUseProgram(0);
 }
 
+ShaderProgram::ShaderProgram(vector<shared_ptr<Shader>> &&shaders, shared_ptr<glm::mat4> const &model,
+                             shared_ptr<glm::mat4> const &view, shared_ptr<glm::mat4> const &projection,
+                             shared_ptr<FunctionParams> const &function_params,
+                             shared_ptr<TessellationSettings> const &tessellation_settings)
+    : program_handle(glCreateProgram()), in_use(false), attached_shaders(std::move(shaders)), model(model), view(view),
+      projection(projection), function_params(function_params), tessellation_settings(tessellation_settings),
+      logger(spdlog::stderr_color_mt("shader_program")), err(spdlog::stderr_color_mt("shader_program_err")) {
+    link_shaders();
+}
+
 ShaderProgram::~ShaderProgram() {
     auto detach_shader = [&](const shared_ptr<Shader> &shader) {
         glDetachShader(program_handle, shader->shader_handle);
@@ -130,7 +142,7 @@ void ShaderProgram::use() {
 }
 
 void ShaderProgram::release() {
-    if (! in_use) {
+    if (!in_use) {
         return;
     }
 

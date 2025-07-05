@@ -64,11 +64,20 @@ public:
     /**
      * prereq: must have opengl initialized before calling
      */
+    explicit ShaderProgram(std::vector<std::shared_ptr<Shader>> &&shaders, std::shared_ptr<glm::mat4> const &model,
+                           std::shared_ptr<glm::mat4> const &view, std::shared_ptr<glm::mat4> const &projection,
+                           std::shared_ptr<FunctionParams> const &function_params,
+                           std::shared_ptr<TessellationSettings> const &tessellation_settings);
+
+    /**
+     * prereq: must have opengl initialized before calling
+     */
     template <std::ranges::input_range R>
         requires std::convertible_to<std::ranges::range_value_t<R>, std::shared_ptr<Shader>>
-    ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
-                  std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
-                  std::shared_ptr<TessellationSettings> const &tessellation_settings)
+    explicit ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
+                           std::shared_ptr<glm::mat4> const &projection,
+                           std::shared_ptr<FunctionParams> const &function_params,
+                           std::shared_ptr<TessellationSettings> const &tessellation_settings)
         : program_handle(glCreateProgram()), in_use(false),
           attached_shaders(std::forward<R>(shaders).cbegin(), std::forward<R>(shaders).cend()), model(model),
           view(view), projection(projection), function_params(function_params),
