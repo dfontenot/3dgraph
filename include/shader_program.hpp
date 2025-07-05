@@ -69,7 +69,8 @@ public:
     ShaderProgram(R &&shaders, std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
                   std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
                   std::shared_ptr<TessellationSettings> const &tessellation_settings)
-        : program_handle(glCreateProgram()), in_use(false), attached_shaders(std::forward<R>(shaders)), model(model),
+        : program_handle(glCreateProgram()), in_use(false),
+          attached_shaders(std::forward<R>(shaders).cbegin(), std::forward<R>(shaders).cend()), model(model),
           view(view), projection(projection), function_params(function_params),
           tessellation_settings(tessellation_settings), logger(spdlog::stderr_color_mt("shader_program")),
           err(spdlog::stderr_color_mt("shader_program_err")) {

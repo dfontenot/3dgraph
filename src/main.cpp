@@ -1,10 +1,10 @@
 #include "glad/glad.h" // have to load glad first
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
-#include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -22,7 +22,6 @@
 #include <spdlog/spdlog.h>
 
 #include "consts.hpp"
-#include "create_array.hpp"
 #include "es/cpu_tessellation.hpp"
 #include "es/grid_points.hpp"
 #include "event_loop.hpp"
@@ -42,6 +41,7 @@ using glm::rotate;
 using glm::translate;
 using glm::vec3;
 
+using std::array;
 using std::getenv;
 using std::initializer_list;
 using std::make_shared;
@@ -49,6 +49,7 @@ using std::shared_ptr;
 using std::size_t;
 using std::string;
 using std::stringstream;
+using std::to_array;
 using std::filesystem::path;
 
 static constexpr const GLint default_tessellation_level = 9;
@@ -185,26 +186,24 @@ int main(int argc, char *argv[]) {
         const path es_shader_base_path = "shaders/es";
         auto vertex_shader = make_shared<Shader>(es_shader_base_path / "vertex.glsl", GL_VERTEX_SHADER);
         auto fragment_shader = make_shared<Shader>(es_shader_base_path / "fragment.glsl", GL_FRAGMENT_SHADER);
-        initializer_list<std::shared_ptr<Shader>> the_shaders{vertex_shader, fragment_shader};
+        array the_shaders{vertex_shader, fragment_shader};
 #else
         auto vertex_shader = make_shared<Shader>("vertex.glsl", GL_VERTEX_SHADER);
         auto tsc_shader = make_shared<Shader>("tsc.glsl", GL_TESS_CONTROL_SHADER);
         auto tes_shader = make_shared<Shader>("tes.glsl", GL_TESS_EVALUATION_SHADER);
         auto fragment_shader = make_shared<Shader>("fragment.glsl", GL_FRAGMENT_SHADER);
-        initializer_list<std::shared_ptr<Shader>> the_shaders{vertex_shader, tsc_shader, tes_shader, fragment_shader};
+        array the_shaders{vertex_shader, tsc_shader, tes_shader, fragment_shader};
 #endif
 
         auto const program =
             make_shared<ShaderProgram>(the_shaders, model, view, projection, function_params, tessellation_settings);
-        // ShaderProgram program{the_shaders, model, view, projection, function_params, tessellation_settings};
 
         // TODO: new abstraction to handle VAO only for opengl 4.1 and VAO + IBO for opengl ES
 #ifdef OPENGL_ES
         GridPoints verts{default_tessellation_level};
 #else
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
-        Vertices verts{create_array_t<GLfloat>(0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0),
-                       (size_t)3};
+        Vertices verts{to_array<GLfloat>({0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0}), (size_t)3};
 #endif
 
         Grid grid{std::move(verts), program};
