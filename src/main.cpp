@@ -61,6 +61,12 @@ static constexpr const bool is_opengl_es = true;
 static constexpr const bool is_opengl_es = false;
 #endif
 
+#if OPENGL_DEBUG
+static constexpr const bool has_opengl_debug = true;
+#else
+static constexpr const bool has_opengl_debug = false;
+#endif
+
 void set_log_level() {
     const auto spdlog_env_var = getenv("SPDLOG_LEVEL");
     const auto log_level_env_var = getenv("LOG_LEVEL");
@@ -149,10 +155,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-#if OPENGL_DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
-    init_opengl_debug();
-#endif
+    if constexpr (has_opengl_debug) {
+        glEnable(GL_DEBUG_OUTPUT);
+        init_opengl_debug();
+    }
 
     SDL_GL_SetSwapInterval(1); // vsync
     glDisable(GL_DEPTH_TEST);

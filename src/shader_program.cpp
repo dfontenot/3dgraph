@@ -220,7 +220,9 @@ void ShaderProgram::set_uniform_matrix_4fv(const GLchar *uniform_variable_name, 
 }
 
 void ShaderProgram::update_tessellation_settings() {
-    set_uniform_1ui(tessellation_level_variable_name, tessellation_settings->get_level());
+    if (tessellation_settings->is_hardware_tessellation_supported()) {
+        set_uniform_1ui(tessellation_level_variable_name, tessellation_settings->get_level());
+    }
 }
 
 void ShaderProgram::set_initial_uniforms() {

@@ -28,7 +28,7 @@ bool tessellation_level_ok(GLuint requested_level) {
 
 GLuint tessellation_level_or_throw(GLuint requested_level) {
     if (!tessellation_level_ok(requested_level)) {
-        WrappedOpenGLError("invalid tessellation level");
+        throw WrappedOpenGLError("invalid tessellation level");
     }
 
     return requested_level;
