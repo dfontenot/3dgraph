@@ -3,10 +3,45 @@
 # NOTE: this file is more of a convenience for building locally
 # this project will build w/o this script using regular cmake commands
 
+# NOTE: no long arg support in getopts
+# and no long arg support for macOS getopt
+# manual argument detection for now
+NEXT_IS_ARG=0
+RUN_TESTS=1
+TARGET_REGEX='--target=([[:alpha:]]+)'
+TARGET=
+for arg do
+  shift
+  if [ "$NEXT_IS_ARG" -eq 1 ]; then
+    TARGET="--target=${arg}"
+
+    if [[ $arg = "clean" ]]; then
+      RUN_TESTS=0
+    fi
+
+    NEXT_IS_ARG=0
+    continue
+  elif [[ "$arg" =~ $TARGET_REGEX ]]; then
+    if [[ "${BASH_REMATCH[1]}" = "clean" ]]; then
+      RUN_TESTS=0
+    fi
+
+    TARGET=$arg
+    NEXT_IS_ARG=0
+    continue
+  elif [[ "$arg" = "--target" ]]; then
+    NEXT_IS_ARG=1
+    continue
+  fi
+
+  set -- "$@" "$arg"
+done
+
 # source: https://github.com/conan-io/examples2/blob/main/tutorial/consuming_packages/simple_cmake_project/run_example.sh
 set -e
 set -x
 
+printf '%s\n' "$@"
 BASEDIR=$(dirname "$0")
 pushd "$BASEDIR"
 
@@ -54,7 +89,10 @@ conan install . --lockfile=conan.lock --lockfile-partial --lockfile-out=conan.lo
 
 cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW $@
-cmake --build .
-ctest --output-on-failure
+cmake --build . $TARGET
+
+if [ $RUN_TESTS -eq 1 ]; then
+  ctest --output-on-failure
+fi
 
 popd
