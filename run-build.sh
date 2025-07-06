@@ -72,7 +72,7 @@ fi
 mkdir -p build
 
 # TODO: easier and less janky way to do this?
-RELEASE_SPECIFIED=Debug
+RELEASE_SPECIFIED=
 for arg in "$@"; do
   if [[ "$arg" == "-DCMAKE_BUILD_TYPE=Release" ]]; then
     RELEASE_SPECIFIED=Release
@@ -84,6 +84,12 @@ for arg in "$@"; do
     RELEASE_SPECIFIED=MinSizeRel
   fi
 done
+
+
+if [ "${RELEASE_SPECIFIED+set}" = "set" ]; then
+  RELEASE_SPECIFIED=Debug
+  set -- "$@" "-DCMAKE_BUILD_TYPE=${RELEASE_SPECIFIED}"
+fi
 
 conan install . --lockfile=conan.lock --lockfile-partial --lockfile-out=conan.lock --output-folder=build --build=missing -s build_type=$RELEASE_SPECIFIED
 
