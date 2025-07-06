@@ -102,23 +102,9 @@ auto logger = spdlog::stdout_color_mt("event_loop");
 
 EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
                      shared_ptr<FunctionParams> function_params, shared_ptr<TessellationSettings> tessellation_settings)
-    : model(model), view(view), projection(projection), function_params(function_params),
-      function_params_modified_(false), view_modified_(false), model_modified_(false),
-      tessellation_settings_modified_(false), start_click(nullopt), event_poll_timings(num_event_timings_maintain),
-      active_keys(ActiveKeys(monitored_keys)), tessellation_settings(tessellation_settings),
-      last_tessellation_change_at_msec(nullopt) {
-}
-
-bool EventLoop::function_params_modified() const noexcept {
-    return function_params_modified_;
-}
-
-bool EventLoop::view_modified() const noexcept {
-    return view_modified_;
-}
-
-bool EventLoop::model_modified() const noexcept {
-    return model_modified_;
+    : model(model), view(view), projection(projection), function_params(function_params), start_click(nullopt),
+      event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)),
+      tessellation_settings(tessellation_settings), last_tessellation_change_at_msec(nullopt) {
 }
 
 optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
@@ -198,7 +184,7 @@ optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t star
     return nullopt;
 }
 
-void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
+TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, TickResult tick_result) {
     using std::get;
 
     auto const now_ms = SDL_GetTicks();
@@ -209,11 +195,11 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
 
     // xor
-    function_params_modified_ = false;
+    tick_result.set_function_params_modified(false);
     if (left_key_timing.has_value() != right_key_timing.has_value()) {
 
         if (left_key_timing.has_value()) {
-            function_params_modified_ = true;
+            tick_result.set_function_params_modified(true);
             auto const panning_movement = (get<2>(*left_key_timing) - get<1>(*left_key_timing)) * panning_delta_per_ms;
             ::logger->debug("panning {} in negative direction", panning_movement);
             if (get<0>(*left_key_timing).has_shift()) {
@@ -225,7 +211,7 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
         }
 
         if (right_key_timing.has_value()) {
-            function_params_modified_ = true;
+            tick_result.set_function_params_modified(true);
             auto const panning_movement =
                 (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
             ::logger->debug("panning {} in positive direction", panning_movement);
@@ -241,28 +227,30 @@ void EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms) {
     if (up_key_timing.has_value() != down_key_timing.has_value()) {
 
         if (up_key_timing.has_value()) {
-            function_params_modified_ = true;
+            tick_result.set_function_params_modified(true);
             auto const z_mult_movement = (get<2>(*up_key_timing) - get<1>(*up_key_timing)) * z_mult_delta_per_ms;
             ::logger->debug("changing z by {} in positive direction", z_mult_movement);
             function_params->z_mult += z_mult_movement;
         }
 
         if (down_key_timing.has_value()) {
-            function_params_modified_ = true;
+            tick_result.set_function_params_modified(true);
             auto const z_mult_movement = (get<2>(*down_key_timing) - get<1>(*down_key_timing)) * z_mult_delta_per_ms;
             ::logger->debug("changing z by {} in negative direction", z_mult_movement);
             function_params->z_mult -= z_mult_movement;
         }
     }
+
+    return tick_result;
 }
 
-void EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms) {
-    tessellation_settings_modified_ = false;
+TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms, TickResult tick_result) {
 
+    tick_result.set_tessellation_settings_modified(false);
     if (last_tessellation_change_at_msec.has_value() &&
         *last_tessellation_change_at_msec + msec_between_tess_level_changes > start_ticks_ms) {
         // not long enough since last tessellation level change occurred
-        return;
+        return tick_result;
     }
 
     bool const plus_key_timing = active_keys.was_key_pressed_since(SDLK_PLUS, start_ticks_ms);
@@ -270,18 +258,20 @@ void EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms) {
 
     if (plus_key_timing != minus_key_timing) {
         if (plus_key_timing) {
-            tessellation_settings_modified_ = true;
+            tick_result.set_tessellation_settings_modified(true);
             tessellation_settings->increment_level();
         }
 
         if (minus_key_timing) {
-            tessellation_settings_modified_ = true;
+            tick_result.set_tessellation_settings_modified(true);
             tessellation_settings->decrement_level();
         }
     }
+
+    return tick_result;
 }
 
-void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) {
+TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms, TickResult tick_result) {
     using std::get;
 
     bool const up_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_W, start_ms);
@@ -293,16 +283,16 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
     auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
     quat current(*model);
 
-    model_modified_ = false;
+    tick_result.set_model_modified(false);
     if (up_key_timing != down_key_timing) {
         if (up_key_timing) {
-            model_modified_ = true;
+            tick_result.set_model_modified(true);
             quat const rotation = angleAxis(rotations_rads, x_axis);
             current = rotation * current;
         }
 
         if (down_key_timing) {
-            model_modified_ = true;
+            tick_result.set_model_modified(true);
             quat const rotation = angleAxis(-rotations_rads, x_axis);
             current = rotation * current;
         }
@@ -310,49 +300,57 @@ void EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms) 
 
     if (left_key_timing != right_key_timing) {
         if (left_key_timing) {
-            model_modified_ = true;
+            tick_result.set_model_modified(true);
             quat const rotation = angleAxis(-rotations_rads, y_axis);
             current = rotation * current;
         }
 
         if (right_key_timing) {
-            model_modified_ = true;
+            tick_result.set_model_modified(true);
             quat const rotation = angleAxis(rotations_rads, y_axis);
             current = rotation * current;
         }
     }
 
-    if (model_modified_) {
+    if (tick_result.model_modified()) {
         ::logger->debug("will update model quat to {0}, {1}, {2}, {3}", current.w, current.x, current.y, current.z);
         *model = toMat4(current);
     }
+
+    return tick_result;
 }
 
-void EventLoop::process_view_mutation_events(bool scrolled_toward_user) {
-    view_modified_ = true;
+TickResult EventLoop::process_view_mutation_events(bool scrolled_toward_user, TickResult tick_result) {
 
+    tick_result.set_view_modified(false);
     if (scrolled_toward_user) {
         // zoom out
         *view = translate(*view, zoom_out);
+        tick_result.set_view_modified(true);
     }
     else {
         // zoom in
         *view = translate(*view, zoom_in);
+        tick_result.set_view_modified(true);
     }
+
+    return tick_result;
 }
 
-bool EventLoop::drain_event_queue_should_exit() {
+TickResult EventLoop::drain_event_queue(TickResult tick_result) {
 
     while (SDL_PollEvent(&evt)) {
         if (evt.type == SDL_EVENT_QUIT) {
-            return true;
+            tick_result.set_should_exit(true);
+            return tick_result;
         }
         else if (evt.type == SDL_EVENT_KEY_UP) {
             active_keys.release_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
         }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
             if (evt.key.key == SDLK_Q) {
-                return true;
+                tick_result.set_should_exit(true);
+                return tick_result;
             }
 
             if (start_click.has_value()) {
@@ -368,19 +366,17 @@ bool EventLoop::drain_event_queue_should_exit() {
             start_click = nullopt;
         }
         else if (evt.type == SDL_EVENT_MOUSE_WHEEL) {
-            process_view_mutation_events(evt.wheel.integer_y < 0);
+            tick_result = process_view_mutation_events(evt.wheel.integer_y < 0, tick_result);
         }
         else if (start_click.has_value() && evt.type == SDL_EVENT_MOUSE_MOTION) {
             // MouseLoc current(evt.motion.x, evt.motion.y);
         }
     }
 
-    return false;
+    return tick_result;
 }
 
 TickResult EventLoop::process_frame(uint64_t render_time_ns) {
-    view_modified_ = false;
-
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
 
@@ -401,9 +397,11 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
         return TickResult{SDL_GetTicks() - start_ticks_ms, false, true};
     }
 
+    TickResult tick_result{SDL_GetTicks() - start_ticks_ms, false, false};
     while ((drain_start_ns = SDL_GetTicksNS()) < end_ticks_ns) {
-        if (drain_event_queue_should_exit()) {
-            return TickResult{SDL_GetTicks() - start_ticks_ms, true, false};
+        tick_result = drain_event_queue(tick_result);
+        if (tick_result.should_exit()) {
+            return tick_result;
         }
 
         auto const drain_end_ns = SDL_GetTicksNS();
@@ -416,17 +414,10 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     // TODO: track this overhead separately and use to compute how much input to process
     // per frame
 
-    process_function_mutation_keys(start_ticks_ms);
-    process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
-    process_tessellation_mutation_keys(start_ticks_ms);
+    tick_result = process_function_mutation_keys(start_ticks_ms, tick_result);
+    tick_result = process_model_mutation_keys(start_ticks_ms, SDL_GetTicks(), tick_result);
+    tick_result = process_tessellation_mutation_keys(start_ticks_ms, tick_result);
 
-    return TickResult{SDL_GetTicks() - start_ticks_ms, false, false};
-}
-
-bool EventLoop::tessellation_settings_modified() const noexcept {
-    return tessellation_settings_modified_;
-}
-
-bool EventLoop::anything_modified() const noexcept {
-    return function_params_modified_ || view_modified_ || model_modified_ || tessellation_settings_modified_;
+    tick_result.elapsed_ticks_ms = SDL_GetTicks() - start_ticks_ms;
+    return tick_result;
 }

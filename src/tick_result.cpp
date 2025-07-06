@@ -15,7 +15,7 @@ TickResult::TickResult(uint64_t elapsed_ticks_ms, bool should_exit, bool frame_s
 bool TickResult::anything_modified() const noexcept {
     constexpr const iota_view bit_range{function_params_modified_bit, tessellation_settings_modified_bit + 1};
 
-    return std::ranges::none_of(bit_range, [&](auto bit_idx) { return state.test(bit_idx); });
+    return std::ranges::any_of(bit_range, [&](auto bit_idx) { return state.test(bit_idx); });
 }
 
 bool TickResult::should_exit() const noexcept {

@@ -14,10 +14,12 @@ class TickResult {
     static constexpr const std::size_t view_modified_bit = 4;
     static constexpr const std::size_t tessellation_settings_modified_bit = 5;
 
-public:
-    uint64_t elapsed_ticks_ms;
     // TODO: better mechanism for tracking this
     std::bitset<tessellation_settings_modified_bit + 1> state;
+
+public:
+    // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
+    uint64_t elapsed_ticks_ms;
 
     TickResult() : elapsed_ticks_ms(0), state(0) {
     }
