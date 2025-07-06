@@ -96,15 +96,13 @@ static const constexpr initializer_list<Keyish> monitored_keys = {
  */
 constexpr size_t num_event_timings_maintain = 10;
 
-namespace {
-auto logger = spdlog::stdout_color_mt("event_loop");
-} // namespace
-
-EventLoop::EventLoop(shared_ptr<mat4> model, shared_ptr<mat4> view, shared_ptr<mat4> projection,
-                     shared_ptr<FunctionParams> function_params, shared_ptr<TessellationSettings> tessellation_settings)
+EventLoop::EventLoop(shared_ptr<mat4> const &model, shared_ptr<mat4> const &view, shared_ptr<mat4> const &projection,
+                     shared_ptr<FunctionParams> const &function_params,
+                     shared_ptr<TessellationSettings> const &tessellation_settings)
     : model(model), view(view), projection(projection), function_params(function_params), start_click(nullopt),
       event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)),
-      tessellation_settings(tessellation_settings), last_tessellation_change_at_msec(nullopt) {
+      tessellation_settings(tessellation_settings), last_tessellation_change_at_msec(nullopt),
+      logger(spdlog::stdout_color_mt("event_loop")), err(spdlog::stderr_color_mt("event_loop_err")) {
 }
 
 optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
@@ -200,8 +198,9 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
 
         if (left_key_timing.has_value()) {
             tick_result.set_function_params_modified(true);
-            auto const panning_movement = (get<2>(*left_key_timing) - get<1>(*left_key_timing)) * panning_delta_per_ms;
-            ::logger->debug("panning {} in negative direction", panning_movement);
+            auto const panning_movement =
+                static_cast<GLfloat>(get<2>(*left_key_timing) - get<1>(*left_key_timing)) * panning_delta_per_ms;
+            logger->debug("panning {} in negative direction", panning_movement);
             if (get<0>(*left_key_timing).has_shift()) {
                 function_params->y_offset -= panning_movement;
             }
@@ -213,8 +212,9 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
         if (right_key_timing.has_value()) {
             tick_result.set_function_params_modified(true);
             auto const panning_movement =
-                (get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
-            ::logger->debug("panning {} in positive direction", panning_movement);
+                static_cast<GLfloat>(get<2>(*right_key_timing) - get<1>(*right_key_timing)) * panning_delta_per_ms;
+
+            logger->debug("panning {} in positive direction", panning_movement);
             if (get<0>(*right_key_timing).has_shift()) {
                 function_params->y_offset += panning_movement;
             }
@@ -228,15 +228,17 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
 
         if (up_key_timing.has_value()) {
             tick_result.set_function_params_modified(true);
-            auto const z_mult_movement = (get<2>(*up_key_timing) - get<1>(*up_key_timing)) * z_mult_delta_per_ms;
-            ::logger->debug("changing z by {} in positive direction", z_mult_movement);
+            auto const z_mult_movement =
+                static_cast<GLfloat>(get<2>(*up_key_timing) - get<1>(*up_key_timing)) * z_mult_delta_per_ms;
+            logger->debug("changing z by {} in positive direction", z_mult_movement);
             function_params->z_mult += z_mult_movement;
         }
 
         if (down_key_timing.has_value()) {
             tick_result.set_function_params_modified(true);
-            auto const z_mult_movement = (get<2>(*down_key_timing) - get<1>(*down_key_timing)) * z_mult_delta_per_ms;
-            ::logger->debug("changing z by {} in negative direction", z_mult_movement);
+            auto const z_mult_movement =
+                static_cast<GLfloat>(get<2>(*down_key_timing) - get<1>(*down_key_timing)) * z_mult_delta_per_ms;
+            logger->debug("changing z by {} in negative direction", z_mult_movement);
             function_params->z_mult -= z_mult_movement;
         }
     }
@@ -313,7 +315,7 @@ TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t en
     }
 
     if (tick_result.model_modified()) {
-        ::logger->debug("will update model quat to {0}, {1}, {2}, {3}", current.w, current.x, current.y, current.z);
+        logger->debug("will update model quat to {0}, {1}, {2}, {3}", current.w, current.x, current.y, current.z);
         *model = toMat4(current);
     }
 
@@ -389,7 +391,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
 
     auto drain_start_ns = SDL_GetTicksNS();
     if (drain_start_ns >= end_ticks_ns) {
-        ::logger->debug("skipping input polling this tick");
+        logger->debug("skipping input polling this tick");
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
         event_poll_timings.add(0);

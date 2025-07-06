@@ -81,7 +81,7 @@ public:
         : program_handle(glCreateProgram()), in_use(false),
           attached_shaders(std::forward<R>(shaders).cbegin(), std::forward<R>(shaders).cend()), model(model),
           view(view), projection(projection), function_params(function_params),
-          tessellation_settings(tessellation_settings), logger(spdlog::stderr_color_mt("shader_program")),
+          tessellation_settings(tessellation_settings), logger(spdlog::stdout_color_mt("shader_program")),
           err(spdlog::stderr_color_mt("shader_program_err")) {
         link_shaders();
     }

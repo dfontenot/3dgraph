@@ -8,14 +8,16 @@
 #include "mouse_loc.hpp"
 #include "tessellation_settings.hpp"
 #include "tick_result.hpp"
-#include <SDL3/SDL.h>
+
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <tuple>
 
+#include <SDL3/SDL.h>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-#include <optional>
+#include <spdlog/spdlog.h>
 
 using KeyAtTime = std::tuple<Key, uint64_t, uint64_t>;
 
@@ -28,6 +30,10 @@ class EventLoop {
     std::shared_ptr<TessellationSettings> tessellation_settings;
     MaxDeque<uint64_t> event_poll_timings;
     ActiveKeys active_keys;
+
+    // logger
+    std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> err;
 
     // state stuff
     std::optional<uint64_t> last_tessellation_change_at_msec;
@@ -61,7 +67,7 @@ public:
     [[nodiscard]] TickResult process_frame(uint64_t render_time_ns);
 
     EventLoop() = delete;
-    EventLoop(std::shared_ptr<glm::mat4> model, std::shared_ptr<glm::mat4> view, std::shared_ptr<glm::mat4> projection,
-              std::shared_ptr<FunctionParams> function_params,
-              std::shared_ptr<TessellationSettings> tessellation_settings);
+    EventLoop(std::shared_ptr<glm::mat4> const &model, std::shared_ptr<glm::mat4> const &view,
+              std::shared_ptr<glm::mat4> const &projection, std::shared_ptr<FunctionParams> const &function_params,
+              std::shared_ptr<TessellationSettings> const &tessellation_settings);
 };
