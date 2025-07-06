@@ -8,7 +8,7 @@
 # manual argument detection for now
 NEXT_IS_ARG=0
 RUN_TESTS=1
-TARGET_REGEX='--target=([[:alpha:]]+)'
+TARGET_REGEX='--target=([[:alnum:]_]+)'
 TARGET=
 for arg do
   shift
