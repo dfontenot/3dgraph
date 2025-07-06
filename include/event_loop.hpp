@@ -91,5 +91,5 @@ public:
     /**
     * was anything changed during the last frame?
     */
-    bool anything_modifed() const noexcept;
+    bool anything_modified() const noexcept;
 };

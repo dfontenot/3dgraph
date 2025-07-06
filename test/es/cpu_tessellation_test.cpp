@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <ranges>
 #include <vector>
 
 #include <gtest/gtest.h>

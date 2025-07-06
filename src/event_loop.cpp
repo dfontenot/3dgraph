@@ -384,7 +384,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     auto const start_ticks_ms = SDL_GetTicks();
     auto const start_ticks_ns = SDL_GetTicksNS();
 
-    // what ticks ns timestamp to not exceed to maintain fps
+    /** what ticks ns timestamp to not exceed to maintain fps */
     auto const absolute_max_end_ticks_ns = start_ticks_ns + max_sleep_ns_per_tick - render_time_ns;
 
     // what's the latest ticks ns that can do another sdl event queue drain
@@ -420,13 +420,13 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     process_model_mutation_keys(start_ticks_ms, SDL_GetTicks());
     process_tessellation_mutation_keys(start_ticks_ms);
 
-    return TickResult(SDL_GetTicks() - start_ticks_ms, false, false);
+    return TickResult{SDL_GetTicks() - start_ticks_ms, false, false};
 }
 
 bool EventLoop::tessellation_settings_modified() const noexcept {
     return tessellation_settings_modified_;
 }
 
-bool EventLoop::anything_modifed() const noexcept {
+bool EventLoop::anything_modified() const noexcept {
     return function_params_modified_ || view_modified_ || model_modified_ || tessellation_settings_modified_;
 }

@@ -224,30 +224,30 @@ int main(int argc, char *argv[]) {
         EventLoop event_loop{model, view, projection, function_params, tessellation_settings};
         while (true) {
             auto const tick_result = event_loop.process_frame(render_timings.get_avg());
-            if (tick_result.should_exit) {
+            if (tick_result.should_exit()) {
                 return 0;
             }
 
-            if (tick_result.frame_skip) {
+            if (tick_result.frame_skip()) {
                 continue;
             }
 
-            if (event_loop.anything_modifed()) {
+            if (tick_result.anything_modified()) {
                 program->use();
 
-                if (event_loop.function_params_modified()) {
+                if (tick_result.function_params_modified()) {
                     program->update_function_params();
                 }
 
-                if (event_loop.view_modified()) {
+                if (tick_result.view_modified()) {
                     program->update_view();
                 }
 
-                if (event_loop.model_modified()) {
+                if (tick_result.model_modified()) {
                     program->update_model();
                 }
 
-                if (event_loop.tessellation_settings_modified()) {
+                if (tick_result.tessellation_settings_modified()) {
                     program->update_tessellation_settings();
                 }
 
