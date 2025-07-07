@@ -26,6 +26,10 @@ bool TickResult::frame_skip() const noexcept {
     return state.test(frame_skip_bit);
 }
 
+bool TickResult::show_wireframe_only() const noexcept {
+    return state.test(show_wireframe_only_bit);
+}
+
 bool TickResult::function_params_modified() const noexcept {
     return state.test(function_params_modified_bit);
 }
@@ -64,4 +68,8 @@ void TickResult::set_view_modified(bool view_modified) noexcept {
 
 void TickResult::set_tessellation_settings_modified(bool tessellation_settings_modified) noexcept {
     state.set(tessellation_settings_modified_bit, tessellation_settings_modified);
+}
+
+void TickResult::set_show_wireframe_only(bool show_wireframe_only) noexcept {
+    state.set(show_wireframe_only_bit, show_wireframe_only);
 }

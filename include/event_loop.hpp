@@ -59,6 +59,7 @@ class EventLoop {
                                                          TickResult tick_result);
     [[nodiscard]] TickResult process_tessellation_mutation_keys(uint64_t start_ticks_ms, TickResult tick_result);
     [[nodiscard]] TickResult process_view_mutation_events(bool scrolled_toward_user, TickResult tick_result);
+    [[nodiscard]] TickResult process_render_setting_keys(uint64_t start_ticks_ms, TickResult tick_result);
 
 public:
     /**

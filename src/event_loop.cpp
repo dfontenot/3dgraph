@@ -7,22 +7,18 @@
 #include "tessellation_settings.hpp"
 #include "tick_result.hpp"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
-#include <SDL3/SDL_timer.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <glm/ext/quaternion_trigonometric.hpp>
-#include <initializer_list>
 #include <memory>
 #include <numbers>
 #include <optional>
 #include <tuple>
 
+#include <SDL3/SDL.h>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -31,7 +27,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-using std::initializer_list;
+using std::array;
 using std::make_optional;
 using std::make_tuple;
 using std::nullopt;
@@ -83,10 +79,10 @@ static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
  */
 static const constexpr uint64_t msec_between_tess_level_changes = 700;
 
-static const constexpr initializer_list<Keyish> monitored_keys = {
+static const constexpr array monitored_keys = {
     Keyish{SDL_SCANCODE_W},  Keyish{SDL_SCANCODE_A},    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
     Keyish{SDL_SCANCODE_UP}, Keyish{SDL_SCANCODE_DOWN}, Keyish{SDL_SCANCODE_LEFT}, Keyish{SDL_SCANCODE_RIGHT},
-    Keyish{SDLK_PLUS},       Keyish{SDLK_MINUS},
+    Keyish{SDLK_PLUS},       Keyish{SDLK_MINUS},        Keyish{SDL_SCANCODE_E},
 };
 
 /**
@@ -243,6 +239,10 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
         }
     }
 
+    return tick_result;
+}
+
+TickResult EventLoop::process_render_setting_keys(uint64_t start_ticks_ms, TickResult tick_result) {
     return tick_result;
 }
 
@@ -419,6 +419,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
     tick_result = process_function_mutation_keys(start_ticks_ms, tick_result);
     tick_result = process_model_mutation_keys(start_ticks_ms, SDL_GetTicks(), tick_result);
     tick_result = process_tessellation_mutation_keys(start_ticks_ms, tick_result);
+    tick_result = process_render_setting_keys(start_ticks_ms, tick_result);
 
     tick_result.elapsed_ticks_ms = SDL_GetTicks() - start_ticks_ms;
     return tick_result;

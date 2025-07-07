@@ -1,9 +1,8 @@
 #include "active_keys.hpp"
 #include "key.hpp"
+
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_scancode.h>
-#include <SDL3/SDL_timer.h>
+
 #include <initializer_list>
 #include <optional>
 #include <utility>
@@ -14,12 +13,18 @@ using std::make_optional;
 using std::make_pair;
 using std::nullopt;
 using std::optional;
+using std::vector;
 
 namespace {
-KeyValue unmonitored_key = nullopt;
+KeyValue const unmonitored_key = nullopt;
 }
 
-ActiveKeys::ActiveKeys() {
+ActiveKeys::ActiveKeys(vector<SDL_Scancode> &&keys_to_monitor) : monitored_keys(std::move(keys_to_monitor)) {
+    for (auto const scan_code : monitored_keys) {
+        const Key key{scan_code};
+        key_timings.insert({key, std::nullopt});
+        key_timings.insert({key.copy_shifted(), std::nullopt});
+    }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
@@ -220,4 +225,8 @@ bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms
 bool ActiveKeys::was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const {
     auto const key = Key(key_code);
     return was_key_pressed_since(key, start_ms) || was_key_pressed_since(key.shift_mod_complement(), start_ms);
+}
+
+std::size_t ActiveKeys::num_keys_monitored() const {
+    return monitored_keys.size();
 }

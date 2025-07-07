@@ -1,14 +1,21 @@
 #include "active_keys.hpp"
 #include "key.hpp"
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_timer.h>
 #include "sdl_test.hpp"
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
+
+#include <cstddef>
+#include <iterator>
 #include <optional>
+#include <ranges>
 #include <utility>
+#include <vector>
 
 using std::nullopt;
+using std::size_t;
+using std::vector;
 
 class ActiveKeysTest : public SDLTest {
 protected:
@@ -16,6 +23,21 @@ protected:
     static auto const any_other_scancode = SDL_SCANCODE_T;
     static auto const any_keymod = SDL_KMOD_CTRL;
 };
+
+TEST_F(ActiveKeysTest, Ctors) {
+    using std::ranges::iota_view;
+
+    vector<SDL_Scancode> codes{SDL_SCANCODE_D, SDL_SCANCODE_F};
+    auto const keycodes_count = codes.size();
+    const ActiveKeys keys{std::move(codes)};
+
+    EXPECT_EQ(keycodes_count, keys.num_keys_monitored());
+
+    const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
+    const ActiveKeys other_keys{key_range | std::views::transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
+
+    EXPECT_EQ(std::distance(key_range.cbegin(), key_range.cend()), other_keys.num_keys_monitored());
+}
 
 TEST_F(ActiveKeysTest, StartListenToKey) {
     auto const key = Key(any_scancode);

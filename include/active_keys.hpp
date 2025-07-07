@@ -2,13 +2,13 @@
 
 #include "key.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
+
 #include <cstdint>
 #include <initializer_list>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
-#include <variant>
+#include <utility>
 #include <vector>
 
 // TODO: refactor to make private
@@ -20,18 +20,74 @@ class ActiveKeys {
      */
     std::unordered_map<Key, KeyValue, KeyHash> key_timings;
     std::vector<SDL_Scancode> monitored_keys;
+
     bool is_key_registered(const Key &key) const;
 
 public:
-    ActiveKeys();
+    ActiveKeys() = default;
+
+    explicit ActiveKeys(std::vector<SDL_Scancode> &&keys_to_monitor);
+    /**
+     * if specifying a key w/o a modifier: it will also monitor the shift version of the key
+     * if a key with a modifier is specified, it will only listen to that exact key
+     */
+    explicit ActiveKeys(std::initializer_list<Key> keys_to_monitor);
+    explicit ActiveKeys(std::initializer_list<std::variant<SDL_Scancode, SDL_Keycode>> keys_to_monitor);
+    explicit ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes);
 
     /**
      * if specifying a key w/o a modifier: it will also monitor the shift version of the key
      * if a key with a modifier is specified, it will only listen to that exact key
      */
-    ActiveKeys(std::initializer_list<Key> keys_to_monitor);
-    ActiveKeys(std::initializer_list<std::variant<SDL_Scancode, SDL_Keycode>> keys_to_monitor);
-    ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes);
+    template <std::ranges::input_range R>
+        requires std::same_as<std::ranges::range_value_t<R>, Key>
+    explicit ActiveKeys(R &&keys_to_monitor)
+        : key_timings(std::from_range, std::forward<R>(keys_to_monitor) | std::views::transform([](auto key) {
+                                           return std::make_pair(key, std::nullopt);
+                                       })),
+          monitored_keys(std::from_range, std::forward<R>(keys_to_monitor) |
+                                              std::views::transform([](auto key) { return key.get_scan_code(); })) {
+        for (auto const key : std::forward<R>(keys_to_monitor)) {
+            // TODO: another leaky abstraction, need to fix
+            key_timings.insert({key.copy_shifted(), std::nullopt});
+        }
+    }
+
+    template <std::ranges::input_range R>
+        requires std::convertible_to<std::ranges::range_value_t<R>, SDL_Scancode>
+    explicit ActiveKeys(R &&keys_to_monitor)
+        // clang-format off
+        : key_timings(std::from_range, std::forward<R>(keys_to_monitor) |
+                      std::views::transform([](auto scan_code) {
+                          const Key key{scan_code};
+                          return std::make_pair(key, std::nullopt);
+                      })),
+          // clang-format on
+          monitored_keys(std::forward<R>(keys_to_monitor).cbegin(), std::forward<R>(keys_to_monitor).cend()) {
+        for (auto const key_code : std::forward<R>(keys_to_monitor)) {
+            const Key key{key_code};
+            // TODO: another leaky abstraction, need to fix
+            key_timings.insert({key.copy_shifted(), std::nullopt});
+        }
+    }
+
+    template <std::ranges::input_range R>
+        requires std::same_as<std::ranges::range_value_t<R>, Keyish>
+    explicit ActiveKeys(R &&keys_to_monitor)
+        // clang-format off
+        : key_timings(std::from_range, std::forward<R>(keys_to_monitor) |
+                      std::views::transform([](auto keyish) {
+                          const Key key{keyish};
+                          return std::make_pair(key, std::nullopt);
+                      })) {
+        // clang-format on
+        for (auto const keyish : std::forward<R>(keys_to_monitor)) {
+            const Key key{keyish};
+            // TODO: another leaky abstraction, need to fix
+            key_timings.insert({key.copy_shifted(), std::nullopt});
+            monitored_keys.push_back(key.get_scan_code());
+        }
+    }
 
     /**
      * register a key for listening
@@ -49,17 +105,23 @@ public:
      */
     void set_key_pressed(const Key &key);
     void release_key(const Key &key);
-    const KeyValue &maybe_get_key(const Key &key) const;
+    [[nodiscard]] const KeyValue &maybe_get_key(const Key &key) const;
 
     /**
      * did this keys' press start time occur before start_ms
      */
-    bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
-    bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
-    bool was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const;
+    [[nodiscard]] bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
+    [[nodiscard]] bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
+    [[nodiscard]] bool was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const;
 
     /**
      * sync the state with SDL_GetKeyboardState
      */
     void sync_key_state();
+
+    /**
+     * gets count of all keys monitored, not including keys
+     * automatically monitored such as shift-variants
+     */
+    [[nodiscard]] std::size_t num_keys_monitored() const;
 };
