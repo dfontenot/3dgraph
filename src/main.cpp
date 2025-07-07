@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            if (tick_result.anything_modified()) {
+            if (tick_result.any_uniforms_modified()) {
                 program->use();
 
                 if (tick_result.function_params_modified()) {
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
             auto const start_render_tick = SDL_GetTicksNS();
-            grid.render();
+            grid.render(tick_result);
             program->release();
 
             SDL_GL_SwapWindow(window);

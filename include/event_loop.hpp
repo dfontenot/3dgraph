@@ -37,13 +37,14 @@ class EventLoop {
 
     // state stuff
     std::optional<uint64_t> last_tessellation_change_at_msec;
+    std::optional<uint64_t> last_wireframe_only_change_at_msec;
     std::optional<MouseLoc> start_click;
 
     /**
      * drain the sdl event queue one time
      * returns true if should exit due to quit event
      */
-    TickResult drain_event_queue(TickResult tick_result);
+    [[nodiscard]] TickResult drain_event_queue(TickResult tick_result);
 
     /**
      * see if the scancode of the key was used at all, and if so see which one was pressed for the longest for

@@ -1,5 +1,6 @@
 #include "grid.hpp"
 #include "es/grid_points.hpp"
+#include "tick_result.hpp"
 #include "vertices.hpp"
 
 #include "glad/glad.h"
@@ -9,8 +10,19 @@
 
 using std::holds_alternative;
 
-uint64_t Grid::render() const {
+uint64_t Grid::render(TickResult tick_result) {
     using std::get;
+
+    if (tick_result.wireframe_display_mode_changed()) {
+        show_wireframe_only = !show_wireframe_only;
+
+        if (show_wireframe_only) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+    }
 
     // TODO: convert to std::visit
     auto const start_nsec = SDL_GetTicksNS();
@@ -22,7 +34,6 @@ uint64_t Grid::render() const {
         program->use();
 
         glPatchParameteri(GL_PATCH_VERTICES, 4);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawArrays(GL_PATCHES, 0, 4);
 
         vao->unbind();
@@ -37,10 +48,9 @@ uint64_t Grid::render() const {
         ibo->bind();
         program->use();
 
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(verts_.get_indices_count()), GL_UNSIGNED_INT, nullptr);
 
-        //ibo->unbind();
+        ibo->unbind();
         vao->unbind();
         program->release();
     }

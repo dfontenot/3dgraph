@@ -12,7 +12,7 @@ TickResult::TickResult(uint64_t elapsed_ticks_ms, bool should_exit, bool frame_s
     set_frame_skip(frame_skip);
 }
 
-bool TickResult::anything_modified() const noexcept {
+bool TickResult::any_uniforms_modified() const noexcept {
     constexpr const iota_view bit_range{function_params_modified_bit, tessellation_settings_modified_bit + 1};
 
     return std::ranges::any_of(bit_range, [&](auto bit_idx) { return state.test(bit_idx); });
@@ -26,8 +26,8 @@ bool TickResult::frame_skip() const noexcept {
     return state.test(frame_skip_bit);
 }
 
-bool TickResult::show_wireframe_only() const noexcept {
-    return state.test(show_wireframe_only_bit);
+bool TickResult::wireframe_display_mode_changed() const noexcept {
+    return state.test(toggle_wireframe_display_bit);
 }
 
 bool TickResult::function_params_modified() const noexcept {
@@ -70,6 +70,7 @@ void TickResult::set_tessellation_settings_modified(bool tessellation_settings_m
     state.set(tessellation_settings_modified_bit, tessellation_settings_modified);
 }
 
-void TickResult::set_show_wireframe_only(bool show_wireframe_only) noexcept {
-    state.set(show_wireframe_only_bit, show_wireframe_only);
+void TickResult::set_wireframe_display_mode_toggled(bool show_wireframe_only) noexcept {
+    state.set(toggle_wireframe_display_bit, show_wireframe_only);
 }
+

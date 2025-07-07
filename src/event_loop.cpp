@@ -74,10 +74,13 @@ static const constexpr GLfloat panning_delta_per_ms = 0.0005f;
  */
 static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 
-/**
- * how long in between tess level changes to allow
- */
+/** how long in msec between tess level changes to allow */
 static const constexpr uint64_t msec_between_tess_level_changes = 700;
+
+/**
+* how long in msec between switching between wireframe only and mesh view
+* (opengl 4.1 only) */
+static const constexpr uint64_t msec_between_toggle_wireframe_changes = 400;
 
 static const constexpr array monitored_keys = {
     Keyish{SDL_SCANCODE_W},  Keyish{SDL_SCANCODE_A},    Keyish{SDL_SCANCODE_S},    Keyish{SDL_SCANCODE_D},
@@ -243,6 +246,19 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
 }
 
 TickResult EventLoop::process_render_setting_keys(uint64_t start_ticks_ms, TickResult tick_result) {
+    tick_result.set_wireframe_display_mode_toggled(false);
+
+    // TODO: de-duplicate between this and the tessellation change settings
+    if (last_wireframe_only_change_at_msec.has_value() &&
+        *last_wireframe_only_change_at_msec + msec_between_toggle_wireframe_changes > start_ticks_ms) {
+        // not long enough since last toggle
+        return tick_result;
+    }
+
+    if (active_keys.was_key_pressed_since(SDL_SCANCODE_E, start_ticks_ms)) {
+        tick_result.set_wireframe_display_mode_toggled(true);
+    }
+
     return tick_result;
 }
 
