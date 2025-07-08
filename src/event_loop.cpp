@@ -78,8 +78,8 @@ static const constexpr GLfloat z_mult_delta_per_ms = 0.001f;
 static const constexpr uint64_t msec_between_tess_level_changes = 700;
 
 /**
-* how long in msec between switching between wireframe only and mesh view
-* (opengl 4.1 only) */
+ * how long in msec between switching between wireframe only and mesh view
+ * (opengl 4.1 only) */
 static const constexpr uint64_t msec_between_toggle_wireframe_changes = 400;
 
 static const constexpr array monitored_keys = {
@@ -101,7 +101,8 @@ EventLoop::EventLoop(shared_ptr<mat4> const &model, shared_ptr<mat4> const &view
     : model(model), view(view), projection(projection), function_params(function_params), start_click(nullopt),
       event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)),
       tessellation_settings(tessellation_settings), last_tessellation_change_at_msec(nullopt),
-      logger(spdlog::stdout_color_mt("event_loop")), err(spdlog::stderr_color_mt("event_loop_err")) {
+      last_wireframe_only_change_at_msec(nullopt), logger(spdlog::stdout_color_mt("event_loop")),
+      err(spdlog::stderr_color_mt("event_loop_err")) {
 }
 
 optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
@@ -255,8 +256,10 @@ TickResult EventLoop::process_render_setting_keys(uint64_t start_ticks_ms, TickR
         return tick_result;
     }
 
+    // TODO: should fix this so that holding down the toggling key doesn't cycle between the two infinitely
     if (active_keys.was_key_pressed_since(SDL_SCANCODE_E, start_ticks_ms)) {
         tick_result.set_wireframe_display_mode_toggled(true);
+        last_wireframe_only_change_at_msec = start_ticks_ms;
     }
 
     return tick_result;
@@ -271,19 +274,28 @@ TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms
         return tick_result;
     }
 
+    // TODO: once pressed these will keep registering every loop even on key release
     bool const plus_key_timing = active_keys.was_key_pressed_since(SDLK_PLUS, start_ticks_ms);
     bool const minus_key_timing = active_keys.was_key_pressed_since(SDLK_MINUS, start_ticks_ms);
 
+    bool level_changed = false;
     if (plus_key_timing != minus_key_timing) {
         if (plus_key_timing) {
-            tick_result.set_tessellation_settings_modified(true);
+            logger->debug("increasing tessellation level");
             tessellation_settings->increment_level();
+            level_changed = true;
         }
 
         if (minus_key_timing) {
-            tick_result.set_tessellation_settings_modified(true);
+            logger->debug("decreasing tessellation level");
             tessellation_settings->decrement_level();
+            level_changed = true;
         }
+    }
+
+    if (level_changed) {
+        tick_result.set_tessellation_settings_modified(true);
+        last_tessellation_change_at_msec = start_ticks_ms;
     }
 
     return tick_result;

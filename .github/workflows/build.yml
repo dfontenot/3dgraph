@@ -20,12 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [15, 16]
+        version: ['gcc15', 'gcc16', 'clang20', 'clang21']
 
     runs-on: ubuntu-latest
 
     container:
-      image: ghcr.io/mattkretz/cplusplus-ci/gcc${{ matrix.version }}
+      image: ghcr.io/mattkretz/cplusplus-ci/${{ matrix.version }}
 
     steps:
       - name: Checkout code
