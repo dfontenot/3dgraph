@@ -3,19 +3,19 @@
 
 #include <SDL3/SDL.h>
 
-#include <span>
 #include <cassert>
 #include <initializer_list>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
-using std::span;
 using std::initializer_list;
 using std::make_optional;
 using std::make_pair;
 using std::nullopt;
 using std::optional;
+using std::span;
 using std::vector;
 
 namespace {
