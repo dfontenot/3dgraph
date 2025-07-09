@@ -108,7 +108,7 @@ public:
     [[nodiscard]] const KeyValue &maybe_get_key(const Key &key) const;
 
     /**
-     * did this keys' press start time occur before start_ms
+     * did this key's press start time occur before start_ms
      */
     [[nodiscard]] bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
     [[nodiscard]] bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
