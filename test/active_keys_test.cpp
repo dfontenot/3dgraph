@@ -196,4 +196,5 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
 
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_press_ms));
     EXPECT_FALSE(active_keys.was_key_pressed_since(Key(any_other_scancode), 0));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_other_scancode, 0));
 }
