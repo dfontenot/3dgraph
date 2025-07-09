@@ -39,5 +39,6 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install conan
+          conan profile detect
           ./run-build.sh -DCMAKE_BUILD_TYPE=Release --target=3dgraph_test
         shell: bash

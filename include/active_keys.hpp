@@ -26,7 +26,11 @@ class ActiveKeys {
 public:
     ActiveKeys() = default;
 
+    /**
+     * monitor these scancodes for key presses
+     */
     explicit ActiveKeys(std::vector<SDL_Scancode> &&keys_to_monitor);
+
     /**
      * if specifying a key w/o a modifier: it will also monitor the shift version of the key
      * if a key with a modifier is specified, it will only listen to that exact key
