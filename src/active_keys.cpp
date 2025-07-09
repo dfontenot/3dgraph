@@ -3,11 +3,14 @@
 
 #include <SDL3/SDL.h>
 
+#include <span>
+#include <cassert>
 #include <initializer_list>
 #include <optional>
 #include <utility>
 #include <vector>
 
+using std::span;
 using std::initializer_list;
 using std::make_optional;
 using std::make_pair;
@@ -184,14 +187,19 @@ void ActiveKeys::release_key(const Key &key) {
 }
 
 void ActiveKeys::sync_key_state() {
-    auto const key_states = SDL_GetKeyboardState(reinterpret_cast<int *>(monitored_keys.data()));
+    int num_keys = -1;
+    auto const key_states = SDL_GetKeyboardState(&num_keys);
+    assert(num_keys > 0);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    span s{key_states, key_states + num_keys};
 
-    for (auto i = 0; i < monitored_keys.size(); i++) {
-        if (key_states[i]) {
-            set_key_pressed(Key(monitored_keys[i]));
+    for (auto const scan_code : monitored_keys) {
+        const Key key{scan_code};
+        if (s[static_cast<size_t>(scan_code)]) {
+            set_key_pressed(key);
         }
         else {
-            release_key(Key(monitored_keys[i]));
+            release_key(key);
         }
     }
 }
