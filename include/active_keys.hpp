@@ -105,6 +105,8 @@ public:
      */
     void set_key_pressed(const Key &key);
     void release_key(const Key &key);
+
+    /** get the key's timing records, nullopt if unmonitored */
     [[nodiscard]] const KeyValue &maybe_get_key(const Key &key) const;
 
     /**
