@@ -178,18 +178,22 @@ TEST_F(ActiveKeysTest, ReleaseKeyTrackModifiers) {
 
 TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     ActiveKeys active_keys{any_scancode};
-    auto const key = Key(any_scancode);
+    auto const any_key = Key(any_scancode);
 
     EXPECT_FALSE(active_keys.was_key_pressed_since(Key(any_other_scancode), 0));
 
-    SDL_Delay(1);
-
     auto const before_press_ms = SDL_GetTicks();
-    active_keys.set_key_pressed(key);
+    SDL_Delay(1);
+
+    active_keys.set_key_pressed(any_key);
+    auto const after_press_ms = SDL_GetTicks();
 
     SDL_Delay(1);
 
-    EXPECT_TRUE(active_keys.was_key_pressed_since(key, before_press_ms));
-    EXPECT_TRUE(active_keys.was_key_pressed_since(key, SDL_GetTicks()));
-    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, before_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, before_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, after_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, SDL_GetTicks()));
+
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(Key(any_other_scancode), 0));
 }
