@@ -2,7 +2,6 @@
 #include "sdl_test.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 #include <unordered_set>
 
@@ -26,7 +25,7 @@ TEST_F(KeyTest, CtorWithMod) {
     EXPECT_FALSE(key.has_shift());
 }
 
-TEST_F(KeyTest, CtorWithAllCodes) {
+TEST_F(KeyTest, CtorWithKeyCode) {
     auto const e_key_scan_code = Key(SDL_SCANCODE_E);
     auto const e_key_key_code = Key(SDLK_E);
     EXPECT_EQ(e_key_key_code, e_key_scan_code);
@@ -183,4 +182,13 @@ TEST_F(KeyTest, Hash) {
     EXPECT_TRUE(set.contains(key5));
     set.insert(key5);
     EXPECT_EQ(5, set.size());
+
+    // from keycode only hashes consistently
+    const Key key6{SDLK_PLUS};
+    const Key key7{SDL_SCANCODE_EQUALS, SDL_KMOD_SHIFT};
+    set.insert(key6);
+    EXPECT_TRUE(set.contains(key6));
+    EXPECT_TRUE(set.contains(key7));
+    set.insert(key7);
+    EXPECT_EQ(6, set.size());
 }

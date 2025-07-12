@@ -80,6 +80,10 @@ void ActiveKeys::start_listen_to_key(SDL_Scancode scan_code) {
     start_listen_to_key(Key(scan_code));
 }
 
+void ActiveKeys::start_listen_to_key(SDL_Keycode key_code) {
+    start_listen_to_key(Key(key_code));
+}
+
 void ActiveKeys::start_listen_to_key(const Key &key) {
     key_timings.insert({key, nullopt});
     monitored_keys.push_back(key.get_scan_code());
@@ -232,7 +236,11 @@ bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms
 
 bool ActiveKeys::was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const {
     auto const key = Key(key_code);
-    return was_key_pressed_since(key, start_ms) || was_key_pressed_since(key.shift_mod_complement(), start_ms);
+
+    // if the keycode already represents a scancode that was shifted (e.g., plus)
+    // then do not count pressing = as the same as + being released
+    return was_key_pressed_since(key, start_ms) ||
+           (!key.has_shift() && was_key_pressed_since(key.shift_mod_complement(), start_ms));
 }
 
 std::size_t ActiveKeys::num_keys_monitored() const {

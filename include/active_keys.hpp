@@ -101,6 +101,7 @@ public:
     void start_listen_to_key(Key &&key);
     void start_listen_to_key(const Key &key);
     void start_listen_to_key(SDL_Scancode scan_code);
+    void start_listen_to_key(SDL_Keycode key_code);
 
     /**
      * before first ever key press, monitored keys will have value nullopt

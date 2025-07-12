@@ -3,7 +3,8 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_timer.h>
 #include <gtest/gtest.h>
 
 #include <cstddef>
@@ -22,6 +23,7 @@ protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;
     static auto const any_keymod = SDL_KMOD_CTRL;
+    static auto const any_keycode = SDLK_PLUS;
 };
 
 TEST_F(ActiveKeysTest, Ctors) {
@@ -178,23 +180,47 @@ TEST_F(ActiveKeysTest, ReleaseKeyTrackModifiers) {
 
 TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     ActiveKeys active_keys{any_scancode};
-    auto const any_key = Key(any_scancode);
+    active_keys.start_listen_to_key(any_keycode);
 
-    EXPECT_FALSE(active_keys.was_key_pressed_since(Key(any_other_scancode), 0));
+    const Key any_key{any_scancode};
+    const Key any_keycode_key{any_keycode};
+    const Key any_other_scancode_key{any_other_scancode};
+
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_other_scancode_key, 0));
 
     auto const before_press_ms = SDL_GetTicks();
     SDL_Delay(1);
 
     active_keys.set_key_pressed(any_key);
+    active_keys.set_key_pressed(any_keycode_key);
     auto const after_press_ms = SDL_GetTicks();
 
     SDL_Delay(1);
 
+    // check key timing while key is held
     EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, before_press_ms));
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, after_press_ms));
-    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, SDL_GetTicks()));
-
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode_key, before_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode_key, after_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode, before_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, after_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_scancode, before_press_ms));
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_press_ms));
-    EXPECT_FALSE(active_keys.was_key_pressed_since(Key(any_other_scancode), 0));
-    EXPECT_FALSE(active_keys.was_key_pressed_since(any_other_scancode, 0));
+
+    auto const before_release_key_ms = SDL_GetTicks();
+    active_keys.release_key(any_key);
+    active_keys.release_key(any_keycode_key);
+
+    SDL_Delay(1);
+    auto const after_release_key_ms = SDL_GetTicks();
+
+    // check key timing after released
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, after_release_key_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, before_release_key_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode_key, after_release_key_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode_key, before_release_key_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_scancode, after_release_key_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, before_release_key_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode, after_release_key_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, before_release_key_ms));
 }
