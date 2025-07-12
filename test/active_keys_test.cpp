@@ -47,11 +47,11 @@ TEST_F(ActiveKeysTest, StartListenToKey) {
 
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 
     active_keys.start_listen_to_key(key);
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
 }
 
@@ -60,10 +60,10 @@ TEST_F(ActiveKeysTest, SetKeyPressed) {
     auto const other_key = Key(any_other_scancode);
     ActiveKeys active_keys{key};
 
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
 
-    active_keys.set_key_pressed(other_key);
+    active_keys.press_key(other_key);
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(other_key));
 }
 
@@ -72,7 +72,7 @@ TEST_F(ActiveKeysTest, MaybeGetKey) {
     auto const key = Key(any_scancode);
 
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
 
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     auto key_timing = *active_keys.maybe_get_key(key);
@@ -95,7 +95,7 @@ TEST_F(ActiveKeysTest, ReleaseKey) {
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
 
     // frame 1: draining sdl event queue and processing key press event
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     auto first_key_press = *active_keys.maybe_get_key(key);
     auto const first_key_press_start_ms = std::get<0>(first_key_press);
@@ -104,7 +104,7 @@ TEST_F(ActiveKeysTest, ReleaseKey) {
     // frame 2: draining sdl event queue and processing key press event
     // key state should be the same
     SDL_Delay(1);
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     EXPECT_EQ(std::get<0>(*active_keys.maybe_get_key(key)), first_key_press_start_ms);
     EXPECT_EQ(nullopt, std::get<1>(first_key_press));
@@ -120,7 +120,7 @@ TEST_F(ActiveKeysTest, ReleaseKey) {
 
     // frame 4: press the key again
     SDL_Delay(1);
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     auto second_key_press = *active_keys.maybe_get_key(key);
     auto const second_key_press_start_ms = std::get<0>(second_key_press);
@@ -139,7 +139,7 @@ TEST_F(ActiveKeysTest, ReleaseKeyTrackModifiers) {
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(shifted_key));
 
     // press just the key
-    active_keys.set_key_pressed(key);
+    active_keys.press_key(key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(shifted_key));
     auto end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
@@ -147,7 +147,7 @@ TEST_F(ActiveKeysTest, ReleaseKeyTrackModifiers) {
 
     // also hold down the modifier
     SDL_Delay(1);
-    active_keys.set_key_pressed(shifted_key);
+    active_keys.press_key(shifted_key);
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
     EXPECT_NE(nullopt, active_keys.maybe_get_key(shifted_key));
     end_time_key = std::get<1>(*active_keys.maybe_get_key(key));
@@ -191,8 +191,8 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     auto const before_press_ms = SDL_GetTicks();
     SDL_Delay(1);
 
-    active_keys.set_key_pressed(any_key);
-    active_keys.set_key_pressed(any_keycode_key);
+    active_keys.press_key(any_key);
+    active_keys.press_key(any_keycode_key);
     auto const after_press_ms = SDL_GetTicks();
 
     SDL_Delay(1);

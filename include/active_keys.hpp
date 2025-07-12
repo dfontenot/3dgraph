@@ -108,7 +108,7 @@ public:
      * after first press and release, the value stored at the key will be whatever the
      * duration of the last key press was until the key is pressed again
      */
-    void set_key_pressed(const Key &key);
+    void press_key(const Key &key);
     void release_key(const Key &key);
 
     /** get the key's timing records, nullopt if unmonitored */

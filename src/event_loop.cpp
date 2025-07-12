@@ -387,7 +387,7 @@ TickResult EventLoop::drain_event_queue(TickResult tick_result) {
                 continue;
             }
 
-            active_keys.set_key_pressed(Key(evt.key.scancode, evt.key.key, evt.key.mod));
+            active_keys.press_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);

@@ -102,7 +102,7 @@ void ActiveKeys::start_listen_to_key(Key &&key) {
     }
 }
 
-void ActiveKeys::set_key_pressed(const Key &key) {
+void ActiveKeys::press_key(const Key &key) {
     if (!is_key_registered(key)) {
         return;
     }
@@ -200,7 +200,7 @@ void ActiveKeys::sync_key_state() {
     for (auto const scan_code : monitored_keys) {
         const Key key{scan_code};
         if (s[static_cast<size_t>(scan_code)]) {
-            set_key_pressed(key);
+            press_key(key);
         }
         else {
             release_key(key);
