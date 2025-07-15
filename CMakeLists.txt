@@ -146,6 +146,14 @@ target_include_directories(${PROJECT_NAME}_test
   PRIVATE ${3dgraph_SOURCE_DIR}/test/include
 )
 
+# TODO: workaround for gcc version lagging the clang version by a lot on
+# CI, TODO restrict this case a bit more
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(${PROJECT_NAME} PUBLIC -stdlib=libc++)
+  target_compile_options(${PROJECT_NAME}_es PUBLIC -stdlib=libc++)
+  target_compile_options(${PROJECT_NAME}_test PUBLIC -stdlib=libc++)
+endif()
+
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}_test)
 

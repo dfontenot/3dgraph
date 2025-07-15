@@ -20,7 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['gcc15', 'gcc16', 'clang20', 'clang21']
+        # TODO: bring back gcc16 testing, currently Conan does not accept this version
+        version: ["gcc15", "clang21"]
 
     runs-on: ubuntu-latest
 
@@ -34,7 +35,10 @@ jobs:
           fetch-depth: 0
       - name: Build
         run: |
-          apt update && apt install -y bash python3 cmake libudev-dev libgl-dev libx11-dev libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxmuu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxss-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev libxcb-glx0-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev uuid-dev libxcb-cursor-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-present-dev libxcb-composite0-dev libxcb-ewmh-dev libxcb-res0-dev libxcb-util-dev libxcb-util0-dev
+          apt update && apt install -y libudev-dev libgl-dev libx11-dev libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxmuu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxss-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev libxcb-glx0-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev uuid-dev libxcb-cursor-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-present-dev libxcb-composite0-dev libxcb-ewmh-dev libxcb-res0-dev libxcb-util-dev libxcb-util0-dev
+          export MATRIX_VERSION=${{ matrix.version }}
+          [[ ${MATRIX_VERSION} =~ 'clang' ]] && update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+          [[ ${MATRIX_VERSION} =~ 'clang' ]] && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
           ln -s $(which python3) /usr/bin/python
           python -m venv .venv
           source .venv/bin/activate
