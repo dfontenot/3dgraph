@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: bring back gcc16 testing, currently Conan does not accept this version
-        version: ["gcc15", "clang21"]
+        # TODO: bring back gcc16 and clang21 testing, currently Conan does not accept these versions
+        version: ["gcc15"]
 
     runs-on: ubuntu-latest
 
