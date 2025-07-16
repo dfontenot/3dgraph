@@ -93,15 +93,6 @@ void ActiveKeys::start_listen_to_key(const Key &key) {
     }
 }
 
-void ActiveKeys::start_listen_to_key(Key &&key) {
-    key_timings.insert({key, nullopt});
-    monitored_keys.push_back(key.get_scan_code());
-
-    if (!key.has_modifier()) {
-        key_timings.insert({key.copy_shifted(), nullopt});
-    }
-}
-
 void ActiveKeys::press_key(const Key &key) {
     if (!is_key_registered(key)) {
         return;
@@ -173,8 +164,8 @@ void ActiveKeys::release_key(const Key &key) {
 
     auto const now_ms = SDL_GetTicks();
     auto const maybe_key_timing = maybe_get_key(key);
+
     if (maybe_key_timing.has_value()) {
-        // key_timings[key] = make_optional(make_pair(maybe_key_timing->first, now_ms));
         key_timings[key]->first = maybe_key_timing->first;
         key_timings[key]->second = now_ms;
     }
@@ -183,7 +174,6 @@ void ActiveKeys::release_key(const Key &key) {
         auto const modded = key.copy_shifted();
         auto const maybe_key_timing_modded = maybe_get_key(modded);
         if (maybe_key_timing_modded.has_value() && !key_timings[modded]->second.has_value()) {
-            // key_timings[unmodded] = make_optional(make_pair(maybe_key_timing->first, now_ms));
             key_timings[modded]->first = maybe_key_timing->first;
             key_timings[modded]->second = now_ms;
         }
@@ -214,19 +204,14 @@ bool ActiveKeys::was_key_pressed_since(const Key &key, uint64_t start_ms) const 
     }
 
     auto const maybe_key_timing = maybe_get_key(key);
-    if (!maybe_key_timing.has_value()) {
-        return false;
-    }
-
-    auto const key_timing = *maybe_key_timing;
-    if (!std::get<1>(key_timing)) {
-        // if the key is still being held down then it had to have been pressed
-        // prior to this start time
-        return key_timing.first <= start_ms;
-    }
-    else {
-        return key_timing.first <= start_ms && *key_timing.second >= start_ms;
-    }
+    return maybe_key_timing
+        .transform([start_ms](auto key_timing) {
+            return std::get<1>(key_timing)
+                .transform(
+                    [&, start_ms](auto end_time) { return key_timing.first <= start_ms && end_time >= start_ms; })
+                .value_or(key_timing.first <= start_ms);
+        })
+        .value_or(false);
 }
 
 bool ActiveKeys::was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const {

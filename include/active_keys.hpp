@@ -12,7 +12,8 @@
 #include <vector>
 
 // TODO: refactor to make private
-using KeyValue = std::optional<std::pair<uint64_t, std::optional<uint64_t>>>;
+using Interval = std::pair<uint64_t, std::optional<uint64_t>>;
+using KeyValue = std::optional<Interval>;
 
 class ActiveKeys {
     /**
@@ -98,7 +99,6 @@ public:
      * likewise with the ctor: just a key will listen to all modifier versions of it,
      * if it has a modifier then will only listen to the key with that exact modifier
      */
-    void start_listen_to_key(Key &&key);
     void start_listen_to_key(const Key &key);
     void start_listen_to_key(SDL_Scancode scan_code);
     void start_listen_to_key(SDL_Keycode key_code);
