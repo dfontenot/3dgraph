@@ -1,8 +1,5 @@
 #include "key.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
 #include <cstddef>
 #include <format>
 #include <functional>
@@ -13,7 +10,7 @@ using std::size_t;
 using std::variant;
 
 std::ostream &operator<<(std::ostream &stream, const Key &key) {
-    stream << "{ Key: scan " << key.scan_code << " mod " << key.key_mod << " key " << key.key_code << " }";
+    stream << "{ Key " << SDL_GetScancodeName(key.scan_code) << " : scan " << key.scan_code << " mod " << key.key_mod << " key " << key.key_code << " }";
     return stream;
 }
 
@@ -23,7 +20,7 @@ template <> struct std::formatter<Key> {
     }
 
     template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ Key: scan {0} mod {1} key {2} }", obj.scan_code, obj.key_mod, obj.key_code);
+        return std::format_to(ctx.out(), "{ Key {0} : scan {1} mod {2} key {3} }", SDL_GetScancodeName(obj.scan_code), obj.scan_code, obj.key_mod, obj.key_code);
     }
 };
 
