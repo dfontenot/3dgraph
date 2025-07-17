@@ -113,12 +113,7 @@ void ActiveKeys::press_key(const Key &key) {
         }
     }
 
-    /*
-     * TODO: fix this handling of shift modded keys as it doesn't take
-     * into account scan codes of LSHIFT and RSHIFT by themselves
-     */
     if (key.has_modifier()) {
-        // if the regular key itself isn't marked as started, do so now
         auto const un_modded = key.without_mods();
         if (!is_key_registered(un_modded)) {
             return;
@@ -150,9 +145,7 @@ void ActiveKeys::press_key(const Key &key) {
 
         auto const maybe_modded = maybe_get_key(shift_modded);
         if (maybe_modded.has_value()) {
-            // key_timings[shift_modded] = make_optional(make_pair(maybe_modded->first, now_ms));
-            key_timings[shift_modded]->first = maybe_modded->first;
-            key_timings[shift_modded]->second = now_ms;
+            key_timings[shift_modded]->second = make_optional(now_ms);
         }
     }
 }
@@ -166,16 +159,19 @@ void ActiveKeys::release_key(const Key &key) {
     auto const maybe_key_timing = maybe_get_key(key);
 
     if (maybe_key_timing.has_value()) {
-        key_timings[key]->first = maybe_key_timing->first;
-        key_timings[key]->second = now_ms;
+        key_timings[key]->second = make_optional(now_ms);
     }
 
     if (!key.has_modifier()) {
         auto const modded = key.copy_shifted();
+        if (!is_key_registered(modded)) {
+            return;
+        }
+
         auto const maybe_key_timing_modded = maybe_get_key(modded);
+
         if (maybe_key_timing_modded.has_value() && !key_timings[modded]->second.has_value()) {
-            key_timings[modded]->first = maybe_key_timing->first;
-            key_timings[modded]->second = now_ms;
+            key_timings[modded]->second = make_optional(now_ms);
         }
     }
 }
