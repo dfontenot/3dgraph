@@ -2,13 +2,16 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 
 #include <optional>
 #include <unordered_set>
+#include <utility>
 
 using std::make_optional;
+using std::make_pair;
 
 class KeyTest : public SDLTest {
 protected:
@@ -38,14 +41,21 @@ TEST_F(KeyTest, CtorWithKeyCode) {
 
 TEST_F(KeyTest, CtorFromVariant) {
     // choosing key has consistent keyboard placement in qwerty and azerty
-    Keyish const scan_code_variant{SDL_SCANCODE_E};
-    Keyish const key_code_variant{SDLK_E};
+    const Keyish scan_code_variant{SDL_SCANCODE_E};
+    const Keyish key_code_variant{SDLK_E};
     EXPECT_NE(scan_code_variant, key_code_variant);
 
     const Key key_from_scan_code{scan_code_variant};
     const Key key_from_key_code{key_code_variant};
 
     EXPECT_EQ(key_from_scan_code, key_from_key_code);
+
+    // ensure key mods are accounted for
+    const Keyish plus_key_code_variant{SDLK_PLUS};
+    const Keyish plus_scan_code_variant{make_pair(SDL_SCANCODE_EQUALS, SDL_KMOD_SHIFT)};
+    const Key plus_scan_code{SDL_SCANCODE_EQUALS, SDL_KMOD_SHIFT};
+    EXPECT_EQ(Key(plus_key_code_variant), plus_scan_code);
+    EXPECT_EQ(Key(plus_scan_code_variant), plus_scan_code);
 }
 
 TEST_F(KeyTest, FromKeyCodeHasCorrectMod) {

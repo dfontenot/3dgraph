@@ -7,11 +7,13 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <utility>
 #include <variant>
 
 using std::make_optional;
 using std::nullopt;
 using std::optional;
+using std::pair;
 using std::size_t;
 using std::variant;
 
@@ -88,6 +90,12 @@ Key::Key(Keyish const &keyish) {
     if (holds_alternative<SDL_Scancode>(keyish)) {
         this->scan_code = std::get<SDL_Scancode>(keyish);
         this->key_mod = SDL_KMOD_NONE;
+        this->key_code = ::maybe_key_from_scan_code(this->scan_code, this->key_mod);
+    }
+    else if (holds_alternative<pair<SDL_Scancode, SDL_Keymod>>(keyish)) {
+        auto const pair_ = std::get<pair<SDL_Scancode, SDL_Keymod>>(keyish);
+        this->scan_code = std::get<0>(pair_);
+        this->key_mod = std::get<1>(pair_);
         this->key_code = ::maybe_key_from_scan_code(this->scan_code, this->key_mod);
     }
     else {

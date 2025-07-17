@@ -1,12 +1,14 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+
 #include <format>
 #include <iostream>
 #include <variant>
 #include <optional>
+#include <utility>
 
-using Keyish = std::variant<SDL_Scancode, SDL_Keycode>;
+using Keyish = std::variant<SDL_Scancode, SDL_Keycode, std::pair<SDL_Scancode, SDL_Keymod>>;
 
 class KeyHash;
 

@@ -37,7 +37,7 @@ public:
      * if a key with a modifier is specified, it will only listen to that exact key
      */
     explicit ActiveKeys(std::initializer_list<Key> keys_to_monitor);
-    explicit ActiveKeys(std::initializer_list<std::variant<SDL_Scancode, SDL_Keycode>> keys_to_monitor);
+    explicit ActiveKeys(std::initializer_list<Keyish> keys_to_monitor);
     explicit ActiveKeys(std::initializer_list<SDL_Scancode> scan_codes);
 
     /**
