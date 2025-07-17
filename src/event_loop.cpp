@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <iostream>
 #include <memory>
 #include <numbers>
 #include <optional>
@@ -375,6 +376,11 @@ TickResult EventLoop::drain_event_queue(TickResult tick_result) {
             return tick_result;
         }
         else if (evt.type == SDL_EVENT_KEY_UP) {
+            if (evt.key.key == SDLK_PLUS) {
+                start_click = nullopt;
+            }
+
+            std::cout << "released key " << Key(evt.key.scancode, evt.key.key, evt.key.mod) << "\n";
             active_keys.release_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
         }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
@@ -383,6 +389,13 @@ TickResult EventLoop::drain_event_queue(TickResult tick_result) {
                 return tick_result;
             }
 
+            if (evt.key.key == SDLK_PLUS) {
+                start_click = nullopt;
+            }
+
+            std::cout << "pressed key " << Key(evt.key.scancode, evt.key.key, evt.key.mod) << "\n";
+
+            // mouse clicks disable keys
             if (start_click.has_value()) {
                 continue;
             }

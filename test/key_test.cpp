@@ -1,9 +1,14 @@
 #include "key.hpp"
 #include "sdl_test.hpp"
+
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
+
+#include <optional>
 #include <unordered_set>
+
+using std::make_optional;
 
 class KeyTest : public SDLTest {
 protected:
@@ -50,11 +55,16 @@ TEST_F(KeyTest, FromKeyCodeHasCorrectMod) {
     EXPECT_EQ(from_scan_code, from_key_code);
 }
 
+TEST_F(KeyTest, CtorNoKeyCode) {
+    const Key from_scancode{SDL_SCANCODE_LSHIFT};
+    EXPECT_FALSE(from_scancode.has_key_code());
+}
+
 TEST_F(KeyTest, Getters) {
     auto const key = Key(any_scancode, any_keymod);
     auto const expected_keymod = any_keymod;
     auto const expected_scancode = any_scancode;
-    auto const expected_keycode = any_keycode;
+    auto const expected_keycode = make_optional(any_keycode);
 
     /*
      * NOTE: these macros appear to be doing something, only when inside of a TEST_F,
@@ -63,6 +73,7 @@ TEST_F(KeyTest, Getters) {
      */
     EXPECT_EQ(key.get_key_mod(), expected_keymod);
     EXPECT_EQ(key.get_scan_code(), expected_scancode);
+    EXPECT_TRUE(key.has_key_code());
     EXPECT_EQ(key.get_key_code(), expected_keycode);
 }
 

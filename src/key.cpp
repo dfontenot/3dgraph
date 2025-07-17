@@ -1,16 +1,36 @@
 #include "key.hpp"
+
 #include <SDL3/SDL.h>
+
 #include <cstddef>
 #include <format>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <variant>
 
+using std::make_optional;
+using std::nullopt;
+using std::optional;
 using std::size_t;
 using std::variant;
 
+namespace {
+optional<SDL_Keycode> maybe_key_from_scan_code(SDL_Scancode scan_code, SDL_Keymod key_mod = SDL_KMOD_NONE) {
+    auto key_code = SDL_GetKeyFromScancode(scan_code, SDL_KMOD_NONE, true);
+    if (key_code > SDLK_RHYPER) {
+        return nullopt;
+    }
+    else {
+        return make_optional(key_code);
+    }
+}
+} // namespace
+
 std::ostream &operator<<(std::ostream &stream, const Key &key) {
-    stream << "{ Key " << SDL_GetScancodeName(key.scan_code) << " : scan " << key.scan_code << " mod " << key.key_mod << " key " << key.key_code << " }";
+    stream << "{ Key " << SDL_GetScancodeName(key.scan_code) << " : scan " << key.scan_code << " mod " << key.key_mod
+           << " key " << key.key_code.transform([](auto code) { return std::to_string(code); }).value_or("n/a") << " }";
+
     return stream;
 }
 
@@ -20,7 +40,9 @@ template <> struct std::formatter<Key> {
     }
 
     template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ Key {0} : scan {1} mod {2} key {3} }", SDL_GetScancodeName(obj.scan_code), obj.scan_code, obj.key_mod, obj.key_code);
+        return std::format_to(ctx.out(), "{ Key {0} : scan {1} mod {2} key {3} }", SDL_GetScancodeName(obj.scan_code),
+                              obj.scan_code, obj.key_mod,
+                              obj.key_code.transform([](auto code) { return std::to_string(code); }).value_or("n/a"));
     }
 };
 
@@ -48,11 +70,11 @@ size_t KeyHash::operator()(const Key &key) const {
 }
 
 Key::Key(SDL_Scancode scan_code)
-    : scan_code(scan_code), key_mod(SDL_KMOD_NONE), key_code(SDL_GetKeyFromScancode(scan_code, SDL_KMOD_NONE, true)) {
+    : scan_code(scan_code), key_mod(SDL_KMOD_NONE), key_code(::maybe_key_from_scan_code(scan_code, SDL_KMOD_NONE)) {
 }
 
 Key::Key(SDL_Scancode scan_code, SDL_Keymod key_mod)
-    : scan_code(scan_code), key_mod(key_mod), key_code(SDL_GetKeyFromScancode(scan_code, key_mod, true)) {
+    : scan_code(scan_code), key_mod(key_mod), key_code(::maybe_key_from_scan_code(scan_code, key_mod)) {
 }
 
 Key::Key(SDL_Keycode key_code) {
@@ -66,11 +88,11 @@ Key::Key(Keyish const &keyish) {
     if (holds_alternative<SDL_Scancode>(keyish)) {
         this->scan_code = std::get<SDL_Scancode>(keyish);
         this->key_mod = SDL_KMOD_NONE;
-        this->key_code = SDL_GetKeyFromScancode(this->scan_code, this->key_mod, true);
+        this->key_code = ::maybe_key_from_scan_code(this->scan_code, this->key_mod);
     }
     else {
         this->key_code = std::get<SDL_Keycode>(keyish);
-        this->scan_code = SDL_GetScancodeFromKey(this->key_code, &key_mod);
+        this->scan_code = SDL_GetScancodeFromKey(*(this->key_code), &key_mod);
     }
 }
 
@@ -95,4 +117,3 @@ Key Key::shift_mod_complement() const {
         return Key(scan_code, SDL_KMOD_SHIFT);
     }
 }
-

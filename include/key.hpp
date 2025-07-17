@@ -4,6 +4,7 @@
 #include <format>
 #include <iostream>
 #include <variant>
+#include <optional>
 
 using Keyish = std::variant<SDL_Scancode, SDL_Keycode>;
 
@@ -11,7 +12,7 @@ class KeyHash;
 
 class Key {
     SDL_Scancode scan_code;
-    SDL_Keycode key_code;
+    std::optional<SDL_Keycode> key_code;
     SDL_Keymod key_mod;
 
     friend bool operator==(const Key &lhs, const Key &rhs);
@@ -39,7 +40,11 @@ public:
         return key_mod;
     }
 
-    [[nodiscard]] constexpr SDL_Keycode get_key_code() const {
+    [[nodiscard]] constexpr bool has_key_code() const {
+        return key_code.has_value();
+    }
+
+    [[nodiscard]] constexpr std::optional<SDL_Keycode> get_key_code() const {
         return key_code;
     }
 
