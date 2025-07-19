@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <iterator>
 #include <list>
+#include <locale>
 #include <optional>
 #include <ranges>
 #include <utility>
@@ -271,16 +272,16 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     const Key any_keycode_key{any_keycode};
     const Key any_other_scancode_key{any_other_scancode};
 
-    EXPECT_FALSE(active_keys.was_key_pressed_since(any_other_scancode_key, 0));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_other_scancode_key, SDL_GetTicks()));
 
     auto const before_press_ms = SDL_GetTicks();
     SDL_Delay(1);
 
     active_keys.press_key(any_key);
     active_keys.press_key(any_keycode_key);
-    auto const after_press_ms = SDL_GetTicks();
 
     SDL_Delay(1);
+    auto const after_press_ms = SDL_GetTicks();
 
     // check key timing while key is held
     EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, before_press_ms));
@@ -298,6 +299,8 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
 
     active_keys.press_key(any_key);
     active_keys.press_key(any_keycode_key);
+
+    SDL_Delay(1);
     auto const after_second_press_ms = SDL_GetTicks();
 
     // check key timing while key is held and has shown up in the event queue more than once
@@ -311,6 +314,8 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_second_press_ms));
 
     auto const before_release_key_ms = SDL_GetTicks();
+    SDL_Delay(1);
+
     active_keys.release_key(any_key);
     active_keys.release_key(any_keycode_key);
 
@@ -333,6 +338,8 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
 
     active_keys.press_key(any_key);
     active_keys.press_key(any_keycode_key);
+
+    SDL_Delay(1);
     auto const after_third_press_ms = SDL_GetTicks();
 
     EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, before_third_press_ms));
