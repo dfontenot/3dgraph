@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <format>
 #include <iostream>
 #include <variant>
@@ -26,6 +28,7 @@ public:
     Key() = delete;
     explicit Key(SDL_Scancode scan_code);
     explicit Key(SDL_Scancode scan_code, SDL_Keymod key_mod);
+    explicit Key(std::pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod);
 
     constexpr Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod)
         : scan_code(scan_code), key_code(key_code), key_mod(key_mod) {
@@ -50,8 +53,25 @@ public:
         return key_code;
     }
 
+    /**
+     * were either of the shift keys pressed down
+     */
     [[nodiscard]] constexpr bool has_shift() const {
-        return key_mod == SDL_KMOD_LSHIFT || key_mod == SDL_KMOD_RSHIFT || key_mod == SDL_KMOD_SHIFT;
+        return (key_mod & SDL_KMOD_LSHIFT) || (key_mod & SDL_KMOD_RSHIFT);
+    }
+
+    /**
+     * were either of the ctrl keys pressed down
+     */
+    [[nodiscard]] constexpr bool has_ctrl() const {
+        return (key_mod & SDL_KMOD_LCTRL) || (key_mod & SDL_KMOD_RCTRL);
+    }
+
+    /**
+     * were either of the alt keys pressed down
+     */
+    [[nodiscard]] constexpr bool has_alt() const {
+        return (key_mod & SDL_KMOD_LALT) || (key_mod & SDL_KMOD_RALT);
     }
 
     [[nodiscard]] constexpr bool has_modifier() const {
@@ -63,9 +83,27 @@ public:
     }
 
     /**
+     * is the key a letter key
+     */
+    [[nodiscard]] constexpr bool is_alpha() const {
+        return scan_code >= SDL_SCANCODE_A && scan_code <= SDL_SCANCODE_Z;
+    }
+
+    /**
+     * is the key a number key
+     */
+    [[nodiscard]] constexpr bool is_numeric() const {
+        return (scan_code >= SDL_SCANCODE_1 && scan_code <= SDL_SCANCODE_0) && !has_shift();
+    }
+
+    [[nodiscard]] constexpr bool is_alphanum() const {
+        return is_alpha() || is_numeric();
+    }
+
+    /**
      * new copy of this key but with the shift modifier applied
      */
-    [[nodiscard]] Key copy_shifted(bool only_this_mod = true) const;
+    [[nodiscard]] Key copy_shifted(bool only_keep_shift = true) const;
 
     /**
      * new copy of this key without any modifiers
@@ -77,7 +115,7 @@ public:
      * if it isn't applied to this, or without it if it
      * already is applied
      */
-    [[nodiscard]] Key shift_mod_complement() const;
+    [[nodiscard]] Key shift_mod_complement(bool only_keey_shift = true) const;
 };
 
 struct KeyHash {

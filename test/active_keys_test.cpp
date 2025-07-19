@@ -4,17 +4,22 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 #include <gtest/gtest.h>
 
 #include <cstddef>
 #include <iterator>
+#include <list>
 #include <optional>
 #include <ranges>
 #include <utility>
 #include <vector>
 
+using std::list;
+using std::make_pair;
 using std::nullopt;
+using std::pair;
 using std::size_t;
 using std::vector;
 
@@ -27,18 +32,79 @@ protected:
 };
 
 TEST_F(ActiveKeysTest, Ctors) {
+    using std::distance;
     using std::ranges::iota_view;
+    using std::views::filter;
+    using std::views::transform;
 
-    vector<SDL_Scancode> codes{SDL_SCANCODE_D, SDL_SCANCODE_F};
-    auto const keycodes_count = codes.size();
-    const ActiveKeys keys{std::move(codes)};
+    auto const lowercase_filter = filter([](auto key) { return !key.has_shift(); });
 
-    EXPECT_EQ(keycodes_count, keys.num_keys_monitored());
+    // initializer list
+    const ActiveKeys from_initializer_list{SDL_SCANCODE_D, SDL_SCANCODE_F};
+    auto non_shifted = from_initializer_list.get_monitored_keys() | lowercase_filter;
+    EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
 
+    // from range
     const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
-    const ActiveKeys other_keys{key_range | std::views::transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
+    const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
+    non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
 
-    EXPECT_EQ(std::distance(key_range.cbegin(), key_range.cend()), other_keys.num_keys_monitored());
+    EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
+
+    // from container
+    list<Keyish> keyishes{SDLK_PLUS, SDL_SCANCODE_A, make_pair(SDL_SCANCODE_D, SDL_KMOD_CTRL)};
+    const ActiveKeys from_keyish{keyishes};
+    for (auto const keyish : keyishes) {
+        const Key key{keyish};
+        EXPECT_TRUE(from_keyish.is_key_registered(key));
+    }
+
+    // container with duplicates
+    list<SDL_Keycode> dupes{SDLK_D, SDLK_A, SDLK_D};
+    const ActiveKeys no_dupes{dupes};
+    non_shifted = no_dupes.get_monitored_keys() | lowercase_filter;
+
+    EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
+}
+
+TEST_F(ActiveKeysTest, GetMonitoredKeys) {
+    using std::distance;
+    using std::views::filter;
+
+    auto const no_shift_filter = filter([](auto key) { return !key.has_shift(); });
+    auto const has_shift_filter = filter([](auto key) { return key.has_shift(); });
+
+    const ActiveKeys empty;
+    EXPECT_EQ(0, empty.get_monitored_keys().size());
+
+    ActiveKeys monitored{SDLK_E};
+    auto monitored_keys = monitored.get_monitored_keys();
+    auto no_shift_keys = monitored_keys | no_shift_filter;
+    auto shifted_keys = monitored_keys | has_shift_filter;
+
+    EXPECT_EQ(1, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
+    EXPECT_EQ(1, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+
+    monitored.start_listen_to_key(SDLK_E);
+    monitored_keys = monitored.get_monitored_keys();
+    no_shift_keys = monitored_keys | no_shift_filter;
+    shifted_keys = monitored_keys | has_shift_filter;
+    EXPECT_EQ(1, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
+    EXPECT_EQ(1, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+
+    monitored.start_listen_to_key(SDLK_F);
+    monitored_keys = monitored.get_monitored_keys();
+    no_shift_keys = monitored_keys | no_shift_filter;
+    shifted_keys = monitored_keys | has_shift_filter;
+    EXPECT_EQ(2, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
+    EXPECT_EQ(2, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+
+    monitored.start_listen_to_key(SDLK_0);
+    monitored_keys = monitored.get_monitored_keys();
+    no_shift_keys = monitored_keys | no_shift_filter;
+    shifted_keys = monitored_keys | has_shift_filter;
+    EXPECT_EQ(3, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
+    EXPECT_EQ(2, distance(shifted_keys.cbegin(), shifted_keys.cend()));
 }
 
 TEST_F(ActiveKeysTest, StartListenToKey) {

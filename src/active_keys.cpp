@@ -8,6 +8,7 @@
 #include <optional>
 #include <span>
 #include <utility>
+#include <ranges>
 #include <vector>
 
 using std::initializer_list;
@@ -17,25 +18,17 @@ using std::nullopt;
 using std::optional;
 using std::span;
 using std::vector;
+using std::pair;
 
 namespace {
 KeyValue const unmonitored_key = nullopt;
 }
 
-ActiveKeys::ActiveKeys(vector<SDL_Scancode> &&keys_to_monitor) : monitored_keys(std::move(keys_to_monitor)) {
-    for (auto const scan_code : monitored_keys) {
-        const Key key{scan_code};
-        key_timings.insert({key, std::nullopt});
-        key_timings.insert({key.copy_shifted(), std::nullopt});
-    }
-}
-
 ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
     for (auto const key : keys_to_monitor) {
-        monitored_keys.push_back(key.get_scan_code());
         key_timings.insert({key, nullopt});
 
-        if (!key.has_modifier()) {
+        if (!key.has_modifier() && key.is_alpha()) {
             // TODO: another leaky abstraction, need to fix
             key_timings.insert({key.copy_shifted(), nullopt});
         }
@@ -44,20 +37,47 @@ ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
 
 ActiveKeys::ActiveKeys(initializer_list<SDL_Scancode> scan_codes) {
     for (auto const scan_code : scan_codes) {
-        monitored_keys.push_back(scan_code);
         auto const key = Key(scan_code);
+
         key_timings.insert({key, nullopt});
-        key_timings.insert({key.copy_shifted(), nullopt});
+
+        if (key.is_alpha()) {
+            key_timings.insert({key.copy_shifted(), nullopt});
+        }
+    }
+}
+
+ActiveKeys::ActiveKeys(initializer_list<pair<SDL_Scancode, SDL_Keymod>> scan_codes_with_mods) {
+    for (auto const scan_code_with_mods : scan_codes_with_mods) {
+        auto const key = Key(scan_code_with_mods);
+
+        key_timings.insert({key, nullopt});
+
+        if (key.is_alpha()) {
+            key_timings.insert({key.copy_shifted(), nullopt});
+        }
+    }
+}
+
+ActiveKeys::ActiveKeys(initializer_list<SDL_Keycode> key_codes) {
+    for (auto const scan_code : key_codes) {
+        auto const key = Key(scan_code);
+
+        key_timings.insert({key, nullopt});
+
+        if (key.is_alpha()) {
+            key_timings.insert({key.copy_shifted(), nullopt});
+        }
     }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<Keyish> keys_to_monitor) {
     for (auto const keyish : keys_to_monitor) {
         auto const key = Key(keyish);
-        monitored_keys.push_back(key.get_scan_code());
+
         key_timings.insert({key, nullopt});
 
-        if (!key.has_modifier()) {
+        if (!key.has_modifier() && key.is_alpha()) {
             key_timings.insert({key.copy_shifted(), nullopt});
         }
     }
@@ -86,9 +106,8 @@ void ActiveKeys::start_listen_to_key(SDL_Keycode key_code) {
 
 void ActiveKeys::start_listen_to_key(const Key &key) {
     key_timings.insert({key, nullopt});
-    monitored_keys.push_back(key.get_scan_code());
 
-    if (!key.has_modifier()) {
+    if (!key.has_modifier() && key.is_alpha()) {
         key_timings.insert({key.copy_shifted(), nullopt});
     }
 }
@@ -183,8 +202,9 @@ void ActiveKeys::sync_key_state() {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     span s{key_states, key_states + num_keys};
 
-    for (auto const scan_code : monitored_keys) {
-        const Key key{scan_code};
+    for (auto const entry : key_timings) {
+        auto const key = std::get<0>(entry);
+        auto const scan_code = key.get_scan_code();
         if (s[static_cast<size_t>(scan_code)]) {
             press_key(key);
         }
@@ -224,6 +244,10 @@ bool ActiveKeys::was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) 
            (!key.has_shift() && was_key_pressed_since(key.shift_mod_complement(), start_ms));
 }
 
-std::size_t ActiveKeys::num_keys_monitored() const {
-    return monitored_keys.size();
+KeySet ActiveKeys::get_monitored_keys() const {
+    KeySet keys;
+    auto keys_only = key_timings | std::views::transform([](auto entry) { return std::get<0>(entry); });
+    keys.insert_range(keys_only);
+
+    return keys;
 }

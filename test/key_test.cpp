@@ -87,6 +87,43 @@ TEST_F(KeyTest, Getters) {
     EXPECT_EQ(key.get_key_code(), expected_keycode);
 }
 
+TEST_F(KeyTest, Modifiers) {
+    const Key no_mods{any_scancode};
+    const Key left_shifted{any_scancode, SDL_KMOD_LSHIFT};
+    const Key right_shifted{any_scancode, SDL_KMOD_RSHIFT};
+    const Key both_shifted{any_scancode, SDL_KMOD_SHIFT};
+    const Key both_ctrl{any_scancode, SDL_KMOD_CTRL};
+    const Key both_alt{any_scancode, SDL_KMOD_ALT};
+    const Key shift_and_ctrl{any_scancode, SDL_KMOD_SHIFT | SDL_KMOD_CTRL};
+
+    // shift
+    EXPECT_FALSE(no_mods.has_shift());
+    EXPECT_TRUE(left_shifted.has_shift());
+    EXPECT_TRUE(right_shifted.has_shift());
+    EXPECT_TRUE(both_shifted.has_shift());
+    EXPECT_TRUE(shift_and_ctrl.has_shift());
+    EXPECT_FALSE(both_ctrl.has_shift());
+    EXPECT_FALSE(both_alt.has_shift());
+
+    // ctrl
+    EXPECT_FALSE(no_mods.has_ctrl());
+    EXPECT_FALSE(left_shifted.has_ctrl());
+    EXPECT_FALSE(right_shifted.has_ctrl());
+    EXPECT_FALSE(both_shifted.has_ctrl());
+    EXPECT_TRUE(shift_and_ctrl.has_ctrl());
+    EXPECT_TRUE(both_ctrl.has_ctrl());
+    EXPECT_FALSE(both_alt.has_ctrl());
+
+    // alt
+    EXPECT_FALSE(no_mods.has_alt());
+    EXPECT_FALSE(left_shifted.has_alt());
+    EXPECT_FALSE(right_shifted.has_alt());
+    EXPECT_FALSE(both_shifted.has_alt());
+    EXPECT_FALSE(shift_and_ctrl.has_alt());
+    EXPECT_FALSE(both_ctrl.has_alt());
+    EXPECT_TRUE(both_alt.has_alt());
+}
+
 TEST_F(KeyTest, CopyShifted) {
     auto const key_no_shift_mod = Key(any_scancode);
     auto const key_no_shift_mod_also = Key(any_scancode, SDL_KMOD_NONE);
@@ -95,6 +132,22 @@ TEST_F(KeyTest, CopyShifted) {
     EXPECT_EQ(key_no_shift_mod.copy_shifted(), key_shifted);
     EXPECT_EQ(key_no_shift_mod_also.copy_shifted(), key_shifted);
     EXPECT_EQ(key_shifted.copy_shifted(), key_shifted);
+
+    // preserves other modifiers
+    const Key key_with_alt{any_scancode, SDL_KMOD_ALT};
+    auto const key_with_alt_copied = key_with_alt.copy_shifted(false);
+    auto const key_with_alt_copied_shift_only = key_with_alt.copy_shifted(true);
+    EXPECT_TRUE(key_with_alt_copied.has_shift());
+    EXPECT_TRUE(key_with_alt_copied_shift_only.has_shift());
+    EXPECT_TRUE(key_with_alt_copied.has_alt());
+    EXPECT_FALSE(key_with_alt_copied_shift_only.has_alt());
+
+    // test scancode that will change keycode on shift
+    const Key plus{SDLK_PLUS};
+    const Key equals{SDLK_EQUALS};
+
+    EXPECT_EQ(plus.copy_shifted(), plus);
+    EXPECT_EQ(equals.copy_shifted(), plus);
 }
 
 TEST_F(KeyTest, Eq) {
@@ -141,16 +194,54 @@ TEST_F(KeyTest, ShiftModComplement) {
 
     EXPECT_EQ(key, key_shifted.shift_mod_complement());
     EXPECT_EQ(key_shifted, key.shift_mod_complement());
+
+    // check preferences for also copying other modifiers
+    const Key key_with_alt{any_scancode, SDL_KMOD_ALT};
+    const Key shifted_key_with_alt{any_scancode, SDL_KMOD_ALT | SDL_KMOD_SHIFT};
+
+    EXPECT_TRUE(key_with_alt.shift_mod_complement(true).has_shift());
+    EXPECT_FALSE(key_with_alt.shift_mod_complement(true).has_alt());
+    EXPECT_FALSE(shifted_key_with_alt.shift_mod_complement(true).has_shift());
+    EXPECT_FALSE(shifted_key_with_alt.shift_mod_complement(true).has_alt());
+
+    EXPECT_TRUE(key_with_alt.shift_mod_complement(false).has_shift());
+    EXPECT_TRUE(key_with_alt.shift_mod_complement(false).has_alt());
+    EXPECT_FALSE(shifted_key_with_alt.shift_mod_complement(false).has_shift());
+    EXPECT_TRUE(shifted_key_with_alt.shift_mod_complement(false).has_alt());
 }
 
 TEST_F(KeyTest, HasShfit) {
-    auto const key1 = Key(any_scancode, SDL_KMOD_SHIFT);
-    auto const key2 = Key(any_scancode, SDL_KMOD_LSHIFT);
-    auto const key3 = Key(any_scancode, SDL_KMOD_RSHIFT);
+    const Key key1{any_scancode, SDL_KMOD_SHIFT};
+    const Key key2{any_scancode, SDL_KMOD_LSHIFT};
+    const Key key3{any_scancode, SDL_KMOD_RSHIFT};
+    const Key key4{any_scancode};
 
     EXPECT_TRUE(key1.has_shift());
     EXPECT_TRUE(key2.has_shift());
     EXPECT_TRUE(key3.has_shift());
+    EXPECT_FALSE(key4.has_shift());
+}
+
+TEST_F(KeyTest, KeyTypes) {
+    const Key a{SDLK_A};
+    const Key z{SDLK_Z};
+    const Key dollar_sign{SDLK_DOLLAR};
+    const Key zero{SDLK_0};
+    const Key nine{SDLK_9};
+
+    EXPECT_TRUE(a.is_alpha());
+    EXPECT_TRUE(a.copy_shifted().is_alpha());
+    EXPECT_TRUE(z.copy_shifted().is_alpha());
+    EXPECT_FALSE(zero.is_alpha());
+    EXPECT_FALSE(dollar_sign.is_alpha());
+    EXPECT_TRUE(zero.is_numeric());
+    EXPECT_FALSE(zero.copy_shifted().is_numeric());
+    EXPECT_TRUE(nine.is_numeric());
+    EXPECT_FALSE(nine.copy_shifted().is_numeric());
+    EXPECT_FALSE(dollar_sign.is_numeric());
+    EXPECT_TRUE(Key{SDLK_5}.is_alphanum());
+    EXPECT_TRUE(Key{SDLK_R}.is_alphanum());
+    EXPECT_FALSE(dollar_sign.is_alphanum());
 }
 
 TEST_F(KeyTest, Hash) {

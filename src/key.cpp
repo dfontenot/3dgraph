@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <SDL3/SDL_keycode.h>
 #include <cstddef>
 #include <format>
 #include <functional>
@@ -79,6 +80,11 @@ Key::Key(SDL_Scancode scan_code, SDL_Keymod key_mod)
     : scan_code(scan_code), key_mod(key_mod), key_code(::maybe_key_from_scan_code(scan_code, key_mod)) {
 }
 
+Key::Key(pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod)
+    : scan_code(std::get<0>(scan_code_with_mod)), key_mod(std::get<1>(scan_code_with_mod)),
+      key_code(::maybe_key_from_scan_code(scan_code, key_mod)) {
+}
+
 Key::Key(SDL_Keycode key_code) {
     this->key_code = key_code;
     this->scan_code = SDL_GetScancodeFromKey(key_code, &key_mod);
@@ -104,24 +110,34 @@ Key::Key(Keyish const &keyish) {
     }
 }
 
-Key Key::copy_shifted(bool only_this_mod) const {
-    if (only_this_mod) {
-        return Key(scan_code, SDL_KMOD_SHIFT);
+Key Key::copy_shifted(bool only_keep_shift) const {
+    if (only_keep_shift) {
+        return Key{scan_code, SDL_KMOD_SHIFT};
     }
     else {
-        return Key(scan_code, key_mod | SDL_KMOD_SHIFT);
+        return Key{scan_code, static_cast<SDL_Keymod>(key_mod | SDL_KMOD_SHIFT)};
     }
 }
 
 Key Key::without_mods() const {
-    return Key(scan_code);
+    return Key{scan_code};
 }
 
-Key Key::shift_mod_complement() const {
-    if (has_modifier()) {
-        return Key(scan_code);
+Key Key::shift_mod_complement(bool only_keep_shift) const {
+    if (only_keep_shift) {
+        if (has_shift()) {
+            return Key{scan_code};
+        }
+        else {
+            return Key{scan_code, SDL_KMOD_SHIFT};
+        }
     }
     else {
-        return Key(scan_code, SDL_KMOD_SHIFT);
+        if (has_shift()) {
+            return Key{scan_code, static_cast<SDL_Keymod>(key_mod & ~SDL_KMOD_SHIFT)};
+        }
+        else {
+            return Key{scan_code, static_cast<SDL_Keymod>(key_mod | SDL_KMOD_SHIFT)};
+        }
     }
 }
