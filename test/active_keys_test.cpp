@@ -121,21 +121,40 @@ TEST_F(ActiveKeysTest, StartListenToKey) {
     EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
 }
 
-TEST_F(ActiveKeysTest, SetKeyPressed) {
-    auto const key = Key(any_scancode);
-    auto const other_key = Key(any_other_scancode);
+TEST_F(ActiveKeysTest, PressKey) {
+    const Key key{any_scancode};
+    const Key other_key{any_other_scancode};
     ActiveKeys active_keys{key};
-
-    active_keys.press_key(key);
-    EXPECT_NE(nullopt, active_keys.maybe_get_key(key));
 
     active_keys.press_key(other_key);
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(other_key));
+
+    auto const before_press_ms = SDL_GetTicks();
+    SDL_Delay(1);
+    active_keys.press_key(key);
+    SDL_Delay(1);
+    auto const after_press_ms = SDL_GetTicks();
+
+    auto maybe_key_timing = active_keys.maybe_get_key(key);
+    EXPECT_NE(nullopt, maybe_key_timing);
+    auto key_timing = *maybe_key_timing;
+    auto const start_time = std::get<0>(key_timing);
+    EXPECT_TRUE(start_time > before_press_ms);
+    EXPECT_TRUE(start_time < after_press_ms);
+    EXPECT_EQ(nullopt, std::get<1>(key_timing));
+
+    SDL_Delay(1);
+    active_keys.press_key(key);
+    maybe_key_timing = active_keys.maybe_get_key(key);
+    EXPECT_NE(nullopt, maybe_key_timing);
+    key_timing = *maybe_key_timing;
+    EXPECT_EQ(std::get<0>(key_timing), start_time);
+    EXPECT_EQ(nullopt, std::get<1>(key_timing));
 }
 
 TEST_F(ActiveKeysTest, MaybeGetKey) {
     ActiveKeys active_keys{any_scancode};
-    auto const key = Key(any_scancode);
+    const Key key{any_scancode};
 
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
     active_keys.press_key(key);
@@ -155,7 +174,7 @@ TEST_F(ActiveKeysTest, MaybeGetKey) {
 
 TEST_F(ActiveKeysTest, ReleaseKey) {
     ActiveKeys active_keys{any_scancode};
-    auto const key = Key(any_scancode);
+    const Key key{any_scancode};
 
     // nothing pressed yet
     EXPECT_EQ(nullopt, active_keys.maybe_get_key(key));
@@ -273,6 +292,24 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     EXPECT_FALSE(active_keys.was_key_pressed_since(any_scancode, before_press_ms));
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_press_ms));
 
+    // register as pressed again (happens for held keys e.g., not holding just a modifier)
+    auto const before_second_press_ms = SDL_GetTicks();
+    SDL_Delay(1);
+
+    active_keys.press_key(any_key);
+    active_keys.press_key(any_keycode_key);
+    auto const after_second_press_ms = SDL_GetTicks();
+
+    // check key timing while key is held and has shown up in the event queue more than once
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, before_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, after_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode_key, before_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode_key, after_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, before_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, after_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, before_second_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_second_press_ms));
+
     auto const before_release_key_ms = SDL_GetTicks();
     active_keys.release_key(any_key);
     active_keys.release_key(any_keycode_key);
@@ -289,4 +326,21 @@ TEST_F(ActiveKeysTest, WasKeyPressedSince) {
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, before_release_key_ms));
     EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode, after_release_key_ms));
     EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, before_release_key_ms));
+
+    // press the key again
+    auto const before_third_press_ms = SDL_GetTicks();
+    SDL_Delay(1);
+
+    active_keys.press_key(any_key);
+    active_keys.press_key(any_keycode_key);
+    auto const after_third_press_ms = SDL_GetTicks();
+
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_key, before_third_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_key, after_third_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode_key, before_third_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode_key, after_third_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_keycode, before_third_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_keycode, after_third_press_ms));
+    EXPECT_FALSE(active_keys.was_key_pressed_since(any_scancode, before_third_press_ms));
+    EXPECT_TRUE(active_keys.was_key_pressed_since(any_scancode, after_third_press_ms));
 }
