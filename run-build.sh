@@ -9,7 +9,15 @@
 NEXT_IS_ARG=0
 RUN_TESTS=1
 TARGET_REGEX='--target=([[:alnum:]_]+)'
+CTEST_OPT_REGEX='--(label)|(tests)|(exclude)-regex='
 TARGET=
+
+# NOTE: only supporting --test-regex="Test*" style for now
+# TODO: getopts for the short args for ctest args
+CTEST_ARGS=()
+
+# loop over CLI arguments and filter out
+# anything that shouldn't be sent to cmake configure
 for arg do
   shift
   if [ "$NEXT_IS_ARG" -eq 1 ]; then
@@ -32,8 +40,12 @@ for arg do
   elif [[ "$arg" = "--target" ]]; then
     NEXT_IS_ARG=1
     continue
+  elif [[ "$arg" =~ $CTEST_OPT_REGEX ]]; then
+    CTEST_ARGS+=($arg)
+    continue
   fi
 
+  # put the arg back
   set -- "$@" "$arg"
 done
 
@@ -98,7 +110,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP
 cmake --build . $TARGET
 
 if [ $RUN_TESTS -eq 1 ]; then
-  ctest --output-on-failure
+  ctest --output-on-failure $CTEST_ARGS
 fi
 
 popd
