@@ -53,6 +53,13 @@ static const constexpr double rotation_max_degrees_second = 20.0;
 static const constexpr double rotation_max_rad_second = rotation_max_degrees_second * (pi_v<double> / 180.0);
 static const constexpr double rotation_rad_millis = rotation_max_rad_second / 1000.0;
 
+/**
+ * how fast to rotate on the slowed rotation setting
+ */
+static const constexpr double slowed_rotation_max_degrees_second = 15.0;
+static const constexpr double slowed_rotation_max_rad_second = rotation_max_degrees_second * (pi_v<double> / 180.0);
+static const constexpr double slowed_rotation_rad_millis = rotation_max_rad_second / 1000.0;
+
 static const constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);
 static const constexpr vec3 y_axis = vec3(0.0f, 1.0f, 0.0f);
 
@@ -305,26 +312,30 @@ TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms
 TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms, TickResult tick_result) {
     using std::get;
 
-    bool const up_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_W, start_ms);
-    bool const down_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_S, start_ms);
+    auto const up_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_W, SDL_KMOD_SHIFT, start_ms);
+    auto const down_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_S, SDL_KMOD_SHIFT, start_ms);
 
-    bool const left_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_A, start_ms);
-    bool const right_key_timing = active_keys.was_key_pressed_since(SDL_SCANCODE_D, start_ms);
+    auto const left_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_A, SDL_KMOD_SHIFT, start_ms);
+    auto const right_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_D, SDL_KMOD_SHIFT, start_ms);
 
     auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
+    auto const slowed_rotations_rads =
+        static_cast<float>(slowed_rotation_rad_millis * static_cast<double>(end_ms - start_ms));
     quat current(*model);
 
     tick_result.set_model_modified(false);
     if (up_key_timing != down_key_timing) {
         if (up_key_timing) {
             tick_result.set_model_modified(true);
-            quat const rotation = angleAxis(rotations_rads, x_axis);
+            quat const rotation =
+                angleAxis(up_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads, x_axis);
             current = rotation * current;
         }
 
         if (down_key_timing) {
             tick_result.set_model_modified(true);
-            quat const rotation = angleAxis(-rotations_rads, x_axis);
+            quat const rotation =
+                angleAxis(-(down_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads), x_axis);
             current = rotation * current;
         }
     }
@@ -332,13 +343,15 @@ TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t en
     if (left_key_timing != right_key_timing) {
         if (left_key_timing) {
             tick_result.set_model_modified(true);
-            quat const rotation = angleAxis(-rotations_rads, y_axis);
+            quat const rotation =
+                angleAxis(-(left_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads), y_axis);
             current = rotation * current;
         }
 
         if (right_key_timing) {
             tick_result.set_model_modified(true);
-            quat const rotation = angleAxis(rotations_rads, y_axis);
+            quat const rotation =
+                angleAxis(right_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads, y_axis);
             current = rotation * current;
         }
     }

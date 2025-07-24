@@ -1,14 +1,15 @@
 #include "active_keys.hpp"
 #include "key.hpp"
+#include "key_mod.hpp"
 
 #include <SDL3/SDL.h>
 
 #include <cassert>
 #include <initializer_list>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <utility>
-#include <ranges>
 #include <vector>
 
 using std::initializer_list;
@@ -16,9 +17,9 @@ using std::make_optional;
 using std::make_pair;
 using std::nullopt;
 using std::optional;
+using std::pair;
 using std::span;
 using std::vector;
-using std::pair;
 
 namespace {
 KeyValue const unmonitored_key = nullopt;
@@ -250,4 +251,38 @@ KeySet ActiveKeys::get_monitored_keys() const {
     keys.insert_range(keys_only);
 
     return keys;
+}
+
+optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const {
+    const KeyMod key_mod_mask{mask};
+
+    bool found = false;
+    KeyMod found_mods;
+    for (size_t bit = 0; bit < sizeof(SDL_Keymod); bit++) {
+        if (key_mod_mask.test(bit)) {
+
+            KeyMod only_this_mod;
+            only_this_mod.set(bit);
+            if (was_key_pressed_since(key.copy_with_mods(only_this_mod), start_ms)) {
+                found_mods.set(bit);
+            }
+        }
+    }
+
+    if (!found) {
+        return nullopt;
+    }
+    else {
+        return make_optional(found_mods);
+    }
+}
+
+optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(SDL_Scancode scan_code, SDL_Keymod mask,
+                                                         uint64_t start_ms) const {
+    return what_key_mods_pressed_since(Key{scan_code}, mask, start_ms);
+}
+
+optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(SDL_Keycode key_code, SDL_Keymod mask,
+                                                         uint64_t start_ms) const {
+    return what_key_mods_pressed_since(Key{key_code}, mask, start_ms);
 }

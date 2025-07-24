@@ -3,7 +3,6 @@
 #include <SDL3/SDL.h>
 
 #include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
 #include <format>
 #include <iostream>
 #include <variant>
@@ -31,6 +30,10 @@ public:
     explicit Key(std::pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod);
 
     constexpr Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod)
+        : scan_code(scan_code), key_code(key_code), key_mod(key_mod) {
+    }
+
+    constexpr Key(SDL_Scancode scan_code, std::optional<SDL_Keycode> key_code, SDL_Keymod key_mod)
         : scan_code(scan_code), key_code(key_code), key_mod(key_mod) {
     }
 
@@ -98,6 +101,10 @@ public:
 
     [[nodiscard]] constexpr bool is_alphanum() const {
         return is_alpha() || is_numeric();
+    }
+
+    [[nodiscard]] constexpr Key copy_with_mods(SDL_Keymod mods) const {
+        return {scan_code, key_code, mods};
     }
 
     /**

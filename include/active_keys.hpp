@@ -1,6 +1,7 @@
 #pragma once
 
 #include "key.hpp"
+#include "key_mod.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -8,8 +9,8 @@
 #include <initializer_list>
 #include <optional>
 #include <ranges>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 // TODO: refactor to make private
@@ -22,6 +23,8 @@ class ActiveKeys {
      * missing from map = key is not monitored
      */
     std::unordered_map<Key, KeyValue, KeyHash> key_timings;
+
+    std::optional<KeyMod> what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const;
 
 public:
     ActiveKeys() = default;
@@ -134,6 +137,14 @@ public:
     [[nodiscard]] bool was_key_pressed_since(const Key &key, uint64_t start_ms) const;
     [[nodiscard]] bool was_key_pressed_since(SDL_Scancode scan_code, uint64_t start_ms) const;
     [[nodiscard]] bool was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) const;
+
+    /**
+     * if the key was pressed at all, what key mods were present while it was pressed?
+     */
+    [[nodiscard]] std::optional<KeyMod> what_key_mods_pressed_since(SDL_Scancode scan_code, SDL_Keymod mask,
+                                                                    uint64_t start_ms) const;
+    [[nodiscard]] std::optional<KeyMod> what_key_mods_pressed_since(SDL_Keycode key_code, SDL_Keymod mask,
+                                                                    uint64_t start_ms) const;
 
     /**
      * sync the state with SDL_GetKeyboardState
