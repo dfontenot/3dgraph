@@ -2,11 +2,11 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_scancode.h>
 #include <gtest/gtest.h>
 
+#include <format>
 #include <optional>
+#include <sstream>
 #include <unordered_set>
 #include <utility>
 
@@ -56,6 +56,19 @@ TEST_F(KeyTest, CtorFromVariant) {
     const Key plus_scan_code{SDL_SCANCODE_EQUALS, SDL_KMOD_SHIFT};
     EXPECT_EQ(Key(plus_key_code_variant), plus_scan_code);
     EXPECT_EQ(Key(plus_scan_code_variant), plus_scan_code);
+}
+
+TEST_F(KeyTest, Format) {
+    const Key any_key{any_scancode};
+    auto const formatted = std::format("{}", any_key);
+    EXPECT_TRUE(formatted.size() > 0);
+}
+
+TEST_F(KeyTest, StreamDisplay) {
+    const Key any_key{any_scancode};
+    std::stringstream s;
+    s << any_key;
+    EXPECT_TRUE(s.str().size() > 0);
 }
 
 TEST_F(KeyTest, FromKeyCodeHasCorrectMod) {

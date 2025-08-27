@@ -2,12 +2,11 @@
 
 #include <SDL3/SDL.h>
 
-#include <SDL3/SDL_keycode.h>
 #include <format>
 #include <iostream>
-#include <variant>
 #include <optional>
 #include <utility>
+#include <variant>
 
 using Keyish = std::variant<SDL_Scancode, SDL_Keycode, std::pair<SDL_Scancode, SDL_Keymod>>;
 
@@ -16,6 +15,7 @@ class KeyHash;
 class Key {
     SDL_Scancode scan_code;
     std::optional<SDL_Keycode> key_code;
+    // TODO: replace with KeyMod
     SDL_Keymod key_mod;
 
     friend bool operator==(const Key &lhs, const Key &rhs);
@@ -128,3 +128,18 @@ public:
 struct KeyHash {
     size_t operator()(const Key &key) const;
 };
+
+namespace std {
+template <> struct formatter<Key, char> {
+    template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
+        return std::format_to(ctx.out(), "< Key {0} : scan {1} mod {2} key {3} >", SDL_GetScancodeName(obj.scan_code),
+                              std::to_string(obj.scan_code), obj.key_mod,
+                              obj.key_code.transform([](auto code) { return std::to_string(code); }).value_or("n/a"));
+    }
+};
+
+} // namespace std

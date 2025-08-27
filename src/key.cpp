@@ -2,9 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-#include <SDL3/SDL_keycode.h>
 #include <cstddef>
-#include <format>
 #include <functional>
 #include <iostream>
 #include <optional>
@@ -14,6 +12,7 @@
 using std::make_optional;
 using std::nullopt;
 using std::optional;
+using std::ostream;
 using std::pair;
 using std::size_t;
 using std::variant;
@@ -30,24 +29,12 @@ optional<SDL_Keycode> maybe_key_from_scan_code(SDL_Scancode scan_code, SDL_Keymo
 }
 } // namespace
 
-std::ostream &operator<<(std::ostream &stream, const Key &key) {
+ostream &operator<<(ostream &stream, const Key &key) {
     stream << "{ Key " << SDL_GetScancodeName(key.scan_code) << " : scan " << key.scan_code << " mod " << key.key_mod
            << " key " << key.key_code.transform([](auto code) { return std::to_string(code); }).value_or("n/a") << " }";
 
     return stream;
 }
-
-template <> struct std::formatter<Key> {
-    template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext> auto format(const Key &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{ Key {0} : scan {1} mod {2} key {3} }", SDL_GetScancodeName(obj.scan_code),
-                              obj.scan_code, obj.key_mod,
-                              obj.key_code.transform([](auto code) { return std::to_string(code); }).value_or("n/a"));
-    }
-};
 
 /**
  * for the purposes of this application, equality does not mean strict

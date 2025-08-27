@@ -256,7 +256,7 @@ KeySet ActiveKeys::get_monitored_keys() const {
 optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const {
     const KeyMod key_mod_mask{mask};
 
-    bool found = false;
+    bool found = is_key_registered(key.without_mods());
     KeyMod found_mods;
     for (size_t bit = 0; bit < sizeof(SDL_Keymod); bit++) {
         if (key_mod_mask.test(bit)) {

@@ -39,6 +39,7 @@ add_executable(${PROJECT_NAME}
   src/gl_inspect.cpp
   src/grid.cpp
   src/key.cpp
+  src/key_mod.cpp
   src/main.cpp
   src/opengl_debug_callback.cpp
   src/shader.cpp
@@ -79,6 +80,7 @@ add_executable(${PROJECT_NAME}_es
   src/gl_inspect.cpp
   src/grid.cpp
   src/key.cpp
+  src/key_mod.cpp
   src/main.cpp
   src/opengl_debug_callback.cpp
   src/shader.cpp
@@ -117,9 +119,11 @@ set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
 add_executable(${PROJECT_NAME}_test
   src/active_keys.cpp
   src/key.cpp
+  src/key_mod.cpp
   src/es/cpu_tessellation.cpp
   test/active_keys_test.cpp
   test/key_test.cpp
+  test/key_mod_test.cpp
   test/es/cpu_tessellation_test.cpp
 )
 
