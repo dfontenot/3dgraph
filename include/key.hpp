@@ -1,5 +1,7 @@
 #pragma once
 
+#include <key_mod.hpp>
+
 #include <SDL3/SDL.h>
 
 #include <format>
@@ -10,16 +12,17 @@
 
 using Keyish = std::variant<SDL_Scancode, SDL_Keycode, std::pair<SDL_Scancode, SDL_Keymod>>;
 
-class KeyHash;
+class KeyEquivalentHash;
+class KeyEquivalentEqualTo;
 
 class Key {
     SDL_Scancode scan_code;
     std::optional<SDL_Keycode> key_code;
-    // TODO: replace with KeyMod
-    SDL_Keymod key_mod;
+    KeyMod key_mod;
 
+    friend KeyEquivalentHash;
+    friend KeyEquivalentEqualTo;
     friend bool operator==(const Key &lhs, const Key &rhs);
-    friend KeyHash;
     friend std::ostream &operator<<(std::ostream &stream, const Key &key);
     friend std::formatter<Key>;
 
@@ -60,25 +63,25 @@ public:
      * were either of the shift keys pressed down
      */
     [[nodiscard]] constexpr bool has_shift() const {
-        return (key_mod & SDL_KMOD_LSHIFT) || (key_mod & SDL_KMOD_RSHIFT);
+        return key_mod.has_shift();
     }
 
     /**
      * were either of the ctrl keys pressed down
      */
     [[nodiscard]] constexpr bool has_ctrl() const {
-        return (key_mod & SDL_KMOD_LCTRL) || (key_mod & SDL_KMOD_RCTRL);
+        return key_mod.has_ctrl();
     }
 
     /**
      * were either of the alt keys pressed down
      */
     [[nodiscard]] constexpr bool has_alt() const {
-        return (key_mod & SDL_KMOD_LALT) || (key_mod & SDL_KMOD_RALT);
+        return key_mod.has_alt();
     }
 
     [[nodiscard]] constexpr bool has_modifier() const {
-        return key_mod != SDL_KMOD_NONE;
+        return !key_mod.has_no_mods();
     }
 
     [[nodiscard]] constexpr bool is_scancode_shift() const {
@@ -125,11 +128,36 @@ public:
     [[nodiscard]] Key shift_mod_complement(bool only_keey_shift = true) const;
 };
 
-struct KeyHash {
+/**
+ * use this hash specialization when the exact
+ * scan code and modifiers that were pressed do not matter
+ */
+struct KeyEquivalentHash {
     size_t operator()(const Key &key) const;
 };
 
+/**
+ * use this equal_to when the exact
+ * scan code and modifiers do not matter
+ */
+struct KeyEquivalentEqualTo {
+    constexpr bool operator()(const Key &lhs, const Key &rhs) const {
+        // TODO: fix the check if both are shifted isn't exactly correct as one could have
+        // other modifiers applied as well
+        return ((lhs.is_scancode_shift() && rhs.is_scancode_shift()) || lhs.scan_code == rhs.scan_code) &&
+               ((lhs.has_shift() && rhs.has_shift()) || lhs.key_mod == rhs.key_mod);
+    }
+};
+
 namespace std {
+template <> struct hash<Key> {
+    std::size_t operator()(const Key &key) const {
+        std::size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.get_scan_code());
+        std::size_t key_mod_hash = std::hash<SDL_Keymod>{}(key.get_key_mod());
+        return scan_code_hash ^ (key_mod_hash << 1);
+    }
+};
+
 template <> struct formatter<Key, char> {
     template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
         return ctx.begin();

@@ -5,7 +5,10 @@
 #include <bitset>
 #include <climits>
 #include <format>
+#include <functional>
 #include <iostream>
+
+struct KeyModEquivalentEqualTo;
 
 struct KeyMod {
     constexpr operator SDL_Keymod() const {
@@ -16,6 +19,10 @@ struct KeyMod {
     }
 
     constexpr explicit KeyMod(SDL_Keymod mask) : val(mask) {
+    }
+
+    [[nodiscard]] static constexpr KeyMod none() {
+        return KeyMod{SDL_KMOD_NONE};
     }
 
     /**
@@ -74,6 +81,27 @@ struct KeyMod {
         return has_lalt() || has_ralt();
     }
 
+    KeyMod &set_lshift(bool bit_val = true);
+    KeyMod &set_rshift(bool bit_val = true);
+    KeyMod &set_lctrl(bool bit_val = true);
+    KeyMod &set_rctrl(bool bit_val = true);
+    KeyMod &set_lalt(bool bit_val = true);
+    KeyMod &set_ralt(bool bit_val = true);
+
+    /**
+     * returns if the two key mods function the same for the
+     * purposes of this application
+     */
+    [[nodiscard]] constexpr bool is_equivalent(KeyMod const &other) const {
+        auto const other_has_ctrl = other.has_ctrl();
+        auto const other_has_alt = other.has_alt();
+        auto const other_has_shift = other.has_shift();
+
+        return has_ctrl() == other_has_ctrl && has_alt() == other_has_alt && has_shift() == other_has_shift;
+    }
+
+    [[nodiscard]] KeyMod as_normalized() const;
+
 private:
     constexpr static std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> lshift{SDL_KMOD_LSHIFT};
     constexpr static std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> rshift{SDL_KMOD_RSHIFT};
@@ -86,9 +114,34 @@ private:
 
     friend std::ostream &operator<<(std::ostream &stream, const KeyMod &key);
     friend std::formatter<KeyMod>;
+    friend bool operator==(const KeyMod &lhs, const KeyMod &rhs);
+};
+
+/**
+ * use this hash specialization when the exact
+ * modifiers that were pressed do not matter
+ */
+struct KeyModEquivalentHash {
+    std::size_t operator()(const KeyMod &key_mod) const;
+};
+
+/**
+ * use this equal_to when the exact
+ * modifiers do not matter
+ */
+struct KeyModEquivalentEqualTo {
+    constexpr bool operator()(const KeyMod &lhs, const KeyMod &rhs) const {
+        return lhs.is_equivalent(rhs);
+    }
 };
 
 namespace std {
+template <> struct hash<KeyMod> {
+    std::size_t operator()(const KeyMod &key_mod) const {
+        return std::hash<SDL_Keymod>{}(key_mod);
+    }
+};
+
 template <> struct formatter<KeyMod> {
     template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
         return ctx.begin();

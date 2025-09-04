@@ -2,6 +2,7 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
 #include <gtest/gtest.h>
 
 #include <format>
@@ -164,23 +165,43 @@ TEST_F(KeyTest, CopyShifted) {
 }
 
 TEST_F(KeyTest, Eq) {
-    auto const key = Key(any_scancode);
-    auto const other_key = Key(any_other_scancode);
-    auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
-    auto const key_left_shifted = Key(any_scancode, SDL_KMOD_LSHIFT);
-    auto const key_right_shifted = Key(any_scancode, SDL_KMOD_RSHIFT);
-    auto const key_alt = Key(any_scancode, SDL_KMOD_ALT);
-    auto const left_shift_only = Key(SDL_SCANCODE_LSHIFT);
-    auto const right_shift_only = Key(SDL_SCANCODE_RSHIFT);
+    const Key key{any_scancode};
+    const Key other_key{any_other_scancode};
+    const Key key_shifted{any_scancode, SDL_KMOD_SHIFT};
+    const Key key_left_shifted{any_scancode, SDL_KMOD_LSHIFT};
+    const Key key_right_shifted{any_scancode, SDL_KMOD_RSHIFT};
+    const Key key_alt{any_scancode, SDL_KMOD_ALT};
+    const Key left_shift_only{SDL_SCANCODE_LSHIFT};
+    const Key right_shift_only{SDL_SCANCODE_RSHIFT};
 
-    EXPECT_FALSE(key == key_shifted);
-    EXPECT_FALSE(key == other_key);
-    EXPECT_TRUE(key == key);
-    EXPECT_FALSE(key_shifted == key_alt);
-    EXPECT_TRUE(key_left_shifted == key_shifted);
-    EXPECT_TRUE(key_right_shifted == key_shifted);
-    EXPECT_TRUE(key_left_shifted == key_right_shifted);
-    EXPECT_TRUE(left_shift_only == right_shift_only);
+    EXPECT_NE(key, key_shifted);
+    EXPECT_NE(key, other_key);
+    EXPECT_EQ(key, key);
+    EXPECT_NE(key_shifted, key_alt);
+    EXPECT_NE(key_left_shifted, key_shifted);
+    EXPECT_NE(key_right_shifted, key_shifted);
+    EXPECT_NE(key_left_shifted, key_right_shifted);
+    EXPECT_NE(left_shift_only, right_shift_only);
+}
+
+TEST_F(KeyTest, EqEquivalent) {
+    const Key key{any_scancode};
+    const Key other_key{any_other_scancode};
+    const Key key_shifted{any_scancode, SDL_KMOD_SHIFT};
+    const Key key_left_shifted{any_scancode, SDL_KMOD_LSHIFT};
+    const Key key_right_shifted{any_scancode, SDL_KMOD_RSHIFT};
+    const Key key_alt{any_scancode, SDL_KMOD_ALT};
+    const Key left_shift_only{SDL_SCANCODE_LSHIFT};
+    const Key right_shift_only{SDL_SCANCODE_RSHIFT};
+
+    EXPECT_FALSE(KeyEquivalentEqualTo{}(key, key_shifted));
+    EXPECT_FALSE(KeyEquivalentEqualTo{}(key, other_key));
+    EXPECT_TRUE(KeyEquivalentEqualTo{}(key, key));
+    EXPECT_FALSE(KeyEquivalentEqualTo{}(key_shifted, key_alt));
+    EXPECT_TRUE(KeyEquivalentEqualTo{}(key_left_shifted, key_shifted));
+    EXPECT_TRUE(KeyEquivalentEqualTo{}(key_right_shifted, key_shifted));
+    EXPECT_TRUE(KeyEquivalentEqualTo{}(key_left_shifted, key_right_shifted));
+    EXPECT_TRUE(KeyEquivalentEqualTo{}(left_shift_only, right_shift_only));
 }
 
 TEST_F(KeyTest, IsScanCodeShift) {
@@ -260,9 +281,9 @@ TEST_F(KeyTest, KeyTypes) {
 TEST_F(KeyTest, Hash) {
     using std::unordered_set;
 
-    unordered_set<Key, KeyHash> set;
+    unordered_set<Key> set;
 
-    auto const key = Key(any_scancode);
+    const Key key{any_scancode};
     EXPECT_FALSE(set.contains(key));
 
     set.insert(key);
@@ -275,7 +296,7 @@ TEST_F(KeyTest, Hash) {
 
     // ensure keys with different modifiers
     // are differentiated
-    auto const key2 = Key(any_scancode, any_keymod);
+    const Key key2{any_scancode, any_keymod};
     set.insert(key2);
     EXPECT_TRUE(set.contains(key));
     EXPECT_TRUE(set.contains(key2));
@@ -283,7 +304,54 @@ TEST_F(KeyTest, Hash) {
 
     // ensure can add keys only differing
     // in scancode
-    auto const key3 = Key(any_other_scancode);
+    const Key key3{any_other_scancode};
+    set.insert(key3);
+    EXPECT_TRUE(set.contains(key));
+    EXPECT_TRUE(set.contains(key2));
+    EXPECT_TRUE(set.contains(key3));
+    EXPECT_EQ(3, set.size());
+
+    // assert can add keys that differ only in left vs. right modifier pressed
+    const Key key4{any_other_scancode, SDL_KMOD_LCTRL};
+    const Key key5{any_other_scancode, SDL_KMOD_RCTRL};
+    set.insert(key4);
+    EXPECT_TRUE(set.contains(key4));
+    EXPECT_FALSE(set.contains(key5));
+    EXPECT_EQ(4, set.size());
+
+    set.insert(key5);
+    EXPECT_TRUE(set.contains(key4));
+    EXPECT_TRUE(set.contains(key5));
+    EXPECT_EQ(5, set.size());
+}
+
+TEST_F(KeyTest, HashEquivalent) {
+    using std::unordered_set;
+
+    unordered_set<Key, KeyEquivalentHash, KeyEquivalentEqualTo> set;
+
+    const Key key{any_scancode};
+    EXPECT_FALSE(set.contains(key));
+
+    set.insert(key);
+    EXPECT_TRUE(set.contains(key));
+    EXPECT_EQ(1, set.size());
+
+    set.insert(key);
+    EXPECT_TRUE(set.contains(key));
+    EXPECT_EQ(1, set.size());
+
+    // ensure keys with different modifiers
+    // are differentiated
+    const Key key2{any_scancode, any_keymod};
+    set.insert(key2);
+    EXPECT_TRUE(set.contains(key));
+    EXPECT_TRUE(set.contains(key2));
+    EXPECT_EQ(2, set.size());
+
+    // ensure can add keys only differing
+    // in scancode
+    const Key key3{any_other_scancode};
     set.insert(key3);
     EXPECT_TRUE(set.contains(key));
     EXPECT_TRUE(set.contains(key2));
@@ -291,8 +359,8 @@ TEST_F(KeyTest, Hash) {
     EXPECT_EQ(3, set.size());
 
     // for this application which shift doesn't matter
-    auto const lshift = Key(SDL_SCANCODE_LSHIFT);
-    auto const rshift = Key(SDL_SCANCODE_RSHIFT);
+    const Key lshift{SDL_SCANCODE_LSHIFT};
+    const Key rshift{SDL_SCANCODE_RSHIFT};
     set.insert(lshift);
     EXPECT_TRUE(set.contains(lshift));
     EXPECT_TRUE(set.contains(rshift));
@@ -300,8 +368,8 @@ TEST_F(KeyTest, Hash) {
     EXPECT_EQ(4, set.size());
 
     // likewise if the key combo is more than just pressing a shift key
-    auto const key4 = Key(yet_another_scancode, SDL_KMOD_LSHIFT);
-    auto const key5 = Key(yet_another_scancode, SDL_KMOD_RSHIFT);
+    const Key key4{yet_another_scancode, SDL_KMOD_LSHIFT};
+    const Key key5{yet_another_scancode, SDL_KMOD_RSHIFT};
     set.insert(key4);
     EXPECT_TRUE(set.contains(key4));
     EXPECT_TRUE(set.contains(key5));

@@ -1,7 +1,9 @@
 #include "key.hpp"
+#include "key_mod.hpp"
 
 #include <SDL3/SDL.h>
 
+#include <SDL3/SDL_keycode.h>
 #include <cstddef>
 #include <functional>
 #include <iostream>
@@ -36,26 +38,19 @@ ostream &operator<<(ostream &stream, const Key &key) {
     return stream;
 }
 
-/**
- * for the purposes of this application, equality does not mean strict
- * equality, just means if the keys are equivalent
- */
 bool operator==(const Key &lhs, const Key &rhs) {
-    // TODO: fix the check if both are shifted isn't exactly correct as one could have
-    // other modifiers applied as well
-    return ((lhs.is_scancode_shift() && rhs.is_scancode_shift()) || lhs.scan_code == rhs.scan_code) &&
-           ((lhs.has_shift() && rhs.has_shift()) || lhs.key_mod == rhs.key_mod);
+    return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod;
 }
 
 /**
  * for the purposes of this application, equivalent keys will hash to the same value
  */
-size_t KeyHash::operator()(const Key &key) const {
+size_t KeyEquivalentHash::operator()(const Key &key) const {
+    // TODO: make this a proper method on key.hpp
     const SDL_Scancode equivalent_scan_code = key.is_scancode_shift() ? SDL_SCANCODE_LSHIFT : key.scan_code;
-    const SDL_Keymod equivalent_key_mod = key.has_shift() ? SDL_KMOD_SHIFT : key.key_mod;
 
     size_t scan_code_hash = std::hash<SDL_Scancode>{}(equivalent_scan_code);
-    size_t key_mod_hash = std::hash<SDL_Keymod>{}(equivalent_key_mod);
+    size_t key_mod_hash = KeyModEquivalentHash{}(key.key_mod);
     return scan_code_hash ^ (key_mod_hash << 1);
 }
 
@@ -74,7 +69,9 @@ Key::Key(pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod)
 
 Key::Key(SDL_Keycode key_code) {
     this->key_code = key_code;
-    this->scan_code = SDL_GetScancodeFromKey(key_code, &key_mod);
+    SDL_Keymod mod = SDL_KMOD_NONE;
+    this->scan_code = SDL_GetScancodeFromKey(key_code, &mod);
+    this->key_mod = KeyMod{mod};
 }
 
 Key::Key(Keyish const &keyish) {
@@ -82,21 +79,24 @@ Key::Key(Keyish const &keyish) {
 
     if (holds_alternative<SDL_Scancode>(keyish)) {
         this->scan_code = std::get<SDL_Scancode>(keyish);
-        this->key_mod = SDL_KMOD_NONE;
+        this->key_mod = KeyMod::none();
         this->key_code = ::maybe_key_from_scan_code(this->scan_code, this->key_mod);
     }
     else if (holds_alternative<pair<SDL_Scancode, SDL_Keymod>>(keyish)) {
         auto const pair_ = std::get<pair<SDL_Scancode, SDL_Keymod>>(keyish);
         this->scan_code = std::get<0>(pair_);
-        this->key_mod = std::get<1>(pair_);
+        this->key_mod = KeyMod{std::get<1>(pair_)};
         this->key_code = ::maybe_key_from_scan_code(this->scan_code, this->key_mod);
     }
     else {
         this->key_code = std::get<SDL_Keycode>(keyish);
-        this->scan_code = SDL_GetScancodeFromKey(*(this->key_code), &key_mod);
+        SDL_Keymod mod = SDL_KMOD_NONE;
+        this->scan_code = SDL_GetScancodeFromKey(*(this->key_code), &mod);
+        this->key_mod = KeyMod{mod};
     }
 }
 
+// TODO: move these mod-specific methods into key_mod.hpp
 Key Key::copy_shifted(bool only_keep_shift) const {
     if (only_keep_shift) {
         return Key{scan_code, SDL_KMOD_SHIFT};
