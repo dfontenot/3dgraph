@@ -63,8 +63,8 @@ Key::Key(SDL_Scancode scan_code, SDL_Keymod key_mod)
 }
 
 Key::Key(pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod)
-    : scan_code(std::get<0>(scan_code_with_mod)), key_mod(std::get<1>(scan_code_with_mod)),
-      key_code(::maybe_key_from_scan_code(scan_code, key_mod)) {
+    : scan_code(std::get<0>(scan_code_with_mod)), key_mod(std::get<1>(scan_code_with_mod)) {
+    key_code = ::maybe_key_from_scan_code(scan_code, key_mod);
 }
 
 Key::Key(SDL_Keycode key_code) {

@@ -21,7 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         # TODO: bring back gcc16 currently Conan does not accept that versions
-        version: ["gcc15", "clang21"]
+        # TODO: bring back clang builds when cartesian product is supported
+        version: ["gcc15"]
 
     runs-on: ubuntu-latest
 
