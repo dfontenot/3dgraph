@@ -24,6 +24,11 @@ class ActiveKeys {
      */
     std::unordered_map<Key, KeyValue, KeyEquivalentHash, KeyEquivalentEqualTo> key_timings;
 
+    /**
+     * returns all of the mods that are in use since start_ms
+     * returns nullopt if the key isn't registered at all or if the key hasn't been
+     * pressed since start_ms
+     */
     std::optional<KeyMod> what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const;
 
 public:
