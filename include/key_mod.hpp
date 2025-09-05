@@ -170,7 +170,7 @@ template <> struct formatter<KeyMod> {
             mods.insert("N");
         }
 
-        return std::format_to(ctx.out(), "{0}", mods | std::views::join_with(string(",")) | std::ranges::to<string>());
+        return std::format_to(ctx.out(), "{0}", mods | std::views::join_with(',') | std::ranges::to<string>());
     }
 };
 } // namespace std

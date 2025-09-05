@@ -133,7 +133,7 @@ void ActiveKeys::press_key(const Key &key) {
         }
     }
 
-    if (key.has_modifier()) {
+    if (key.has_modifier() && key.is_alpha()) {
         auto const un_modded = key.without_mods();
         if (!is_key_registered(un_modded)) {
             return;
@@ -256,7 +256,7 @@ KeySet ActiveKeys::get_monitored_keys() const {
 optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const {
     const KeyMod key_mod_mask{mask};
 
-    // TODO: make this work on non alphanum keys such as checking mods used with plus
+    // TODO: make this work on non alpha keys such as checking mods used with plus
     auto const without_mods = key.without_mods();
     bool found = is_key_registered(without_mods);
     if (!was_key_pressed_since(without_mods, start_ms)) {
