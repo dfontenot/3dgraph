@@ -62,6 +62,9 @@ Key::Key(SDL_Scancode scan_code, SDL_Keymod key_mod)
     : scan_code(scan_code), key_mod(key_mod), key_code(::maybe_key_from_scan_code(scan_code, key_mod)) {
 }
 
+Key::Key(SDL_Scancode scan_code, KeyMod key_mod) : scan_code(scan_code), key_mod(key_mod) {
+}
+
 Key::Key(pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod)
     : scan_code(std::get<0>(scan_code_with_mod)), key_mod(std::get<1>(scan_code_with_mod)) {
     key_code = ::maybe_key_from_scan_code(scan_code, key_mod);
@@ -127,4 +130,8 @@ Key Key::shift_mod_complement(bool only_keep_shift) const {
             return Key{scan_code, static_cast<SDL_Keymod>(key_mod | SDL_KMOD_SHIFT)};
         }
     }
+}
+
+[[nodiscard]] Key Key::with_normalized_mods() const {
+    return Key{scan_code, key_mod};
 }

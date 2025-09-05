@@ -30,6 +30,7 @@ public:
     Key() = delete;
     explicit Key(SDL_Scancode scan_code);
     explicit Key(SDL_Scancode scan_code, SDL_Keymod key_mod);
+    explicit Key(SDL_Scancode scan_code, KeyMod key_mod);
     explicit Key(std::pair<SDL_Scancode, SDL_Keymod> scan_code_with_mod);
 
     constexpr Key(SDL_Scancode scan_code, SDL_Keycode key_code, SDL_Keymod key_mod)
@@ -121,11 +122,16 @@ public:
     [[nodiscard]] Key without_mods() const;
 
     /**
+     * new copy with normalized modifiers (left-side only)
+     */
+    [[nodiscard]] Key with_normalized_mods() const;
+
+    /**
      * a new copy of this key with the shift modifier
      * if it isn't applied to this, or without it if it
      * already is applied
      */
-    [[nodiscard]] Key shift_mod_complement(bool only_keey_shift = true) const;
+    [[nodiscard]] Key shift_mod_complement(bool only_key_shift = true) const;
 };
 
 /**
@@ -142,10 +148,10 @@ struct KeyEquivalentHash {
  */
 struct KeyEquivalentEqualTo {
     constexpr bool operator()(const Key &lhs, const Key &rhs) const {
-        // TODO: fix the check if both are shifted isn't exactly correct as one could have
-        // other modifiers applied as well
-        return ((lhs.is_scancode_shift() && rhs.is_scancode_shift()) || lhs.scan_code == rhs.scan_code) &&
-               ((lhs.has_shift() && rhs.has_shift()) || lhs.key_mod == rhs.key_mod);
+        auto const lhs_normalized = lhs.with_normalized_mods();
+        auto const rhs_normalized = rhs.with_normalized_mods();
+
+        return lhs_normalized == rhs_normalized;
     }
 };
 
