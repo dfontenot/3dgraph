@@ -11,7 +11,6 @@
 #include <cstddef>
 #include <iterator>
 #include <list>
-#include <locale>
 #include <optional>
 #include <ranges>
 #include <utility>
@@ -29,6 +28,8 @@ protected:
     static auto const any_scancode = SDL_SCANCODE_D;
     static auto const any_other_scancode = SDL_SCANCODE_T;
     static auto const any_keymod = SDL_KMOD_CTRL;
+
+    /** any keycode that does not translate to an unmodded scan code */
     static auto const any_keycode = SDLK_PLUS;
 };
 

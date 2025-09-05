@@ -27,60 +27,31 @@ KeyValue const unmonitored_key = nullopt;
 
 ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
     for (auto const key : keys_to_monitor) {
-        key_timings.insert({key, nullopt});
-
-        if (!key.has_modifier() && key.is_alpha()) {
-            // TODO: another leaky abstraction, need to fix
-            key_timings.insert({key.copy_shifted(), nullopt});
-        }
+        start_listen_to_key(key);
     }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<SDL_Scancode> scan_codes) {
     for (auto const scan_code : scan_codes) {
-        auto const key = Key(scan_code);
-
-        key_timings.insert({key, nullopt});
-
-        if (key.is_alpha()) {
-            key_timings.insert({key.copy_shifted(), nullopt});
-        }
+        start_listen_to_key(Key{scan_code});
     }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<pair<SDL_Scancode, SDL_Keymod>> scan_codes_with_mods) {
     for (auto const scan_code_with_mods : scan_codes_with_mods) {
-        auto const key = Key(scan_code_with_mods);
-
-        key_timings.insert({key, nullopt});
-
-        if (key.is_alpha()) {
-            key_timings.insert({key.copy_shifted(), nullopt});
-        }
+        start_listen_to_key(Key{scan_code_with_mods});
     }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<SDL_Keycode> key_codes) {
-    for (auto const scan_code : key_codes) {
-        auto const key = Key(scan_code);
-
-        key_timings.insert({key, nullopt});
-
-        if (key.is_alpha()) {
-            key_timings.insert({key.copy_shifted(), nullopt});
-        }
+    for (auto const key_code : key_codes) {
+        start_listen_to_key(Key{key_code});
     }
 }
 
 ActiveKeys::ActiveKeys(initializer_list<Keyish> keys_to_monitor) {
     for (auto const keyish : keys_to_monitor) {
-        auto const key = Key(keyish);
-
-        key_timings.insert({key, nullopt});
-
-        if (!key.has_modifier() && key.is_alpha()) {
-            key_timings.insert({key.copy_shifted(), nullopt});
-        }
+        start_listen_to_key(Key{keyish});
     }
 }
 
