@@ -7,6 +7,9 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <ranges>
+#include <string>
+#include <unordered_set>
 
 struct KeyModEquivalentEqualTo;
 
@@ -113,7 +116,6 @@ private:
     std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> val;
 
     friend std::ostream &operator<<(std::ostream &stream, const KeyMod &key);
-    friend std::formatter<KeyMod>;
     friend bool operator==(const KeyMod &lhs, const KeyMod &rhs);
 };
 
@@ -148,7 +150,27 @@ template <> struct formatter<KeyMod> {
     }
 
     template <typename FormatContext> auto format(const KeyMod &obj, FormatContext &ctx) const {
-        return std::format_to(ctx.out(), "{0}", obj.val.to_string());
+        using std::string;
+        using std::unordered_set;
+
+        unordered_set<string> mods;
+        if (obj.has_alt()) {
+            mods.insert("A");
+        }
+
+        if (obj.has_ctrl()) {
+            mods.insert("C");
+        }
+
+        if (obj.has_shift()) {
+            mods.insert("S");
+        }
+
+        if (mods.size() == 0) {
+            mods.insert("N");
+        }
+
+        return std::format_to(ctx.out(), "{0}", mods | std::views::join_with(string(",")) | std::ranges::to<string>());
     }
 };
 } // namespace std

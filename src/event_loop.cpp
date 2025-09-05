@@ -7,11 +7,11 @@
 #include "tessellation_settings.hpp"
 #include "tick_result.hpp"
 
+#include <SDL3/SDL_keycode.h>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <iostream>
 #include <memory>
 #include <numbers>
 #include <optional>
@@ -384,39 +384,40 @@ TickResult EventLoop::process_view_mutation_events(bool scrolled_toward_user, Ti
 TickResult EventLoop::drain_event_queue(TickResult tick_result) {
 
     while (SDL_PollEvent(&evt)) {
+        // TODO: std::visit
         if (evt.type == SDL_EVENT_QUIT) {
             tick_result.set_should_exit(true);
             return tick_result;
         }
         else if (evt.type == SDL_EVENT_KEY_UP) {
-            if (evt.key.key == SDLK_PLUS) {
-                start_click = nullopt;
-            }
+            const Key released{evt.key.scancode, evt.key.key, evt.key.mod};
 
-            std::cout << "released key " << Key(evt.key.scancode, evt.key.key, evt.key.mod) << "\n";
-            active_keys.release_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
+            logger->debug("released key {0}", released);
+            active_keys.release_key(released);
         }
         else if (evt.type == SDL_EVENT_KEY_DOWN) {
-            if (evt.key.key == SDLK_Q) {
+            const Key pressed{evt.key.scancode, evt.key.key, evt.key.mod};
+
+            if (pressed.get_key_code()
+                    .transform([](SDL_Keycode code) { return code == SDLK_Q || code == SDLK_ESCAPE; })
+                    .value_or(false)) {
                 tick_result.set_should_exit(true);
                 return tick_result;
             }
 
-            if (evt.key.key == SDLK_PLUS) {
-                start_click = nullopt;
-            }
-
-            std::cout << "pressed key " << Key(evt.key.scancode, evt.key.key, evt.key.mod) << "\n";
+            logger->debug("pressed key {0}", pressed);
 
             // mouse clicks disable keys
             if (start_click.has_value()) {
                 continue;
             }
 
-            active_keys.press_key(Key(evt.key.scancode, evt.key.key, evt.key.mod));
+            active_keys.press_key(pressed);
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
+            // TODO: implement this
+            start_click = nullopt;
+            // start_click = make_optional<MouseLoc>(evt.motion.x, evt.motion.y);
         }
         else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             start_click = nullopt;
@@ -425,6 +426,7 @@ TickResult EventLoop::drain_event_queue(TickResult tick_result) {
             tick_result = process_view_mutation_events(evt.wheel.integer_y < 0, tick_result);
         }
         else if (start_click.has_value() && evt.type == SDL_EVENT_MOUSE_MOTION) {
+            // TODO: implement this
             // MouseLoc current(evt.motion.x, evt.motion.y);
         }
     }
@@ -445,7 +447,7 @@ TickResult EventLoop::process_frame(uint64_t render_time_ns) {
 
     auto drain_start_ns = SDL_GetTicksNS();
     if (drain_start_ns >= end_ticks_ns) {
-        logger->debug("skipping input polling this tick");
+        logger->warn("skipping input polling this tick");
         // not entirely accurate, is used to prevent a couple of slow input poll loops
         // from locking out all input polling by dropping down the average
         event_poll_timings.add(0);
