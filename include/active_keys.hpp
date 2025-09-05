@@ -16,13 +16,13 @@
 // TODO: refactor to make private
 using Interval = std::pair<uint64_t, std::optional<uint64_t>>;
 using KeyValue = std::optional<Interval>;
-using KeySet = std::unordered_set<Key, KeyEquivalentHash>;
+using KeySet = std::unordered_set<Key, KeyEquivalentHash, KeyEquivalentEqualTo>;
 
 class ActiveKeys {
     /**
      * missing from map = key is not monitored
      */
-    std::unordered_map<Key, KeyValue, KeyEquivalentHash> key_timings;
+    std::unordered_map<Key, KeyValue, KeyEquivalentHash, KeyEquivalentEqualTo> key_timings;
 
     std::optional<KeyMod> what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const;
 
