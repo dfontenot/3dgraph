@@ -124,7 +124,7 @@ void ActiveKeys::press_key(const Key &key) {
             }
         }
     }
-    else {
+    else if (! key.has_shift()) {
         // see if there is a modifier version of this already pressed
         // and if so, mark it as no longer pressed
         // e.g., shift-D was held down at the start and now the shift has been
