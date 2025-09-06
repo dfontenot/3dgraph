@@ -87,26 +87,22 @@ KeyMod &KeyMod::set_ralt(bool bit_val) {
     return *this;
 }
 
-/**
- * normalized in this context just means all relevant modifiers are only
- * pressed on the left side (arbitrary)
- */
 KeyMod KeyMod::as_normalized() const {
     KeyMod copied{*this};
 
-    if (copied.has_ralt()) {
+    if (copied.has_ralt() != copied.has_lalt()) {
         copied.set_lalt();
-        copied.set_ralt(false);
+        copied.set_ralt();
     }
 
-    if (copied.has_rshift()) {
-        copied.set_lshift();
-        copied.set_rshift(false);
-    }
-
-    if (copied.has_rctrl()) {
+    if (copied.has_rctrl() != copied.has_lctrl()) {
         copied.set_lctrl();
-        copied.set_rctrl(false);
+        copied.set_rctrl();
+    }
+
+    if (copied.has_rshift() != copied.has_lshift()) {
+        copied.set_lshift();
+        copied.set_rshift();
     }
 
     return copied;

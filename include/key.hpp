@@ -113,6 +113,7 @@ public:
 
     /**
      * new copy of this key but with the shift modifier applied
+     * (both left and right)
      */
     [[nodiscard]] Key copy_shifted(bool only_keep_shift = true) const;
 
@@ -122,7 +123,7 @@ public:
     [[nodiscard]] Key without_mods() const;
 
     /**
-     * new copy with normalized scan codes and modifiers (left-side only)
+     * new copy with normalized scan codes and modifiers
      */
     [[nodiscard]] Key as_normalized() const;
 
@@ -131,7 +132,7 @@ public:
      * if it isn't applied to this, or without it if it
      * already is applied
      */
-    [[nodiscard]] Key shift_mod_complement(bool only_key_shift = true) const;
+    [[nodiscard]] Key shift_mod_complement(bool only_modify_shift = true) const;
 
     /**
      * account for differences in left and right equivalent keys

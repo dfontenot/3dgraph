@@ -139,9 +139,9 @@ TEST_F(KeyTest, Modifiers) {
 }
 
 TEST_F(KeyTest, CopyShifted) {
-    auto const key_no_shift_mod = Key(any_scancode);
-    auto const key_no_shift_mod_also = Key(any_scancode, SDL_KMOD_NONE);
-    auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
+    const Key key_no_shift_mod{any_scancode};
+    const Key key_no_shift_mod_also{any_scancode, SDL_KMOD_NONE};
+    const Key key_shifted{any_scancode, SDL_KMOD_SHIFT};
 
     EXPECT_EQ(key_no_shift_mod.copy_shifted(), key_shifted);
     EXPECT_EQ(key_no_shift_mod_also.copy_shifted(), key_shifted);
@@ -223,8 +223,8 @@ TEST_F(KeyTest, WithoutMods) {
 }
 
 TEST_F(KeyTest, ShiftModComplement) {
-    auto const key = Key(any_scancode);
-    auto const key_shifted = Key(any_scancode, SDL_KMOD_SHIFT);
+    const Key key{any_scancode};
+    const Key key_shifted{any_scancode, SDL_KMOD_SHIFT};
 
     EXPECT_EQ(key, key_shifted.shift_mod_complement());
     EXPECT_EQ(key_shifted, key.shift_mod_complement());

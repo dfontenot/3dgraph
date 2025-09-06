@@ -110,18 +110,19 @@ Key Key::without_mods() const {
     return Key{scan_code};
 }
 
-Key Key::shift_mod_complement(bool only_keep_shift) const {
-    if (only_keep_shift) {
+Key Key::shift_mod_complement(bool only_modify_shift) const {
+    if (only_modify_shift) {
         if (has_shift()) {
             return Key{scan_code};
         }
         else {
-            return Key{scan_code, key_mod.with_shifted()};
+            return Key{scan_code, KeyMod::shift()};
         }
     }
     else {
         KeyMod key_mod_copy{key_mod};
         key_mod_copy.set_lshift(!has_shift());
+        key_mod_copy.set_rshift(!has_shift());
         return Key{scan_code, key_mod_copy};
     }
 }

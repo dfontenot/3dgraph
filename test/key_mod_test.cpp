@@ -141,18 +141,23 @@ TEST_F(KeyModTest, IsEquivalent) {
 }
 
 TEST_F(KeyModTest, AsNormalized) {
-    const KeyMod alt{SDL_KMOD_LALT};
+    const KeyMod alt{SDL_KMOD_ALT};
+    const KeyMod l_alt{SDL_KMOD_LALT};
     const KeyMod r_alt{SDL_KMOD_RALT};
-    const KeyMod l_mult{SDL_KMOD_LALT | SDL_KMOD_LCTRL};
-    const KeyMod mixed{SDL_KMOD_RALT | SDL_KMOD_RSHIFT | SDL_KMOD_LCTRL};
-    const KeyMod l_mixed{SDL_KMOD_LALT | SDL_KMOD_LSHIFT | SDL_KMOD_LCTRL};
+    const KeyMod l_mixed{SDL_KMOD_LALT | SDL_KMOD_LCTRL};
+    const KeyMod r_mixed{SDL_KMOD_RALT | SDL_KMOD_RCTRL};
+    const KeyMod mixed{SDL_KMOD_LALT | SDL_KMOD_RALT | SDL_KMOD_LCTRL | SDL_KMOD_RCTRL};
 
     EXPECT_EQ(alt, alt.as_normalized());
-    EXPECT_NE(r_alt, alt.as_normalized());
+    EXPECT_EQ(alt, l_alt.as_normalized());
     EXPECT_EQ(alt, r_alt.as_normalized());
-    EXPECT_EQ(l_mult, l_mult.as_normalized());
-    EXPECT_NE(mixed, mixed.as_normalized());
-    EXPECT_EQ(l_mixed, mixed.as_normalized());
+    EXPECT_NE(l_alt, l_alt.as_normalized());
+    EXPECT_NE(r_alt, l_alt.as_normalized());
+    EXPECT_NE(l_alt, r_alt.as_normalized());
+    EXPECT_NE(l_mixed, l_mixed.as_normalized());
+    EXPECT_NE(r_mixed, r_mixed.as_normalized());
+    EXPECT_EQ(mixed, r_mixed.as_normalized());
+    EXPECT_EQ(mixed, l_mixed.as_normalized());
 }
 
 TEST_F(KeyModTest, Hash) {
@@ -261,5 +266,6 @@ TEST_F(KeyModTest, WithShifted) {
 
     auto const mod2 = mod.with_shifted();
     EXPECT_TRUE(mod2.has_alt());
-    EXPECT_TRUE(mod2.has_shift());
+    EXPECT_TRUE(mod2.has_lshift());
+    EXPECT_TRUE(mod2.has_rshift());
 }

@@ -32,7 +32,7 @@ struct KeyMod {
     }
 
     [[nodiscard]] static constexpr KeyMod shift() {
-        return KeyMod{SDL_KMOD_LSHIFT};
+        return KeyMod{SDL_KMOD_SHIFT};
     }
 
     /**
@@ -112,7 +112,9 @@ struct KeyMod {
 
     /**
      * new copy of this, but with normalized modifiers
-     * (only left side)
+     * meaning that the left and right side modifier keys
+     * are pressed simultaneously so as to match the results of
+     * SDL_GetScancodeFromKey
      */
     [[nodiscard]] KeyMod as_normalized() const;
 
@@ -134,7 +136,7 @@ struct KeyMod {
     }
 
     [[nodiscard]] constexpr KeyMod with_shifted() const {
-        return with_more_mods(SDL_KMOD_LSHIFT);
+        return with_more_mods(SDL_KMOD_SHIFT);
     }
 
 private:
