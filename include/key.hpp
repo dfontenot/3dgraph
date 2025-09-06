@@ -122,9 +122,9 @@ public:
     [[nodiscard]] Key without_mods() const;
 
     /**
-     * new copy with normalized modifiers (left-side only)
+     * new copy with normalized scan codes and modifiers (left-side only)
      */
-    [[nodiscard]] Key with_normalized_mods() const;
+    [[nodiscard]] Key as_normalized() const;
 
     /**
      * a new copy of this key with the shift modifier
@@ -132,6 +132,11 @@ public:
      * already is applied
      */
     [[nodiscard]] Key shift_mod_complement(bool only_key_shift = true) const;
+
+    /**
+     * account for differences in left and right equivalent keys
+     */
+    [[nodiscard]] SDL_Scancode get_equivalent_scan_code() const;
 };
 
 /**
@@ -148,10 +153,7 @@ struct KeyEquivalentHash {
  */
 struct KeyEquivalentEqualTo {
     constexpr bool operator()(const Key &lhs, const Key &rhs) const {
-        auto const lhs_normalized = lhs.with_normalized_mods();
-        auto const rhs_normalized = rhs.with_normalized_mods();
-
-        return lhs_normalized == rhs_normalized;
+        return lhs.as_normalized() == rhs.as_normalized();
     }
 };
 

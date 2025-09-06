@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 
 #include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <cstddef>
 #include <functional>
 #include <iostream>
@@ -46,10 +47,7 @@ bool operator==(const Key &lhs, const Key &rhs) {
  * for the purposes of this application, equivalent keys will hash to the same value
  */
 size_t KeyEquivalentHash::operator()(const Key &key) const {
-    // TODO: make this a proper method on key.hpp
-    const SDL_Scancode equivalent_scan_code = key.is_scancode_shift() ? SDL_SCANCODE_LSHIFT : key.scan_code;
-
-    size_t scan_code_hash = std::hash<SDL_Scancode>{}(equivalent_scan_code);
+    size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.get_equivalent_scan_code());
     size_t key_mod_hash = KeyModEquivalentHash{}(key.key_mod);
     return scan_code_hash ^ (key_mod_hash << 1);
 }
@@ -132,6 +130,20 @@ Key Key::shift_mod_complement(bool only_keep_shift) const {
     }
 }
 
-[[nodiscard]] Key Key::with_normalized_mods() const {
-    return Key{scan_code, key_mod};
+[[nodiscard]] Key Key::as_normalized() const {
+    return Key{get_equivalent_scan_code(), key_mod.as_normalized()};
+}
+
+[[nodiscard]] SDL_Scancode Key::get_equivalent_scan_code() const {
+    if (scan_code == SDL_SCANCODE_RSHIFT) {
+        return SDL_SCANCODE_LSHIFT;
+    }
+    else if (scan_code == SDL_SCANCODE_RALT) {
+        return SDL_SCANCODE_LALT;
+    }
+    else if (scan_code == SDL_SCANCODE_RCTRL) {
+        return SDL_SCANCODE_LCTRL;
+    }
+
+    return scan_code;
 }
