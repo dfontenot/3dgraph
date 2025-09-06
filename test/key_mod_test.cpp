@@ -4,13 +4,13 @@
 #include <SDL3/SDL_keycode.h>
 #include <gtest/gtest.h>
 
-#include <sstream>
 #include <format>
 #include <iostream>
+#include <sstream>
 #include <unordered_set>
 
-using std::size_t;
 using std::cout;
+using std::size_t;
 
 class KeyModTest : public ::testing::Test {
 protected:
@@ -76,7 +76,7 @@ TEST_F(KeyModTest, HasNoMods) {
 TEST_F(KeyModTest, Shift) {
     const KeyMod shift{SDL_KMOD_LSHIFT};
     const KeyMod shift_and_others{SDL_KMOD_LSHIFT | SDL_KMOD_LALT};
-    
+
     EXPECT_TRUE(shift.has_lshift());
     EXPECT_TRUE(shift.has_shift());
     EXPECT_TRUE(shift_and_others.has_lshift());
@@ -86,7 +86,7 @@ TEST_F(KeyModTest, Shift) {
 TEST_F(KeyModTest, Ctrl) {
     const KeyMod ctrl{SDL_KMOD_LCTRL};
     const KeyMod ctrl_and_others{SDL_KMOD_LCTRL | SDL_KMOD_LALT};
-    
+
     EXPECT_TRUE(ctrl.has_lctrl());
     EXPECT_TRUE(ctrl.has_ctrl());
     EXPECT_TRUE(ctrl_and_others.has_lctrl());
@@ -96,7 +96,7 @@ TEST_F(KeyModTest, Ctrl) {
 TEST_F(KeyModTest, Alt) {
     const KeyMod alt{SDL_KMOD_LALT};
     const KeyMod alt_and_others{SDL_KMOD_LCTRL | SDL_KMOD_LALT};
-    
+
     EXPECT_TRUE(alt.has_lalt());
     EXPECT_TRUE(alt.has_alt());
     EXPECT_TRUE(alt_and_others.has_lalt());
@@ -119,10 +119,14 @@ TEST_F(KeyModTest, EqEquivalent) {
     const KeyMod r_alt{SDL_KMOD_RALT};
     const KeyMod alt_also{SDL_KMOD_LALT};
     const KeyMod ctrl{SDL_KMOD_LCTRL};
+    const KeyMod either_alt{SDL_KMOD_ALT};
 
     EXPECT_TRUE(KeyModEquivalentEqualTo{}(alt, alt_also));
     EXPECT_FALSE(KeyModEquivalentEqualTo{}(alt, ctrl));
     EXPECT_TRUE(KeyModEquivalentEqualTo{}(alt, r_alt));
+    EXPECT_TRUE(KeyModEquivalentEqualTo{}(either_alt, alt));
+    EXPECT_TRUE(KeyModEquivalentEqualTo{}(either_alt, r_alt));
+    EXPECT_FALSE(KeyModEquivalentEqualTo{}(either_alt, ctrl));
 }
 
 TEST_F(KeyModTest, IsEquivalent) {
@@ -187,11 +191,16 @@ TEST_F(KeyModTest, HashEquivalent) {
     const KeyMod alt_again{SDL_KMOD_LALT};
     const KeyMod ctrl{SDL_KMOD_LCTRL};
     const KeyMod r_ctrl{SDL_KMOD_RCTRL};
+    const KeyMod either_ctrl{SDL_KMOD_CTRL};
     set.insert(alt_again);
     set.insert(ctrl);
 
     EXPECT_EQ(2, set.size());
     EXPECT_TRUE(set.contains(r_ctrl));
+    EXPECT_TRUE(set.contains(either_ctrl));
+
+    set.insert(either_ctrl);
+    EXPECT_EQ(2, set.size());
 }
 
 // TODO: the rest of the copy-paste tests
@@ -220,4 +229,37 @@ TEST_F(KeyModTest, SetLShift) {
     EXPECT_TRUE(mod.has_lalt());
     EXPECT_FALSE(mod.has_lshift());
     EXPECT_FALSE(mod.has_rshift());
+}
+
+TEST_F(KeyModTest, WithMoreMods) {
+    const KeyMod mod{SDL_KMOD_LALT};
+
+    EXPECT_TRUE(mod.has_alt());
+    EXPECT_FALSE(mod.has_shift());
+
+    auto const mod2 = mod.with_more_mods(SDL_KMOD_LSHIFT);
+    EXPECT_TRUE(mod2.has_alt());
+    EXPECT_TRUE(mod2.has_shift());
+}
+
+TEST_F(KeyModTest, AddMods) {
+    KeyMod mod{SDL_KMOD_LALT};
+
+    EXPECT_TRUE(mod.has_alt());
+    EXPECT_FALSE(mod.has_shift());
+
+    mod.add_mods(SDL_KMOD_LSHIFT);
+    EXPECT_TRUE(mod.has_alt());
+    EXPECT_TRUE(mod.has_shift());
+}
+
+TEST_F(KeyModTest, WithShifted) {
+    const KeyMod mod{SDL_KMOD_LALT};
+
+    EXPECT_TRUE(mod.has_alt());
+    EXPECT_FALSE(mod.has_shift());
+
+    auto const mod2 = mod.with_shifted();
+    EXPECT_TRUE(mod2.has_alt());
+    EXPECT_TRUE(mod2.has_shift());
 }

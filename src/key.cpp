@@ -97,13 +97,12 @@ Key::Key(Keyish const &keyish) {
     }
 }
 
-// TODO: move these mod-specific methods into key_mod.hpp
 Key Key::copy_shifted(bool only_keep_shift) const {
     if (only_keep_shift) {
-        return Key{scan_code, SDL_KMOD_SHIFT};
+        return Key{scan_code, KeyMod::shift()};
     }
     else {
-        return Key{scan_code, static_cast<SDL_Keymod>(key_mod | SDL_KMOD_SHIFT)};
+        return Key{scan_code, key_mod.with_shifted()};
     }
 }
 
@@ -117,16 +116,13 @@ Key Key::shift_mod_complement(bool only_keep_shift) const {
             return Key{scan_code};
         }
         else {
-            return Key{scan_code, SDL_KMOD_SHIFT};
+            return Key{scan_code, key_mod.with_shifted()};
         }
     }
     else {
-        if (has_shift()) {
-            return Key{scan_code, static_cast<SDL_Keymod>(key_mod & ~SDL_KMOD_SHIFT)};
-        }
-        else {
-            return Key{scan_code, static_cast<SDL_Keymod>(key_mod | SDL_KMOD_SHIFT)};
-        }
+        KeyMod key_mod_copy{key_mod};
+        key_mod_copy.set_lshift(!has_shift());
+        return Key{scan_code, key_mod_copy};
     }
 }
 

@@ -24,8 +24,15 @@ struct KeyMod {
     constexpr explicit KeyMod(SDL_Keymod mask) : val(mask) {
     }
 
+    constexpr explicit KeyMod(std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> mask) : val(mask) {
+    }
+
     [[nodiscard]] static constexpr KeyMod none() {
         return KeyMod{SDL_KMOD_NONE};
+    }
+
+    [[nodiscard]] static constexpr KeyMod shift() {
+        return KeyMod{SDL_KMOD_LSHIFT};
     }
 
     /**
@@ -103,7 +110,32 @@ struct KeyMod {
         return has_ctrl() == other_has_ctrl && has_alt() == other_has_alt && has_shift() == other_has_shift;
     }
 
+    /**
+     * new copy of this, but with normalized modifiers
+     * (only left side)
+     */
     [[nodiscard]] KeyMod as_normalized() const;
+
+    /**
+     * adds modifiers to this keymod
+     */
+    KeyMod &add_mods(SDL_Keymod key_mod) {
+        std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> new_mods{key_mod};
+        val |= new_mods;
+        return *this;
+    }
+
+    /**
+     * new instance with the added on modifiers
+     */
+    [[nodiscard]] constexpr KeyMod with_more_mods(SDL_Keymod key_mod) const {
+        std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> new_mods{key_mod};
+        return KeyMod{val | new_mods};
+    }
+
+    [[nodiscard]] constexpr KeyMod with_shifted() const {
+        return with_more_mods(SDL_KMOD_LSHIFT);
+    }
 
 private:
     constexpr static std::bitset<CHAR_BIT * sizeof(SDL_Keymod)> lshift{SDL_KMOD_LSHIFT};
