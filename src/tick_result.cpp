@@ -73,4 +73,3 @@ void TickResult::set_tessellation_settings_modified(bool tessellation_settings_m
 void TickResult::set_wireframe_display_mode_toggled(bool show_wireframe_only) noexcept {
     state.set(toggle_wireframe_display_bit, show_wireframe_only);
 }
-

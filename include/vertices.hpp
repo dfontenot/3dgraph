@@ -6,9 +6,9 @@
 #include "vao.hpp"
 #include "vbo.hpp"
 
-#include <iostream>
 #include <concepts>
 #include <format>
+#include <iostream>
 #include <memory>
 #include <utility>
 

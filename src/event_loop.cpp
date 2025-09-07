@@ -57,7 +57,8 @@ static const constexpr double rotation_rad_millis = rotation_max_rad_second / 10
  * how fast to rotate on the slowed rotation setting
  */
 static const constexpr double slowed_rotation_max_degrees_second = 15.0;
-static const constexpr double slowed_rotation_max_rad_second = slowed_rotation_max_degrees_second * (pi_v<double> / 180.0);
+static const constexpr double slowed_rotation_max_rad_second =
+    slowed_rotation_max_degrees_second * (pi_v<double> / 180.0);
 static const constexpr double slowed_rotation_rad_millis = slowed_rotation_max_rad_second / 1000.0;
 
 static const constexpr vec3 x_axis = vec3(1.0f, 0.0f, 0.0f);

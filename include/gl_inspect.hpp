@@ -1,8 +1,8 @@
 #pragma once
 
 #include "glad/glad.h"
-#include <string>
 #include <optional>
+#include <string>
 
 /**
  * @brief similar to glu

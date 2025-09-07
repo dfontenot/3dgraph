@@ -2,8 +2,8 @@
 
 #include <cstddef>
 #include <deque>
-#include <iostream>
 #include <format>
+#include <iostream>
 #include <type_traits>
 
 template <typename T>
@@ -55,8 +55,7 @@ public:
     }
 };
 
-template <typename T>
-std::ostream &operator<<(std::ostream &stream, const MaxDeque<T> &deque) {
+template <typename T> std::ostream &operator<<(std::ostream &stream, const MaxDeque<T> &deque) {
     stream << "{ MaxDeque size " << deque.size() << " avg " << deque.get_avg() << " }";
     return stream;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include "glad/glad.h"
+#include <vector>
 
 /**
  * @ brief creates a lattice of points (no triangles)

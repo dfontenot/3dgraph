@@ -4,8 +4,8 @@
 #include "spdlog/logger.h"
 
 #include <filesystem>
-#include <iostream>
 #include <format>
+#include <iostream>
 #include <string>
 
 #include <spdlog/spdlog.h>
