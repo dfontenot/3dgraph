@@ -6,7 +6,6 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
 #include <cstddef>
-#include <functional>
 #include <iostream>
 #include <optional>
 #include <utility>
@@ -22,7 +21,7 @@ using std::variant;
 
 namespace {
 optional<SDL_Keycode> maybe_key_from_scan_code(SDL_Scancode scan_code, SDL_Keymod key_mod = SDL_KMOD_NONE) {
-    auto key_code = SDL_GetKeyFromScancode(scan_code, SDL_KMOD_NONE, true);
+    auto key_code = SDL_GetKeyFromScancode(scan_code, key_mod, false);
     if (key_code > SDLK_RHYPER) {
         return nullopt;
     }
@@ -41,15 +40,6 @@ ostream &operator<<(ostream &stream, const Key &key) {
 
 bool operator==(const Key &lhs, const Key &rhs) {
     return lhs.scan_code == rhs.scan_code && lhs.key_mod == rhs.key_mod;
-}
-
-/**
- * for the purposes of this application, equivalent keys will hash to the same value
- */
-size_t KeyEquivalentHash::operator()(const Key &key) const {
-    size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.get_equivalent_scan_code());
-    size_t key_mod_hash = KeyModEquivalentHash{}(key.key_mod);
-    return scan_code_hash ^ (key_mod_hash << 1);
 }
 
 Key::Key(SDL_Scancode scan_code)
@@ -110,6 +100,13 @@ Key Key::without_mods() const {
     return Key{scan_code};
 }
 
+Key Key::without_shift() const {
+    KeyMod key_mod_copy{key_mod};
+    key_mod_copy.set_lshift(false);
+    key_mod_copy.set_rshift(false);
+    return Key{scan_code, key_mod_copy};
+}
+
 Key Key::shift_mod_complement(bool only_modify_shift) const {
     if (only_modify_shift) {
         if (has_shift()) {
@@ -127,11 +124,24 @@ Key Key::shift_mod_complement(bool only_modify_shift) const {
     }
 }
 
-[[nodiscard]] Key Key::as_normalized() const {
-    return Key{get_equivalent_scan_code(), key_mod.as_normalized()};
+Key Key::as_normalized() const {
+    auto new_key_mod = key_mod.as_normalized();
+    auto new_scan_code = get_equivalent_scan_code();
+
+    if (new_scan_code == SDL_SCANCODE_LSHIFT) {
+        new_key_mod.set_shift();
+    }
+    else if (new_scan_code == SDL_SCANCODE_LALT) {
+        new_key_mod.set_alt();
+    }
+    else if (new_scan_code == SDL_SCANCODE_LCTRL) {
+        new_key_mod.set_ctrl();
+    }
+
+    return Key{new_scan_code, new_key_mod};
 }
 
-[[nodiscard]] SDL_Scancode Key::get_equivalent_scan_code() const {
+SDL_Scancode Key::get_equivalent_scan_code() const {
     if (scan_code == SDL_SCANCODE_RSHIFT) {
         return SDL_SCANCODE_LSHIFT;
     }
@@ -143,4 +153,56 @@ Key Key::shift_mod_complement(bool only_modify_shift) const {
     }
 
     return scan_code;
+}
+
+Key &Key::set_shift(bool bit_val) {
+    key_mod.set_shift(bit_val);
+    key_code = ::maybe_key_from_scan_code(scan_code, key_mod);
+    return *this;
+}
+
+Key &Key::set_alt(bool bit_val) {
+    key_mod.set_alt(bit_val);
+    return *this;
+}
+
+Key &Key::set_ctrl(bool bit_val) {
+    key_mod.set_ctrl(bit_val);
+    return *this;
+}
+
+Key &Key::set_lshift(bool bit_val) {
+    key_mod.set_lshift(bit_val);
+    key_code = ::maybe_key_from_scan_code(scan_code, key_mod);
+    return *this;
+}
+
+Key &Key::set_rshift(bool bit_val) {
+    key_mod.set_rshift(bit_val);
+    key_code = ::maybe_key_from_scan_code(scan_code, key_mod);
+    return *this;
+}
+
+Key &Key::set_lctrl(bool bit_val) {
+    key_mod.set_lctrl(bit_val);
+    return *this;
+}
+
+Key &Key::set_rctrl(bool bit_val) {
+    key_mod.set_rctrl(bit_val);
+    return *this;
+}
+
+Key &Key::set_lalt(bool bit_val) {
+    key_mod.set_lalt(bit_val);
+    return *this;
+}
+
+Key &Key::set_ralt(bool bit_val) {
+    key_mod.set_ralt(bit_val);
+    return *this;
+}
+
+Key Key::copy_with_mods(SDL_Keymod mods) const {
+    return Key{scan_code, mods};
 }

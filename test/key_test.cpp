@@ -2,7 +2,6 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_keycode.h>
 #include <gtest/gtest.h>
 
 #include <format>
@@ -328,7 +327,7 @@ TEST_F(KeyTest, Hash) {
 TEST_F(KeyTest, HashEquivalent) {
     using std::unordered_set;
 
-    unordered_set<Key, KeyEquivalentHash, KeyEquivalentEqualTo> set;
+    unordered_set<Key, KeyEquivalentHash<>, KeyEquivalentEqualTo<>> set;
 
     const Key key{any_scancode};
     EXPECT_FALSE(set.contains(key));
@@ -384,4 +383,44 @@ TEST_F(KeyTest, HashEquivalent) {
     EXPECT_TRUE(set.contains(key7));
     set.insert(key7);
     EXPECT_EQ(6, set.size());
+}
+
+TEST_F(KeyTest, SetShift) {
+    Key any_key{any_scancode};
+
+    EXPECT_FALSE(any_key.has_shift());
+    EXPECT_TRUE(any_key.set_shift().has_shift());
+
+    // reset
+    any_key = Key{any_scancode};
+    EXPECT_FALSE(any_key.has_shift());
+    EXPECT_TRUE(any_key.set_lshift().has_shift());
+
+    // reset
+    any_key = Key{any_scancode};
+    EXPECT_FALSE(any_key.has_shift());
+    EXPECT_TRUE(any_key.set_rshift().has_shift());
+}
+
+TEST_F(KeyTest, SetShiftChangeKeyCode) {
+    Key equals{SDLK_EQUALS};
+
+    EXPECT_FALSE(equals.has_shift());
+    EXPECT_EQ(SDLK_EQUALS, *equals.get_key_code());
+
+    equals.set_shift();
+    EXPECT_TRUE(equals.has_shift());
+    EXPECT_EQ(SDLK_PLUS, *equals.get_key_code());
+
+    // reset
+    equals = Key{SDLK_EQUALS};
+    equals.set_lshift();
+    EXPECT_TRUE(equals.has_shift());
+    EXPECT_EQ(SDLK_PLUS, *equals.get_key_code());
+
+    // reset
+    equals = Key{SDLK_EQUALS};
+    equals.set_rshift();
+    EXPECT_TRUE(equals.has_shift());
+    EXPECT_EQ(SDLK_PLUS, *equals.get_key_code());
 }

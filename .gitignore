@@ -1,5 +1,6 @@
 build/
 Debug/
+Testing/
 .ccls-cache/
 .cache/
 compile_commands.json

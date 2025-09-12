@@ -108,98 +108,25 @@ EventLoop::EventLoop(shared_ptr<mat4> const &model, shared_ptr<mat4> const &view
                      shared_ptr<FunctionParams> const &function_params,
                      shared_ptr<TessellationSettings> const &tessellation_settings)
     : model(model), view(view), projection(projection), function_params(function_params), start_click(nullopt),
-      event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys(monitored_keys)),
+      event_poll_timings(num_event_timings_maintain), active_keys(ActiveKeys{monitored_keys}),
       tessellation_settings(tessellation_settings), last_tessellation_change_at_msec(nullopt),
       last_wireframe_only_change_at_msec(nullopt), logger(spdlog::stdout_color_mt("event_loop")),
       err(spdlog::stderr_color_mt("event_loop_err")) {
-}
-
-optional<KeyAtTime> EventLoop::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
-                                                                   const Key &key) const {
-    using std::get;
-
-    // TODO this is a bit of a leaky abstraction because eventloop knows that activekeys only
-    // checks for the shift modifier, need to restructure the code to remove this implicit coupling
-
-    auto const key_only = key.without_mods();
-    auto const key_with_shift = key.copy_shifted();
-    auto const maybe_this_key_timing = active_keys.maybe_get_key(key_only);
-    auto const maybe_shift_key_timing = active_keys.maybe_get_key(key_with_shift);
-
-    // were either of the keys pressed at all?
-    if (!maybe_shift_key_timing.has_value() && !maybe_this_key_timing.has_value()) {
-        return nullopt;
-    }
-
-    // xor
-    if (maybe_shift_key_timing.has_value() != maybe_this_key_timing.has_value()) {
-
-        if (maybe_shift_key_timing.has_value()) {
-            auto const shift_key_timing = *maybe_shift_key_timing;
-            auto const maybe_shift_key_end_ms = get<1>(shift_key_timing);
-            auto const start_time_ms = std::max(get<0>(shift_key_timing), start_ms);
-
-            // button was released before the start time under consideration
-            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
-                return nullopt;
-            }
-
-            // button is still held down
-            if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(key_with_shift, start_time_ms, end_ms));
-            }
-            else {
-                return make_optional(make_tuple(key_with_shift, start_time_ms, *maybe_shift_key_end_ms));
-            }
-        }
-        else {
-            auto const this_key_timing = *maybe_this_key_timing;
-            auto const maybe_shift_key_end_ms = get<1>(this_key_timing);
-            auto const start_time_ms = std::max(get<0>(this_key_timing), start_ms);
-
-            // button was released before the start time under consideration
-            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
-                return nullopt;
-            }
-
-            // button is still held down
-            if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(key_with_shift, start_time_ms, end_ms));
-            }
-            else {
-                return make_optional(make_tuple(key_with_shift, start_time_ms, *maybe_shift_key_end_ms));
-            }
-        }
-    }
-
-    // tie-breaker if both keys were pressed
-    auto const shift_key_timing = *maybe_shift_key_timing;
-    auto const this_key_timing = *maybe_this_key_timing;
-
-    // arbitrary: give shift key precedence if either are still
-    // held down at the end of the frame
-    if (!get<1>(shift_key_timing).has_value() && !get<1>(this_key_timing).has_value()) {
-        return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
-    }
-    else if (get<1>(shift_key_timing).has_value()) {
-        return make_optional(make_tuple(key_only, get<0>(shift_key_timing), end_ms));
-    }
-    else {
-        return make_optional(make_tuple(key_with_shift, get<0>(shift_key_timing), end_ms));
-    }
-
-    return nullopt;
 }
 
 TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, TickResult tick_result) {
     using std::get;
 
     auto const now_ms = SDL_GetTicks();
-    auto const up_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_UP));
-    auto const down_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_DOWN));
+    auto const up_key_timing =
+        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_UP));
+    auto const down_key_timing =
+        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_DOWN));
 
-    auto const left_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_LEFT));
-    auto const right_key_timing = which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
+    auto const left_key_timing =
+        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_LEFT));
+    auto const right_key_timing =
+        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
 
     // xor
     tick_result.set_function_params_modified(false);
@@ -283,7 +210,6 @@ TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms
         return tick_result;
     }
 
-    // TODO: once pressed these will keep registering every loop even on key release
     bool const plus_key_timing = active_keys.was_key_pressed_since(SDLK_PLUS, start_ticks_ms);
     bool const minus_key_timing = active_keys.was_key_pressed_since(SDLK_MINUS, start_ticks_ms);
 
@@ -313,11 +239,12 @@ TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms
 TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms, TickResult tick_result) {
     using std::get;
 
-    auto const up_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_W, SDL_KMOD_SHIFT, start_ms);
-    auto const down_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_S, SDL_KMOD_SHIFT, start_ms);
+    auto const now_ms = SDL_GetTicks();
+    auto const up_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_W);
+    auto const down_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_S);
 
-    auto const left_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_A, SDL_KMOD_SHIFT, start_ms);
-    auto const right_key_timing = active_keys.what_key_mods_pressed_since(SDL_SCANCODE_D, SDL_KMOD_SHIFT, start_ms);
+    auto const left_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_A);
+    auto const right_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_D);
 
     auto const rotations_rads = static_cast<float>(rotation_rad_millis * static_cast<double>(end_ms - start_ms));
     auto const slowed_rotations_rads =
@@ -325,34 +252,34 @@ TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t en
     quat current(*model);
 
     tick_result.set_model_modified(false);
-    if (up_key_timing != down_key_timing) {
-        if (up_key_timing) {
+    if (up_key_timing.has_value() != down_key_timing.has_value()) {
+        if (up_key_timing.has_value()) {
             tick_result.set_model_modified(true);
             quat const rotation =
-                angleAxis(up_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads, x_axis);
+                angleAxis(get<0>(*up_key_timing).has_shift() ? slowed_rotations_rads : rotations_rads, x_axis);
             current = rotation * current;
         }
 
-        if (down_key_timing) {
+        if (down_key_timing.has_value()) {
             tick_result.set_model_modified(true);
             quat const rotation =
-                angleAxis(-(down_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads), x_axis);
+                angleAxis(-(get<0>(*down_key_timing).has_shift() ? slowed_rotations_rads : rotations_rads), x_axis);
             current = rotation * current;
         }
     }
 
-    if (left_key_timing != right_key_timing) {
-        if (left_key_timing) {
+    if (left_key_timing.has_value() != right_key_timing.has_value()) {
+        if (left_key_timing.has_value()) {
             tick_result.set_model_modified(true);
             quat const rotation =
-                angleAxis(-(left_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads), y_axis);
+                angleAxis(-(get<0>(*left_key_timing).has_shift() ? slowed_rotations_rads : rotations_rads), y_axis);
             current = rotation * current;
         }
 
-        if (right_key_timing) {
+        if (right_key_timing.has_value()) {
             tick_result.set_model_modified(true);
             quat const rotation =
-                angleAxis(right_key_timing->has_shift() ? slowed_rotations_rads : rotations_rads, y_axis);
+                angleAxis(get<0>(*right_key_timing).has_shift() ? slowed_rotations_rads : rotations_rads, y_axis);
             current = rotation * current;
         }
     }

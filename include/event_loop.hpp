@@ -46,15 +46,6 @@ class EventLoop {
      */
     [[nodiscard]] TickResult drain_event_queue(TickResult tick_result);
 
-    /**
-     * see if the scancode of the key was used at all, and if so see which one was pressed for the longest for
-     * this frame. the returned start time will always be greater than or equal to the start_ms
-     * argument (so keys still held down on the last frame will be at start_ms).
-     * keys that were released after the start time are excluded, and keys that are still currently pressed will
-     * report end_ms as their end time
-     */
-    std::optional<KeyAtTime> which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
-                                                                 const Key &key) const;
     [[nodiscard]] TickResult process_function_mutation_keys(uint64_t start_ticks_ms, TickResult tick_result);
     [[nodiscard]] TickResult process_model_mutation_keys(uint64_t start_ticks_ms, uint64_t end_ticks_ms,
                                                          TickResult tick_result);

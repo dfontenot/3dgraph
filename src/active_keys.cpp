@@ -1,10 +1,11 @@
 #include "active_keys.hpp"
 #include "key.hpp"
-#include "key_mod.hpp"
 
 #include <SDL3/SDL.h>
 
 #include <cassert>
+#include <cstdint>
+#include <expected>
 #include <initializer_list>
 #include <optional>
 #include <ranges>
@@ -12,18 +13,18 @@
 #include <utility>
 #include <vector>
 
+using std::expected;
 using std::initializer_list;
 using std::make_optional;
 using std::make_pair;
+using std::make_tuple;
 using std::nullopt;
 using std::optional;
 using std::pair;
 using std::span;
+using std::string;
+using std::unexpected;
 using std::vector;
-
-namespace {
-KeyValue const unmonitored_key = nullopt;
-}
 
 ActiveKeys::ActiveKeys(initializer_list<Key> keys_to_monitor) {
     for (auto const key : keys_to_monitor) {
@@ -55,29 +56,22 @@ ActiveKeys::ActiveKeys(initializer_list<Keyish> keys_to_monitor) {
     }
 }
 
-const KeyValue &ActiveKeys::maybe_get_key(const Key &key) const {
-    auto const key_loc = key_timings.find(key);
-    if (key_loc == key_timings.end()) {
-        return unmonitored_key;
-    }
-
-    return key_loc->second;
-}
-
-bool ActiveKeys::is_key_registered(const Key &key) const {
-    return key_timings.find(key) != key_timings.end();
-}
-
 void ActiveKeys::start_listen_to_key(SDL_Scancode scan_code) {
-    start_listen_to_key(Key(scan_code));
+    start_listen_to_key(Key{scan_code});
 }
 
 void ActiveKeys::start_listen_to_key(SDL_Keycode key_code) {
-    start_listen_to_key(Key(key_code));
+    start_listen_to_key(Key{key_code});
 }
 
 void ActiveKeys::start_listen_to_key(const Key &key) {
+    // no current support for ctrl or alt
+    if (key.has_alt() || key.has_ctrl()) {
+        return;
+    }
+
     key_timings.insert({key, nullopt});
+    registered_scan_codes.insert(key.get_scan_code());
 
     if (!key.has_modifier() && key.is_alpha()) {
         key_timings.insert({key.copy_shifted(), nullopt});
@@ -85,85 +79,70 @@ void ActiveKeys::start_listen_to_key(const Key &key) {
 }
 
 void ActiveKeys::press_key(const Key &key) {
-    if (!is_key_registered(key)) {
+    if (!registered_scan_codes.contains(key.get_scan_code())) {
         return;
     }
 
     auto const now_ms = SDL_GetTicks();
-    auto const maybe_key = maybe_get_key(key);
-    if (!maybe_key.has_value()) {
+    _press_key(key.without_shift(), now_ms);
+
+    if (key.has_shift()) {
+        _press_key(key, now_ms);
+    }
+
+    if (!key.has_shift()) {
+        auto const with_shift = key.copy_shifted();
+        if (is_key_registered(with_shift) && key_timings[with_shift].has_value() &&
+            !key_timings[with_shift]->second.has_value()) {
+            _release_key(with_shift, now_ms);
+        }
+    }
+}
+
+void ActiveKeys::_press_key(const Key &key, uint64_t now_ms) {
+    if (!is_key_registered(key)) {
+        return;
+    }
+
+    auto const key_timing = key_timings[key];
+    if (!key_timing.has_value()) {
         // this is the first time the key has ever been pressed
         key_timings[key] = make_optional(make_pair(now_ms, nullopt));
     }
     else {
         // if this key has been previously released, clear out the old
         // entry and start a new keypress from this time
-        if (std::get<1>(*maybe_key).has_value()) {
+        if (std::get<1>(*key_timing).has_value()) {
             key_timings[key]->first = now_ms;
             key_timings[key]->second = nullopt;
-        }
-    }
-
-    if (key.has_modifier() && key.is_alpha()) {
-        auto const un_modded = key.without_mods();
-        if (!is_key_registered(un_modded)) {
-            return;
-        }
-
-        auto const maybe_un_modded_key = maybe_get_key(un_modded);
-        if (!maybe_un_modded_key.has_value()) {
-            // this is the first time the key has ever been pressed
-            key_timings[un_modded] = make_optional(make_pair(now_ms, nullopt));
-        }
-        else {
-            // if the unmodded version of this key has already been released
-            // then overwrite its value
-            if (std::get<1>(*maybe_un_modded_key).has_value()) {
-                key_timings[un_modded]->first = now_ms;
-                key_timings[un_modded]->second = nullopt;
-            }
-        }
-    }
-    else if (!key.has_shift()) {
-        // see if there is a modifier version of this already pressed
-        // and if so, mark it as no longer pressed
-        // e.g., shift-D was held down at the start and now the shift has been
-        // released while the d key is still held down
-        auto const shift_modded = key.copy_shifted(true);
-        if (!is_key_registered(shift_modded)) {
-            return;
-        }
-
-        auto const maybe_modded = maybe_get_key(shift_modded);
-        if (maybe_modded.has_value()) {
-            key_timings[shift_modded]->second = make_optional(now_ms);
         }
     }
 }
 
 void ActiveKeys::release_key(const Key &key) {
-    if (!is_key_registered(key)) {
+    if (!registered_scan_codes.contains(key.get_scan_code())) {
         return;
     }
 
     auto const now_ms = SDL_GetTicks();
-    auto const maybe_key_timing = maybe_get_key(key);
+    _release_key(key, now_ms);
+    _release_key(key.shift_mod_complement(), now_ms);
+}
 
-    if (maybe_key_timing.has_value()) {
-        key_timings[key]->second = make_optional(now_ms);
+void ActiveKeys::_release_key(const Key &key, uint64_t now_ms) {
+    if (!is_key_registered(key)) {
+        return;
     }
 
-    if (!key.has_modifier()) {
-        auto const modded = key.copy_shifted();
-        if (!is_key_registered(modded)) {
-            return;
+    auto const key_timing = key_timings[key];
+    if (key_timing.has_value()) {
+        if (!std::get<1>(*key_timing).has_value()) {
+            key_timings[key]->second = make_optional(now_ms);
         }
-
-        auto const maybe_key_timing_modded = maybe_get_key(modded);
-
-        if (maybe_key_timing_modded.has_value() && !key_timings[modded]->second.has_value()) {
-            key_timings[modded]->second = make_optional(now_ms);
-        }
+    }
+    else {
+        // original key press has been lost, make up key press start
+        key_timings[key] = make_pair(now_ms, make_optional(now_ms));
     }
 }
 
@@ -191,8 +170,8 @@ bool ActiveKeys::was_key_pressed_since(const Key &key, uint64_t start_ms) const 
         return false;
     }
 
-    auto const maybe_key_timing = maybe_get_key(key);
-    return maybe_key_timing
+    auto const key_timing = key_timings.at(key);
+    return key_timing
         .transform([start_ms](auto key_timing) {
             return std::get<1>(key_timing)
                 .transform(
@@ -224,42 +203,106 @@ KeySet ActiveKeys::get_monitored_keys() const {
     return keys;
 }
 
-optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(Key const &key, SDL_Keymod mask, uint64_t start_ms) const {
-    const KeyMod key_mod_mask{mask};
+[[nodiscard]] bool ActiveKeys::is_key_registered(Key const &key) const {
+    return key_timings.contains(key);
+}
 
-    // TODO: make this work on non alpha keys such as checking mods used with plus
-    auto const without_mods = key.without_mods();
-    bool found = is_key_registered(without_mods);
-    if (!was_key_pressed_since(without_mods, start_ms)) {
+optional<KeyAtTime> ActiveKeys::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
+                                                                    SDL_Scancode scan_code) const {
+    return which_key_variant_was_pressed_since(start_ms, end_ms, Key{scan_code});
+}
+
+optional<KeyAtTime> ActiveKeys::which_key_variant_was_pressed_since(uint64_t start_ms, uint64_t end_ms,
+                                                                    const Key &key) const {
+    using std::get;
+
+    if (!registered_scan_codes.contains(key.get_scan_code())) {
         return nullopt;
     }
 
-    KeyMod found_mods;
-    for (size_t bit = 0; bit < sizeof(SDL_Keymod); bit++) {
-        if (key_mod_mask.test(bit)) {
+    const Key with_shift = key.copy_shifted();
+    const Key without_shift = key.without_mods();
+    auto const maybe_unshifted_key = registered_key_or_empty(without_shift);
+    auto const maybe_shifted_key = registered_key_or_empty(with_shift);
 
-            KeyMod only_this_mod;
-            only_this_mod.set(bit);
-            if (was_key_pressed_since(key.copy_with_mods(only_this_mod), start_ms)) {
-                found_mods.set(bit);
+    auto const maybe_unshifted_key_timing = maybe_unshifted_key.and_then([&](auto key) { return key_timings.at(key); });
+    auto const maybe_shifted_key_timing = maybe_shifted_key.and_then([&](auto key) { return key_timings.at(key); });
+
+    if (!maybe_unshifted_key_timing.has_value() && !maybe_shifted_key_timing.has_value()) {
+        return nullopt;
+    }
+
+    // xor
+    if (maybe_unshifted_key_timing.has_value() != maybe_shifted_key_timing.has_value()) {
+
+        if (maybe_shifted_key_timing.has_value()) {
+            auto const shift_key_timing = *maybe_shifted_key_timing;
+            auto const maybe_shift_key_end_ms = get<1>(shift_key_timing);
+            auto const start_time_ms = std::max(get<0>(shift_key_timing), start_ms);
+
+            // button was released before the start time under consideration
+            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
+                return nullopt;
+            }
+
+            // button is still held down
+            if (!maybe_shift_key_end_ms.has_value()) {
+                return make_optional(make_tuple(with_shift, start_time_ms, end_ms));
+            }
+            else {
+                return make_optional(make_tuple(with_shift, start_time_ms, *maybe_shift_key_end_ms));
+            }
+        }
+        else {
+            auto const this_key_timing = *maybe_unshifted_key_timing;
+            auto const maybe_shift_key_end_ms = get<1>(this_key_timing);
+            auto const start_time_ms = std::max(get<0>(this_key_timing), start_ms);
+
+            // button was released before the start time under consideration
+            if (maybe_shift_key_end_ms.has_value() && maybe_shift_key_end_ms.value() < start_ms) {
+                return nullopt;
+            }
+
+            // button is still held down
+            if (!maybe_shift_key_end_ms.has_value()) {
+                return make_optional(make_tuple(without_shift, start_time_ms, end_ms));
+            }
+            else {
+                return make_optional(make_tuple(without_shift, start_time_ms, *maybe_shift_key_end_ms));
             }
         }
     }
 
-    if (!found) {
-        return nullopt;
+    // TODO: consider case of registered keys but neither were pressed
+
+    // tie-breaker if both keys were pressed
+    auto const shift_key_timing = *maybe_shifted_key_timing;
+    auto const this_key_timing = *maybe_unshifted_key_timing;
+
+    // arbitrary: give shift key precedence if either are still
+    // held down at the end of the frame
+    if (!get<1>(shift_key_timing).has_value() && !get<1>(this_key_timing).has_value()) {
+        return make_optional(make_tuple(with_shift, get<0>(shift_key_timing), end_ms));
     }
     else {
-        return make_optional(found_mods);
+        return make_optional(make_tuple(without_shift, get<0>(shift_key_timing), end_ms));
     }
+
+    return nullopt;
 }
 
-optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(SDL_Scancode scan_code, SDL_Keymod mask,
-                                                         uint64_t start_ms) const {
-    return what_key_mods_pressed_since(Key{scan_code}, mask, start_ms);
+optional<Key> ActiveKeys::registered_key_or_empty(const Key &key) const {
+    if (is_key_registered(key)) {
+        return make_optional(key);
+    }
+
+    return nullopt;
 }
 
-optional<KeyMod> ActiveKeys::what_key_mods_pressed_since(SDL_Keycode key_code, SDL_Keymod mask,
-                                                         uint64_t start_ms) const {
-    return what_key_mods_pressed_since(Key{key_code}, mask, start_ms);
+expected<KeyValue, string> ActiveKeys::get(const Key &key) const {
+    if (!is_key_registered(key)) {
+        return unexpected(std::format("key {0} not registered", key));
+    }
+
+    return key_timings.at(key);
 }

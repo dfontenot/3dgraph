@@ -11,7 +11,15 @@
 #include <string>
 #include <unordered_set>
 
-struct KeyModEquivalentEqualTo;
+/**
+ * @brief std::equal_to for key mods
+ * @details
+ * use this when the exact modifiers (left and right side) do not matter
+ * @tparam ignore_non_shift set to true to essentially ignore unsupported
+ * modifiers ctrl and alt. usage is for considering these the same if a non-shift
+ * modifier key is accidentally held
+ */
+template <bool ignore_non_shift = true> struct KeyModEquivalentEqualTo;
 
 struct KeyMod {
     constexpr operator SDL_Keymod() const {
@@ -91,6 +99,9 @@ struct KeyMod {
         return has_lalt() || has_ralt();
     }
 
+    KeyMod &set_shift(bool bit_val = true);
+    KeyMod &set_alt(bool bit_val = true);
+    KeyMod &set_ctrl(bool bit_val = true);
     KeyMod &set_lshift(bool bit_val = true);
     KeyMod &set_rshift(bool bit_val = true);
     KeyMod &set_lctrl(bool bit_val = true);
@@ -153,24 +164,6 @@ private:
     friend bool operator==(const KeyMod &lhs, const KeyMod &rhs);
 };
 
-/**
- * use this hash specialization when the exact
- * modifiers that were pressed do not matter
- */
-struct KeyModEquivalentHash {
-    std::size_t operator()(const KeyMod &key_mod) const;
-};
-
-/**
- * use this equal_to when the exact
- * modifiers do not matter
- */
-struct KeyModEquivalentEqualTo {
-    constexpr bool operator()(const KeyMod &lhs, const KeyMod &rhs) const {
-        return lhs.is_equivalent(rhs);
-    }
-};
-
 namespace std {
 template <> struct hash<KeyMod> {
     std::size_t operator()(const KeyMod &key_mod) const {
@@ -208,3 +201,32 @@ template <> struct formatter<KeyMod> {
     }
 };
 } // namespace std
+
+/**
+ */
+template <bool ignore_non_shift> struct KeyModEquivalentEqualTo {
+    constexpr bool operator()(const KeyMod &lhs, const KeyMod &rhs) const {
+        if (ignore_non_shift) {
+            return lhs.has_shift() == rhs.has_shift();
+        }
+
+        return lhs.is_equivalent(rhs);
+    }
+};
+
+/**
+ * use this hash specialization when the exact
+ * modifiers that were pressed do not matter
+ */
+template <bool ignore_non_shift = true> struct KeyModEquivalentHash {
+    std::size_t operator()(const KeyMod &key_mod) const {
+        if (ignore_non_shift) {
+            KeyMod copied{key_mod};
+            copied.set_ctrl(false).set_alt(false);
+
+            return std::hash<KeyMod>{}(copied.as_normalized());
+        }
+
+        return std::hash<KeyMod>{}(key_mod.as_normalized());
+    }
+};

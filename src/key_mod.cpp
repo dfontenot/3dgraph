@@ -2,7 +2,6 @@
 
 #include <SDL3/SDL.h>
 #include <cstddef>
-#include <functional>
 #include <iostream>
 
 using std::ostream;
@@ -15,10 +14,6 @@ ostream &operator<<(ostream &stream, const KeyMod &key) {
 
 bool operator==(const KeyMod &lhs, const KeyMod &rhs) {
     return lhs.val == rhs.val;
-}
-
-size_t KeyModEquivalentHash::operator()(const KeyMod &key) const {
-    return std::hash<KeyMod>{}(key.as_normalized());
 }
 
 KeyMod &KeyMod::set_lshift(bool bit_val) {
@@ -106,4 +101,25 @@ KeyMod KeyMod::as_normalized() const {
     }
 
     return copied;
+}
+
+KeyMod &KeyMod::set_shift(bool bit_val) {
+    set_lshift(bit_val);
+    set_rshift(bit_val);
+
+    return *this;
+}
+
+KeyMod &KeyMod::set_alt(bool bit_val) {
+    set_lalt(bit_val);
+    set_ralt(bit_val);
+
+    return *this;
+}
+
+KeyMod &KeyMod::set_ctrl(bool bit_val) {
+    set_lctrl(bit_val);
+    set_rctrl(bit_val);
+
+    return *this;
 }

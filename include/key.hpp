@@ -12,22 +12,24 @@
 
 using Keyish = std::variant<SDL_Scancode, SDL_Keycode, std::pair<SDL_Scancode, SDL_Keymod>>;
 
-class KeyEquivalentHash;
-class KeyEquivalentEqualTo;
+template <bool ignore_non_shift = true> struct KeyEquivalentHash;
+
+template <bool ignore_non_shift = true> struct KeyEquivalentEqualTo;
 
 class Key {
     SDL_Scancode scan_code;
     std::optional<SDL_Keycode> key_code;
     KeyMod key_mod;
 
-    friend KeyEquivalentHash;
-    friend KeyEquivalentEqualTo;
+    friend KeyEquivalentHash<>;
+    friend KeyEquivalentEqualTo<>;
     friend bool operator==(const Key &lhs, const Key &rhs);
     friend std::ostream &operator<<(std::ostream &stream, const Key &key);
     friend std::formatter<Key>;
 
 public:
     Key() = delete;
+    // TODO: deferred sdl_keycode lookup for more constexpr stuff
     explicit Key(SDL_Scancode scan_code);
     explicit Key(SDL_Scancode scan_code, SDL_Keymod key_mod);
     explicit Key(SDL_Scancode scan_code, KeyMod key_mod);
@@ -107,9 +109,7 @@ public:
         return is_alpha() || is_numeric();
     }
 
-    [[nodiscard]] constexpr Key copy_with_mods(SDL_Keymod mods) const {
-        return {scan_code, key_code, mods};
-    }
+    [[nodiscard]] Key copy_with_mods(SDL_Keymod mods) const;
 
     /**
      * new copy of this key but with the shift modifier applied
@@ -121,6 +121,11 @@ public:
      * new copy of this key without any modifiers
      */
     [[nodiscard]] Key without_mods() const;
+
+    /**
+     * new copy of this key without shift modifiers
+     */
+    [[nodiscard]] Key without_shift() const;
 
     /**
      * new copy with normalized scan codes and modifiers
@@ -138,24 +143,16 @@ public:
      * account for differences in left and right equivalent keys
      */
     [[nodiscard]] SDL_Scancode get_equivalent_scan_code() const;
-};
 
-/**
- * use this hash specialization when the exact
- * scan code and modifiers that were pressed do not matter
- */
-struct KeyEquivalentHash {
-    size_t operator()(const Key &key) const;
-};
-
-/**
- * use this equal_to when the exact
- * scan code and modifiers do not matter
- */
-struct KeyEquivalentEqualTo {
-    constexpr bool operator()(const Key &lhs, const Key &rhs) const {
-        return lhs.as_normalized() == rhs.as_normalized();
-    }
+    Key &set_shift(bool bit_val = true);
+    Key &set_alt(bool bit_val = true);
+    Key &set_ctrl(bool bit_val = true);
+    Key &set_lshift(bool bit_val = true);
+    Key &set_rshift(bool bit_val = true);
+    Key &set_lctrl(bool bit_val = true);
+    Key &set_rctrl(bool bit_val = true);
+    Key &set_lalt(bool bit_val = true);
+    Key &set_ralt(bool bit_val = true);
 };
 
 namespace std {
@@ -180,3 +177,35 @@ template <> struct formatter<Key, char> {
 };
 
 } // namespace std
+
+/**
+ * use this hash specialization when the exact
+ * scan code and modifiers that were pressed do not matter
+ */
+template <bool ignore_non_shift> struct KeyEquivalentHash {
+    size_t operator()(const Key &key) const {
+        std::size_t scan_code_hash = std::hash<SDL_Scancode>{}(key.get_equivalent_scan_code());
+        std::size_t key_mod_hash = KeyModEquivalentHash<ignore_non_shift>{}(key.key_mod);
+        return scan_code_hash ^ (key_mod_hash << 1);
+    }
+};
+
+/**
+ * use this equal_to when the exact
+ * scan code and modifiers do not matter
+ */
+template <bool ignore_non_shift> struct KeyEquivalentEqualTo {
+    constexpr bool operator()(const Key &lhs, const Key &rhs) const {
+        auto lhs_norm = lhs.as_normalized();
+        auto rhs_norm = rhs.as_normalized();
+
+        if (ignore_non_shift) {
+            lhs_norm.set_alt(false);
+            rhs_norm.set_alt(false);
+            lhs_norm.set_ctrl(false);
+            rhs_norm.set_ctrl(false);
+        }
+
+        return lhs.as_normalized() == rhs.as_normalized();
+    }
+};
