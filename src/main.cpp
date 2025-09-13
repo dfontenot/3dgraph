@@ -145,6 +145,11 @@ int main(int argc, char *argv[]) {
     stdout->info("version: {}", reinterpret_cast<const char *>(glGetString(GL_VERSION)));
     stdout->info("shading language version: {}",
                  reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+#if defined(__clang__)
+    stdout->info("compiler: clang {}.{}.{}", __clang_major__, __clang_minor__, __clang_patchlevel__);
+#else
+    stdout->info("compiler: gcc {}.{}.{}", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#endif
 
     GLint major = -1;
     GLint minor = -1;
