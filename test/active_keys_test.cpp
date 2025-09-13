@@ -3,6 +3,7 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_timer.h>
 #include <gtest/gtest.h>
 
 #include <cstddef>
@@ -449,6 +450,7 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSinceNonAlpha) {
 
     EXPECT_EQ(nullopt, active.which_key_variant_was_pressed_since(start_ms, SDL_GetTicks(), plus));
 
+    active.press_key(any_shift_key);
     active.press_key(plus);
     auto const query_result = active.which_key_variant_was_pressed_since(start_ms, SDL_GetTicks(), plus);
 
@@ -459,6 +461,7 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSinceNonAlpha) {
     EXPECT_TRUE(queried_key.has_shift());
     EXPECT_FALSE(queried_key.has_ctrl());
 
+    active.release_key(any_shift_key);
     active.release_key(plus);
     SDL_Delay(1);
     auto const after_release_ms = SDL_GetTicks();
@@ -467,6 +470,7 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSinceNonAlpha) {
     EXPECT_EQ(nullopt, active.which_key_variant_was_pressed_since(after_release_ms, SDL_GetTicks(), SDL_SCANCODE_EQUALS));
 }
 
+// TODO: for the key queries need to validate the returned start and end times too
 TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSince) {
     const Key any_key{any_scancode};
     const Key any_shifted_key{any_scancode, KeyMod::shift()};
@@ -496,6 +500,7 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSince) {
     auto const before_press_shift_ms = SDL_GetTicks();
     SDL_Delay(1);
 
+    active.press_key(any_shift_key);
     active.press_key(any_shifted_key);
     query_result = active.which_key_variant_was_pressed_since(before_press_shift_ms, SDL_GetTicks(), any_key);
 
@@ -516,4 +521,26 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSince) {
     EXPECT_TRUE(queried_key.has_shift());
     EXPECT_FALSE(queried_key.has_alt());
     EXPECT_FALSE(queried_key.has_ctrl());
+
+    // release shift key
+    active.release_key(any_shift_key);
+    active.press_key(any_key);
+
+    SDL_Delay(1);
+    auto const after_release_shift_key_ms = SDL_GetTicks();
+
+    query_result = active.which_key_variant_was_pressed_since(after_release_shift_key_ms, SDL_GetTicks(), any_key);
+
+    EXPECT_NE(nullopt, query_result);
+    queried_key = std::get<0>(*query_result);
+    EXPECT_FALSE(queried_key.has_shift());
+
+    // release key
+    active.release_key(any_key);
+
+    SDL_Delay(1);
+    auto const after_release_key_ms = SDL_GetTicks();
+
+    query_result = active.which_key_variant_was_pressed_since(after_release_key_ms, SDL_GetTicks(), any_key);
+    EXPECT_EQ(nullopt, query_result);
 }

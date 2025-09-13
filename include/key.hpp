@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SDL3/SDL_scancode.h>
 #include <key_mod.hpp>
 
 #include <SDL3/SDL.h>
@@ -143,6 +144,22 @@ public:
      * account for differences in left and right equivalent keys
      */
     [[nodiscard]] SDL_Scancode get_equivalent_scan_code() const;
+
+    [[nodiscard]] static constexpr Key up() {
+        return Key{SDL_SCANCODE_UP};
+    }
+
+    [[nodiscard]] static constexpr Key down() {
+        return Key{SDL_SCANCODE_DOWN};
+    }
+
+    [[nodiscard]] static constexpr Key left() {
+        return Key{SDL_SCANCODE_LEFT};
+    }
+
+    [[nodiscard]] static constexpr Key right() {
+        return Key{SDL_SCANCODE_RIGHT};
+    }
 
     Key &set_shift(bool bit_val = true);
     Key &set_alt(bool bit_val = true);

@@ -3,11 +3,9 @@
 #include "consts.hpp"
 #include "function_params.hpp"
 #include "key.hpp"
-#include "mouse_loc.hpp"
 #include "tessellation_settings.hpp"
 #include "tick_result.hpp"
 
-#include <SDL3/SDL_keycode.h>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -118,15 +116,11 @@ TickResult EventLoop::process_function_mutation_keys(uint64_t start_ticks_ms, Ti
     using std::get;
 
     auto const now_ms = SDL_GetTicks();
-    auto const up_key_timing =
-        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_UP));
-    auto const down_key_timing =
-        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_DOWN));
+    auto const up_key_timing = active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key::up());
+    auto const down_key_timing = active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key::down());
 
-    auto const left_key_timing =
-        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_LEFT));
-    auto const right_key_timing =
-        active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key(SDL_SCANCODE_RIGHT));
+    auto const left_key_timing = active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key::left());
+    auto const right_key_timing = active_keys.which_key_variant_was_pressed_since(start_ticks_ms, now_ms, Key::right());
 
     // xor
     tick_result.set_function_params_modified(false);
@@ -239,7 +233,6 @@ TickResult EventLoop::process_tessellation_mutation_keys(uint64_t start_ticks_ms
 TickResult EventLoop::process_model_mutation_keys(uint64_t start_ms, uint64_t end_ms, TickResult tick_result) {
     using std::get;
 
-    auto const now_ms = SDL_GetTicks();
     auto const up_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_W);
     auto const down_key_timing = active_keys.which_key_variant_was_pressed_since(start_ms, end_ms, SDL_SCANCODE_S);
 

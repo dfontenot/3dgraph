@@ -246,12 +246,7 @@ optional<KeyAtTime> ActiveKeys::which_key_variant_was_pressed_since(uint64_t sta
             }
 
             // button is still held down
-            if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(with_shift, start_time_ms, end_ms));
-            }
-            else {
-                return make_optional(make_tuple(with_shift, start_time_ms, *maybe_shift_key_end_ms));
-            }
+            return make_optional(make_tuple(with_shift, start_time_ms, maybe_shift_key_end_ms.value_or(end_ms)));
         }
         else {
             auto const this_key_timing = *maybe_unshifted_key_timing;
@@ -264,28 +259,43 @@ optional<KeyAtTime> ActiveKeys::which_key_variant_was_pressed_since(uint64_t sta
             }
 
             // button is still held down
-            if (!maybe_shift_key_end_ms.has_value()) {
-                return make_optional(make_tuple(without_shift, start_time_ms, end_ms));
-            }
-            else {
-                return make_optional(make_tuple(without_shift, start_time_ms, *maybe_shift_key_end_ms));
-            }
+            return make_optional(make_tuple(without_shift, start_time_ms, maybe_shift_key_end_ms.value_or(end_ms)));
         }
     }
 
-    // TODO: consider case of registered keys but neither were pressed
+    auto const shift_key_timing = *maybe_shifted_key_timing;
+    auto const shifted_start_time_ms = std::max(get<0>(shift_key_timing), start_ms);
+    auto const maybe_shift_key_end_time_ms = get<1>(shift_key_timing);
+
+    auto const this_key_timing = *maybe_unshifted_key_timing;
+    auto const unshifted_start_time_ms = std::max(get<0>(this_key_timing), start_ms);
+    auto const maybe_unshifted_key_end_time_ms = get<1>(this_key_timing);
+
+    // disqualify if both end times were in the past
+    if (maybe_shift_key_end_time_ms.has_value() && maybe_unshifted_key_end_time_ms.has_value() &&
+        *maybe_shift_key_end_time_ms < start_ms && *maybe_unshifted_key_end_time_ms < start_ms) {
+        return nullopt;
+    }
+
+    // if either was left go of in the past then choose the other one
+    if (maybe_shift_key_end_time_ms.has_value() && *maybe_shift_key_end_time_ms < start_ms) {
+        return make_optional(
+            make_tuple(without_shift, unshifted_start_time_ms, maybe_unshifted_key_end_time_ms.value_or(end_ms)));
+    }
+
+    if (maybe_unshifted_key_end_time_ms.has_value() && *maybe_unshifted_key_end_time_ms < start_ms) {
+        return make_optional(
+            make_tuple(with_shift, shifted_start_time_ms, maybe_shift_key_end_time_ms.value_or(end_ms)));
+    }
 
     // tie-breaker if both keys were pressed
-    auto const shift_key_timing = *maybe_shifted_key_timing;
-    auto const this_key_timing = *maybe_unshifted_key_timing;
-
     // arbitrary: give shift key precedence if either are still
     // held down at the end of the frame
-    if (!get<1>(shift_key_timing).has_value() && !get<1>(this_key_timing).has_value()) {
-        return make_optional(make_tuple(with_shift, get<0>(shift_key_timing), end_ms));
+    if (!maybe_shift_key_end_time_ms.has_value() && !maybe_unshifted_key_end_time_ms.has_value()) {
+        return make_optional(make_tuple(with_shift, shifted_start_time_ms, end_ms));
     }
     else {
-        return make_optional(make_tuple(without_shift, get<0>(shift_key_timing), end_ms));
+        return make_optional(make_tuple(without_shift, unshifted_start_time_ms, end_ms));
     }
 
     return nullopt;
