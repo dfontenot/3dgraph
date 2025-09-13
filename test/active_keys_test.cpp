@@ -3,7 +3,6 @@
 #include "sdl_test.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_timer.h>
 #include <gtest/gtest.h>
 
 #include <cstddef>
