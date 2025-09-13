@@ -12,12 +12,21 @@
 #include <stdexcept>
 #include <vector>
 
+#if defined(__clang__)
+#include <range/v3/all.hpp>
+#endif
+
 using std::domain_error;
 using std::numeric_limits;
 using std::size_t;
 using std::vector;
 using std::ranges::iota_view;
+
+#if defined(__clang__)
+using ranges::views::cartesian_product;
+#else
 using std::ranges::views::cartesian_product;
+#endif
 
 /** grid, 2 dimensions only */
 constexpr const auto vertex_dims = 2;
