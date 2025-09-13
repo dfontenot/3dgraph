@@ -1,13 +1,21 @@
 [requires]
 cpptrace/0.8.3
 glm/1.0.1
-gtest/1.16.0
 opengl/system
 sdl/3.2.14
+
+[tool_requires]
+cmake/[>3.24]
+
+[test_requires]
+gtest/1.16.0
 
 [generators]
 CMakeDeps
 CMakeToolchain
+
+[layout]
+cmake_layout
 
 [options]
 sdl/*:alsa=False
