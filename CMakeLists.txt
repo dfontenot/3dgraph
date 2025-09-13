@@ -29,6 +29,11 @@ find_package(opengl_system REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(spdlog REQUIRED)
 
+# polyfill for no cartesian_product in clang yet
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  find_package(range-v3 REQUIRED)
+endif()
+
 set_source_files_properties(src/glad.c PROPERTIES LANGUAGE CXX)
 
 # main executable
@@ -72,6 +77,10 @@ target_include_directories(${PROJECT_NAME}
   PRIVATE ${3dgraph_SOURCE_DIR}/include
 )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_link_libraries(${PROJECT_NAME} PRIVATE range-v3::range-v3)
+endif()
+
 # opengl es 3.0 build
 add_executable(${PROJECT_NAME}_es
   src/active_keys.cpp
@@ -112,6 +121,10 @@ target_include_directories(${PROJECT_NAME}_es
   PRIVATE ${3dgraph_SOURCE_DIR}/include
 )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_link_libraries(${PROJECT_NAME}_es PRIVATE range-v3::range-v3)
+endif()
+
 # tests
 enable_testing()
 set(TEST_WITH_COVERAGE "build and run test suite with code coverage" OFF)
@@ -149,6 +162,10 @@ target_include_directories(${PROJECT_NAME}_test
   PRIVATE ${3dgraph_SOURCE_DIR}/include
   PRIVATE ${3dgraph_SOURCE_DIR}/test/include
 )
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_link_libraries(${PROJECT_NAME}_test PRIVATE range-v3::range-v3)
+endif()
 
 # TODO: workaround for gcc version lagging the clang version by a lot on
 # CI, TODO restrict this case a bit more

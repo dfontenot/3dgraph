@@ -1,6 +1,7 @@
 [requires]
 cpptrace/0.8.3
 glm/1.0.1
+range-v3/0.12.0
 opengl/system
 sdl/3.2.14
 
