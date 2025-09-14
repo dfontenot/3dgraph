@@ -74,7 +74,11 @@ vector<GLfloat> make_lattice(GLuint tessellation_amount) {
         | std::views::join;
     // clang-format on
 
+#if defined(__clang__)
+    ranges::copy(result.cbegin(), result.cend(), ranges::back_inserter(lattice));
+#else
     std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(lattice));
+#endif
     return lattice;
 }
 
@@ -113,6 +117,11 @@ vector<GLuint> lattice_points_list(GLuint tessellation_amount) {
     }) | std::views::join;
     // clang-format on
 
+#if defined(__clang__)
+    ranges::copy(result.cbegin(), result.cend(), ranges::back_inserter(indices_list));
+#else
     std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(indices_list));
+#endif
+
     return indices_list;
 }
