@@ -7,7 +7,11 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#if defined(__clang_major__) && __clang_major__ < 21
+#include <range/v3/all.hpp>
+#else
 #include <ranges>
+#endif
 #include <string>
 #include <unordered_set>
 
@@ -197,7 +201,11 @@ template <> struct formatter<KeyMod> {
             mods.insert("N");
         }
 
+#if defined(__clang_major__) && __clang_major__ < 21
+        return std::format_to(ctx.out(), "{0}", mods | ::ranges::views::join(',') | ::ranges::to<string>());
+#else
         return std::format_to(ctx.out(), "{0}", mods | std::views::join_with(',') | std::ranges::to<string>());
+#endif
     }
 };
 } // namespace std

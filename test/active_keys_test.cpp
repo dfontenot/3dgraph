@@ -13,6 +13,10 @@
 #include <utility>
 #include <vector>
 
+#if defined(__clang__)
+#include <range/v3/all.hpp>
+#endif
+
 using std::list;
 using std::make_pair;
 using std::nullopt;
@@ -43,14 +47,23 @@ TEST_F(ActiveKeysTest, Ctors) {
     // initializer list
     const ActiveKeys from_initializer_list{SDL_SCANCODE_D, SDL_SCANCODE_F};
     auto non_shifted = from_initializer_list.get_monitored_keys() | lowercase_filter;
+
+#if defined(__clang__)
+    EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
+#else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
+#endif
 
     // from range
     const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
     const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
     non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
 
+#if defined(__clang__)
+    EXPECT_EQ(distance(non_shifted.begin(), non_shifted.end()), key_range.size());
+#else
     EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
+#endif
 
     // from container
     list<Keyish> keyishes{SDLK_PLUS, SDL_SCANCODE_A, make_pair(SDL_SCANCODE_D, SDL_KMOD_CTRL)};
@@ -65,7 +78,11 @@ TEST_F(ActiveKeysTest, Ctors) {
     const ActiveKeys no_dupes{dupes};
     non_shifted = no_dupes.get_monitored_keys() | lowercase_filter;
 
+#if defined(__clang__)
+    EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
+#else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
+#endif
 }
 
 TEST_F(ActiveKeysTest, GetMonitoredKeys) {
@@ -83,36 +100,65 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     auto no_shift_keys = monitored_keys | no_shift_filter;
     auto shifted_keys = monitored_keys | has_shift_filter;
 
+#if defined(__clang__)
+    EXPECT_EQ(1, distance(no_shift_keys.begin(), no_shift_keys.end()));
+    EXPECT_EQ(1, distance(shifted_keys.begin(), shifted_keys.end()));
+#else
     EXPECT_EQ(1, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
     EXPECT_EQ(1, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+#endif
 
     monitored.start_listen_to_key(SDLK_E);
     monitored_keys = monitored.get_monitored_keys();
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
+
+#if defined(__clang__)
+    EXPECT_EQ(1, distance(no_shift_keys.begin(), no_shift_keys.end()));
+    EXPECT_EQ(1, distance(shifted_keys.begin(), shifted_keys.end()));
+#else
     EXPECT_EQ(1, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
     EXPECT_EQ(1, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+#endif
 
     monitored.start_listen_to_key(SDLK_F);
     monitored_keys = monitored.get_monitored_keys();
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
+
+#if defined(__clang__)
+    EXPECT_EQ(2, distance(no_shift_keys.begin(), no_shift_keys.end()));
+    EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
+#else
     EXPECT_EQ(2, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
     EXPECT_EQ(2, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+#endif
 
     monitored.start_listen_to_key(SDLK_0);
     monitored_keys = monitored.get_monitored_keys();
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
+
+#if defined(__clang__)
+    EXPECT_EQ(3, distance(no_shift_keys.begin(), no_shift_keys.end()));
+    EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
+#else
     EXPECT_EQ(3, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
     EXPECT_EQ(2, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+#endif
 
     monitored.start_listen_to_key(SDLK_EQUALS);
     monitored_keys = monitored.get_monitored_keys();
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
+
+#if defined(__clang__)
+    EXPECT_EQ(4, distance(no_shift_keys.begin(), no_shift_keys.end()));
+    EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
+#else
     EXPECT_EQ(4, distance(no_shift_keys.cbegin(), no_shift_keys.cend()));
     EXPECT_EQ(2, distance(shifted_keys.cbegin(), shifted_keys.cend()));
+#endif
 }
 
 TEST_F(ActiveKeysTest, StartListenToKey) {
@@ -466,7 +512,8 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSinceNonAlpha) {
     auto const after_release_ms = SDL_GetTicks();
 
     EXPECT_EQ(nullopt, active.which_key_variant_was_pressed_since(after_release_ms, SDL_GetTicks(), plus));
-    EXPECT_EQ(nullopt, active.which_key_variant_was_pressed_since(after_release_ms, SDL_GetTicks(), SDL_SCANCODE_EQUALS));
+    EXPECT_EQ(nullopt,
+              active.which_key_variant_was_pressed_since(after_release_ms, SDL_GetTicks(), SDL_SCANCODE_EQUALS));
 }
 
 // TODO: for the key queries need to validate the returned start and end times too
@@ -509,7 +556,8 @@ TEST_F(ActiveKeysTest, WhichKeyVariantWasPressedSince) {
     EXPECT_TRUE(queried_key.has_shift());
     EXPECT_FALSE(queried_key.has_alt());
     EXPECT_FALSE(queried_key.has_ctrl());
-    EXPECT_EQ(nullopt, active.which_key_variant_was_pressed_since(before_press_shift_ms, SDL_GetTicks(), any_unregistered_key));
+    EXPECT_EQ(nullopt,
+              active.which_key_variant_was_pressed_since(before_press_shift_ms, SDL_GetTicks(), any_unregistered_key));
 
     // mods on the key in the query are ignored
     query_result = active.which_key_variant_was_pressed_since(start_ms, SDL_GetTicks(), any_key);

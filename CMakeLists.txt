@@ -4,9 +4,17 @@ project(3dgraph
   DESCRIPTION "a very basic opengl render"
   LANGUAGES CXX)
 
+cmake_policy(SET CMP0132 NEW)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_BUILD_TYPE Debug)
+
+# TODO: workaround for gcc version lagging the clang version by a lot on
+# CI, TODO restrict this case a bit more
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "-stdlib=libc++")
+  set(CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
+endif()
 
 include(FetchContent)
 
@@ -165,14 +173,6 @@ target_include_directories(${PROJECT_NAME}_test
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_link_libraries(${PROJECT_NAME}_test PRIVATE range-v3::range-v3)
-endif()
-
-# TODO: workaround for gcc version lagging the clang version by a lot on
-# CI, TODO restrict this case a bit more
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  target_compile_options(${PROJECT_NAME} PUBLIC -stdlib=libc++)
-  target_compile_options(${PROJECT_NAME}_es PUBLIC -stdlib=libc++)
-  target_compile_options(${PROJECT_NAME}_test PUBLIC -stdlib=libc++)
 endif()
 
 include(GoogleTest)
