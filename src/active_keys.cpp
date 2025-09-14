@@ -12,6 +12,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include <version>
 
 using std::expected;
 using std::initializer_list;
@@ -198,7 +199,13 @@ bool ActiveKeys::was_key_pressed_since(SDL_Keycode key_code, uint64_t start_ms) 
 KeySet ActiveKeys::get_monitored_keys() const {
     KeySet keys;
     auto keys_only = key_timings | std::views::transform([](auto entry) { return std::get<0>(entry); });
+#if __cpp_lib_containers_ranges
     keys.insert_range(keys_only);
+#else
+    for (auto key : keys_only) {
+        keys.insert(key);
+    }
+#endif
 
     return keys;
 }
