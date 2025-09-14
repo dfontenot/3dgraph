@@ -84,10 +84,10 @@ TEST_F(KeyTest, CtorNoKeyCode) {
 }
 
 TEST_F(KeyTest, Getters) {
-    auto const key = Key(any_scancode, any_keymod);
+    const Key key{any_scancode, any_keymod};
     auto const expected_keymod = any_keymod;
     auto const expected_scancode = any_scancode;
-    auto const expected_keycode = make_optional(any_keycode);
+    auto const expected_keycode = any_keycode;
 
     /*
      * NOTE: these macros appear to be doing something, only when inside of a TEST_F,
@@ -97,7 +97,7 @@ TEST_F(KeyTest, Getters) {
     EXPECT_EQ(key.get_key_mod(), expected_keymod);
     EXPECT_EQ(key.get_scan_code(), expected_scancode);
     EXPECT_TRUE(key.has_key_code());
-    EXPECT_EQ(key.get_key_code(), expected_keycode);
+    EXPECT_EQ(key.get_key_code(), make_optional(expected_keycode));
 }
 
 TEST_F(KeyTest, Modifiers) {

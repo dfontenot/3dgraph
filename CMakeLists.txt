@@ -9,13 +9,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_BUILD_TYPE Debug)
 
-# TODO: workaround for gcc version lagging the clang version by a lot on
-# CI, TODO restrict this case a bit more
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "-stdlib=libc++")
-  set(CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
-endif()
-
 include(FetchContent)
 
 # workaround for https://github.com/conan-io/conan-center-index/issues/25185
