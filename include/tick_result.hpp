@@ -31,6 +31,7 @@ public:
     TickResult(uint64_t elapsed_ticks_ms, bool should_exit, bool frame_skip);
 
     // getters
+    /** was an exit signal sent during processing? */
     [[nodiscard]] bool should_exit() const noexcept;
 
     /** during processing, was it determined that a frame needs to be skipped due to slow processesing */
