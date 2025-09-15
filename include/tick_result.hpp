@@ -45,6 +45,8 @@ public:
 
     /** during this tick did any function parameters for the 3d function change? */
     [[nodiscard]] bool function_params_modified() const noexcept;
+
+    /** during this tick was the model matrix updated? */
     [[nodiscard]] bool model_modified() const noexcept;
     [[nodiscard]] bool view_modified() const noexcept;
     [[nodiscard]] bool tessellation_settings_modified() const noexcept;

@@ -27,6 +27,7 @@ jobs:
 
     container:
       # TODO: use stable branch when they have gcc15 and clang21
+      # TODO: unpin cmake after using stable branch
       image: alpine:edge
 
     steps:
@@ -37,9 +38,13 @@ jobs:
       - name: Build
         run: |
           export MATRIX_VERSION=${{ matrix.version }}
+          echo 'http://dl-cdn.alpinelinux.org/alpine/v3.22/main' >> /etc/apk/repositories
+          apk update
           [[ ${MATRIX_VERSION} =~ 'clang' ]] && apk add ${MATRIX_VERSION}
           [[ ! ${MATRIX_VERSION} =~ 'clang' ]] && apk add gcc g++
-          apk add cmake make python3 libx11-dev libxcb-dev libfontenc-dev libice-dev libsm-dev libxau-dev libxaw-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxdmcp-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxscrnsaver-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev xcb-util-wm-dev xcb-util-image-dev xcb-util-keysyms-dev xcb-util-renderutil-dev libxinerama-dev libxcb-dev xcb-util-dev xcb-util-cursor-dev bash musl-dev libudev-zero-dev mesa-gl mesa-dev
+          apk add cmake==3.31.7-r1
+          apk add make python3 libx11-dev libxcb-dev libfontenc-dev libice-dev libsm-dev libxau-dev libxaw-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxdmcp-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxscrnsaver-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev xcb-util-wm-dev xcb-util-image-dev xcb-util-keysyms-dev xcb-util-renderutil-dev libxinerama-dev libxcb-dev xcb-util-dev xcb-util-cursor-dev bash musl-dev libudev-zero-dev mesa-gl mesa-dev
+          cmake --version
           python -m venv .venv
           source .venv/bin/activate
           pip install conan
