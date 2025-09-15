@@ -19,7 +19,7 @@ public:
     }
 
     /**
-     * average of the values stored in the deque
+     * @brief average of the values stored in the deque
      */
     constexpr T get_avg() const {
         auto const num = deque.size();
@@ -32,7 +32,7 @@ public:
     }
 
     /**
-     * add a new value
+     * @brief add a new value
      */
     constexpr void add(T value) {
         auto const num = deque.size();
@@ -46,11 +46,11 @@ public:
         sum += value;
     }
 
-    constexpr std::size_t size() const {
+    [[nodiscard]] constexpr std::size_t size() const {
         return deque.size();
     }
 
-    constexpr std::size_t get_capacity() const {
+    [[nodiscard]] constexpr std::size_t get_capacity() const {
         return capacity;
     }
 };
@@ -60,7 +60,8 @@ template <typename T> std::ostream &operator<<(std::ostream &stream, const MaxDe
     return stream;
 }
 
-template <typename T> struct std::formatter<MaxDeque<T>> {
+namespace std {
+template <typename T> struct formatter<MaxDeque<T>> {
     template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
         return ctx.begin();
     }
@@ -69,3 +70,5 @@ template <typename T> struct std::formatter<MaxDeque<T>> {
         return std::format_to(ctx.out(), "{ MaxDeque size {0} avg {1} }", obj.size(), obj.get_avg());
     }
 };
+
+} // namespace std

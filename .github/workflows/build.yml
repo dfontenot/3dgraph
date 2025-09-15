@@ -14,7 +14,6 @@ on:
       - "test/**/*.cpp"
       - "test/**/*.hpp"
       - "run-build.sh"
-      - "./github/workflows/build.yml"
 
 jobs:
   build:
