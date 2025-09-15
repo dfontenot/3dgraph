@@ -4,6 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 
+/**
+ * @brief what happened while processing this frame / tick
+ */
 class TickResult {
     // TODO: better mechanism for tracking this
     // TODO: update to constexpr std::map in C++26
@@ -33,7 +36,11 @@ public:
 
     /** during this tick, did the user toggle wireframe only vs. mesh view */
     [[nodiscard]] bool wireframe_display_mode_changed() const noexcept;
+
+    /** during this tick were any opengl uniform variables modified? */
     [[nodiscard]] bool any_uniforms_modified() const noexcept;
+
+    /** during this tick did any function parameters for the 3d function change? */
     [[nodiscard]] bool function_params_modified() const noexcept;
     [[nodiscard]] bool model_modified() const noexcept;
     [[nodiscard]] bool view_modified() const noexcept;
