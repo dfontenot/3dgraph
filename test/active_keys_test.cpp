@@ -12,8 +12,9 @@
 #include <ranges>
 #include <utility>
 #include <vector>
+#include <version>
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
 #include <range/v3/all.hpp>
 #endif
 
@@ -48,7 +49,7 @@ TEST_F(ActiveKeysTest, Ctors) {
     const ActiveKeys from_initializer_list{SDL_SCANCODE_D, SDL_SCANCODE_F};
     auto non_shifted = from_initializer_list.get_monitored_keys() | lowercase_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
 #else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
@@ -59,7 +60,7 @@ TEST_F(ActiveKeysTest, Ctors) {
     const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
     non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(distance(non_shifted.begin(), non_shifted.end()), key_range.size());
 #else
     EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
@@ -78,7 +79,7 @@ TEST_F(ActiveKeysTest, Ctors) {
     const ActiveKeys no_dupes{dupes};
     non_shifted = no_dupes.get_monitored_keys() | lowercase_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
 #else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
@@ -100,7 +101,7 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     auto no_shift_keys = monitored_keys | no_shift_filter;
     auto shifted_keys = monitored_keys | has_shift_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(1, distance(no_shift_keys.begin(), no_shift_keys.end()));
     EXPECT_EQ(1, distance(shifted_keys.begin(), shifted_keys.end()));
 #else
@@ -113,7 +114,7 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(1, distance(no_shift_keys.begin(), no_shift_keys.end()));
     EXPECT_EQ(1, distance(shifted_keys.begin(), shifted_keys.end()));
 #else
@@ -126,7 +127,7 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(2, distance(no_shift_keys.begin(), no_shift_keys.end()));
     EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
 #else
@@ -139,7 +140,7 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(3, distance(no_shift_keys.begin(), no_shift_keys.end()));
     EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
 #else
@@ -152,7 +153,7 @@ TEST_F(ActiveKeysTest, GetMonitoredKeys) {
     no_shift_keys = monitored_keys | no_shift_filter;
     shifted_keys = monitored_keys | has_shift_filter;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     EXPECT_EQ(4, distance(no_shift_keys.begin(), no_shift_keys.end()));
     EXPECT_EQ(2, distance(shifted_keys.begin(), shifted_keys.end()));
 #else
