@@ -7,13 +7,15 @@
 #include <format>
 #include <functional>
 #include <iostream>
-#if defined(__clang__)
+#include <string>
+#include <unordered_set>
+#include <version>
+
+#if !__cpp_lib_ranges_join_with
 #include <range/v3/all.hpp>
 #else
 #include <ranges>
 #endif
-#include <string>
-#include <unordered_set>
 
 /**
  * @brief std::equal_to for key mods
@@ -201,7 +203,7 @@ template <> struct formatter<KeyMod> {
             mods.insert("N");
         }
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_join_with
         return std::format_to(ctx.out(), "{0}", mods | ::ranges::views::join(',') | ::ranges::to<string>());
 #else
         return std::format_to(ctx.out(), "{0}", mods | std::views::join_with(',') | std::ranges::to<string>());
