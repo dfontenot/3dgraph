@@ -11,8 +11,9 @@
 #include <ranges>
 #include <stdexcept>
 #include <vector>
+#include <version>
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_cartesian_product || !__cpp_lib_ranges_as_const
 #include <range/v3/all.hpp>
 #endif
 
@@ -22,7 +23,7 @@ using std::size_t;
 using std::vector;
 using std::ranges::iota_view;
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_cartesian_product
 using ranges::views::cartesian_product;
 #else
 using std::ranges::views::cartesian_product;
@@ -74,7 +75,7 @@ vector<GLfloat> make_lattice(GLuint tessellation_amount) {
         | std::views::join;
     // clang-format on
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     ranges::copy(result.begin(), result.end(), ::ranges::back_inserter(lattice));
 #else
     std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(lattice));
@@ -117,7 +118,7 @@ vector<GLuint> lattice_points_list(GLuint tessellation_amount) {
     }) | std::views::join;
     // clang-format on
 
-#if defined(__clang__)
+#if !__cpp_lib_ranges_as_const
     ranges::copy(result.begin(), result.end(), ::ranges::back_inserter(indices_list));
 #else
     std::ranges::copy(result.cbegin(), result.cend(), std::back_inserter(indices_list));
