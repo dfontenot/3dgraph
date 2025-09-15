@@ -32,6 +32,8 @@ public:
 
     // getters
     [[nodiscard]] bool should_exit() const noexcept;
+
+    /** during processing, was it determined that a frame needs to be skipped due to slow processesing */
     [[nodiscard]] bool frame_skip() const noexcept;
 
     /** during this tick, did the user toggle wireframe only vs. mesh view */
