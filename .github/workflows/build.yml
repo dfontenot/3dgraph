@@ -46,7 +46,7 @@ jobs:
           source .venv/bin/activate
           pip install conan
           conan profile detect
-          export CMAKE_VERSION=$(cmake --version | grep -Po '(\d+\.\d+.\d+)')
+          export CMAKE_VERSION=$(cmake --version | grep -Eo '([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)' )
           echo "\n[platform_tool_requires]\n${CMAKE_VERSION}" > /root/.conan2/profiles/default
           ./run-build.sh -DCMAKE_BUILD_TYPE=Release --target=3dgraph_test
         shell: sh

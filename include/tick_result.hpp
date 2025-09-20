@@ -48,6 +48,8 @@ public:
 
     /** during this tick was the model matrix updated? */
     [[nodiscard]] bool model_modified() const noexcept;
+
+    /** during this tick was the view matrix updated? */
     [[nodiscard]] bool view_modified() const noexcept;
     [[nodiscard]] bool tessellation_settings_modified() const noexcept;
 
