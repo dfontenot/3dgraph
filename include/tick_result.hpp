@@ -51,6 +51,8 @@ public:
 
     /** during this tick was the view matrix updated? */
     [[nodiscard]] bool view_modified() const noexcept;
+
+    /** during this tick were the tessellation settings updated? */
     [[nodiscard]] bool tessellation_settings_modified() const noexcept;
 
     // setters
