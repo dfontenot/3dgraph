@@ -103,7 +103,7 @@ if [ "${RELEASE_SPECIFIED+set}" = "set" ]; then
   set -- "$@" "-DCMAKE_BUILD_TYPE=${RELEASE_SPECIFIED}"
 fi
 
-conan install . --lockfile=conan.lock --lockfile-partial --lockfile-out=conan.lock --output-folder=build --build=missing -s build_type=$RELEASE_SPECIFIED
+conan install . --lockfile=conan.lock --lockfile-partial --lockfile-out=conan.lock --lockfile-clean --output-folder=build --build=missing -s build_type=$RELEASE_SPECIFIED
 
 cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW $@

@@ -38,16 +38,15 @@ jobs:
       - name: Build
         run: |
           export MATRIX_VERSION=${{ matrix.version }}
-          echo 'http://dl-cdn.alpinelinux.org/alpine/v3.22/main' >> /etc/apk/repositories
-          apk update
           [[ ${MATRIX_VERSION} =~ 'clang' ]] && apk add ${MATRIX_VERSION}
-          [[ ! ${MATRIX_VERSION} =~ 'clang' ]] && apk add gcc g++
-          apk add cmake==3.31.7-r1
-          apk add make python3 libx11-dev libxcb-dev libfontenc-dev libice-dev libsm-dev libxau-dev libxaw-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxdmcp-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxscrnsaver-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev xcb-util-wm-dev xcb-util-image-dev xcb-util-keysyms-dev xcb-util-renderutil-dev libxinerama-dev libxcb-dev xcb-util-dev xcb-util-cursor-dev bash musl-dev libudev-zero-dev mesa-gl mesa-dev
+          [[ ! ${MATRIX_VERSION} =~ 'clang' ]] && apk add g++
+          apk add cmake cmake-extras make python3 libx11-dev libxcb-dev libfontenc-dev libice-dev libsm-dev libxau-dev libxaw-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxdmcp-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxscrnsaver-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev xcb-util-wm-dev xcb-util-image-dev xcb-util-keysyms-dev xcb-util-renderutil-dev libxinerama-dev libxcb-dev xcb-util-dev xcb-util-cursor-dev bash musl-dev libudev-zero-dev mesa-gl mesa-dev
           cmake --version
           python -m venv .venv
           source .venv/bin/activate
           pip install conan
           conan profile detect
+          export CMAKE_VERSION=$(cmake --version | grep -Po '(\d+\.\d+.\d+)')
+          echo "\n[platform_tool_requires]\n${CMAKE_VERSION}" > /root/.conan2/profiles/default
           ./run-build.sh -DCMAKE_BUILD_TYPE=Release --target=3dgraph_test
         shell: sh
