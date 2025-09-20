@@ -24,6 +24,9 @@ struct Ibo {
         glDeleteBuffers(num_create, &val);
     }
 
+    /**
+     * binds the IBO, throws on error
+     */
     void bind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {
@@ -55,5 +58,5 @@ struct Ibo {
 
 private:
     static constexpr const GLsizei num_create = 1;
-    GLuint val;
+    GLuint val{};
 };

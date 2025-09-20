@@ -47,6 +47,6 @@ jobs:
           pip install conan
           conan profile detect
           export CMAKE_VERSION=$(cmake --version | grep -Eo '([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)' )
-          printf "\n[platform_tool_requires]\n${CMAKE_VERSION}" >> ~/.conan2/profiles/default
+          printf "\n[platform_tool_requires]\ncmake/${CMAKE_VERSION}" >> ~/.conan2/profiles/default
           ./run-build.sh -DCMAKE_BUILD_TYPE=Release --target=3dgraph_test
         shell: sh
