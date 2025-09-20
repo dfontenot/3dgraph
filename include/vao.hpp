@@ -18,6 +18,9 @@ struct Vao {
         glDeleteVertexArrays(num_create, &val);
     }
 
+    /**
+     * binds the VAO, throws on error
+     */
     void bind() {
         auto err = glGetError();
         if (err != GL_NO_ERROR) {

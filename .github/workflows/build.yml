@@ -27,7 +27,6 @@ jobs:
 
     container:
       # TODO: use stable branch when they have gcc15 and clang21
-      # TODO: unpin cmake after using stable branch
       image: alpine:edge
 
     steps:
