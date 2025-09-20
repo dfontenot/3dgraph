@@ -20,6 +20,7 @@ public:
     Grid(Grid &&) noexcept = default;
     Grid &operator=(const Grid &) noexcept = delete;
     Grid &operator=(Grid &&) noexcept = delete;
+    ~Grid() = default;
 
     Grid(Vertices &&verts, std::shared_ptr<ShaderProgram> const &shader_program) noexcept
         : verts(std::move(verts)), program(shader_program), show_wireframe_only(false) {
