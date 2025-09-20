@@ -56,11 +56,11 @@ public:
     [[nodiscard]] bool tessellation_settings_modified() const noexcept;
 
     // setters
-    void set_should_exit(bool should_exit) noexcept;
-    void set_frame_skip(bool should_exit) noexcept;
-    void set_wireframe_display_mode_toggled(bool show_wireframe_only) noexcept;
-    void set_function_params_modified(bool function_params_modified) noexcept;
-    void set_model_modified(bool model_modfied) noexcept;
-    void set_view_modified(bool view_modified) noexcept;
-    void set_tessellation_settings_modified(bool tessellation_settings_modified) noexcept;
+    void set_should_exit(bool should_exit=true) noexcept;
+    void set_frame_skip(bool should_exit=true) noexcept;
+    void set_wireframe_display_mode_toggled(bool show_wireframe_only=true) noexcept;
+    void set_function_params_modified(bool function_params_modified=true) noexcept;
+    void set_model_modified(bool model_modfied=true) noexcept;
+    void set_view_modified(bool view_modified=true) noexcept;
+    void set_tessellation_settings_modified(bool tessellation_settings_modified=true) noexcept;
 };
