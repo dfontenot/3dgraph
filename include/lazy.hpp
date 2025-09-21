@@ -2,8 +2,13 @@
 
 #include <functional>
 #include <optional>
+#include <utility>
 
 // ref: https://stackoverflow.com/a/41955881
+
+/**
+ * a lazy-evaluated (deferred) value
+ */
 template <typename Return> class Lazy {
     std::optional<Return> result;
     std::function<Return()> f;
@@ -18,7 +23,7 @@ template <typename Return> class Lazy {
     }
 
 public:
-    Lazy(std::function<Return()> &&f) : result(std::nullopt), f(f) {
+    Lazy(std::function<Return()> &&f) : result(std::nullopt), f(std::move(f)) {
     }
 
     const Return &operator*() {
