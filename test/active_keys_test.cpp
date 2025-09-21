@@ -54,6 +54,17 @@ TEST_F(ActiveKeysTest, Ctors) {
 #else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
 #endif
+}
+
+TEST_F(ActiveKeysTest, CtorFromContainers) {
+    // currently, via ranges is how this is supported so feature gate it
+#if __cpp_lib_containers_ranges
+    using std::distance;
+    using std::ranges::iota_view;
+    using std::views::filter;
+    using std::views::transform;
+
+    auto const lowercase_filter = filter([](auto key) { return !key.has_shift(); });
 
     // from container
     list<Keyish> keyishes{SDLK_PLUS, SDL_SCANCODE_A, make_pair(SDL_SCANCODE_D, SDL_KMOD_CTRL)};
@@ -66,16 +77,20 @@ TEST_F(ActiveKeysTest, Ctors) {
     // container with duplicates
     list<SDL_Keycode> dupes{SDLK_D, SDLK_A, SDLK_D};
     const ActiveKeys no_dupes{dupes};
-    non_shifted = no_dupes.get_monitored_keys() | lowercase_filter;
+    auto non_shifted = no_dupes.get_monitored_keys() | lowercase_filter;
 
 #if !__cpp_lib_ranges_as_const
     EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
 #else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
 #endif
+#else
+    GTEST_SKIP() << "initializing ActiveKeys from STL container not supported by this STL";
+#endif
 }
 
 TEST_F(ActiveKeysTest, CtorFromRange) {
+#if __cpp_lib_containers_ranges
     using std::distance;
     using std::ranges::iota_view;
     using std::views::filter;
@@ -83,15 +98,10 @@ TEST_F(ActiveKeysTest, CtorFromRange) {
 
     auto const lowercase_filter = filter([](auto key) { return !key.has_shift(); });
 
-    // initializer list
-    const ActiveKeys from_initializer_list{SDL_SCANCODE_D, SDL_SCANCODE_F};
-    auto non_shifted = from_initializer_list.get_monitored_keys() | lowercase_filter;
-
-#if __cpp_lib_containers_ranges
     // from range
     const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
     const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
-    non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
+    auto non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
 
 #if !__cpp_lib_ranges_as_const
     EXPECT_EQ(distance(non_shifted.begin(), non_shifted.end()), key_range.size());
@@ -99,7 +109,7 @@ TEST_F(ActiveKeysTest, CtorFromRange) {
     EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
 #endif
 #else
-    GTEST_SKIP() << "initializing containers from range not supported by this STL";
+    GTEST_SKIP() << "initializing ActiveKeys from range not supported by this STL";
 #endif
 }
 
