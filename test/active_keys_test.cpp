@@ -55,17 +55,6 @@ TEST_F(ActiveKeysTest, Ctors) {
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
 #endif
 
-    // from range
-    const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
-    const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
-    non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
-
-#if !__cpp_lib_ranges_as_const
-    EXPECT_EQ(distance(non_shifted.begin(), non_shifted.end()), key_range.size());
-#else
-    EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
-#endif
-
     // from container
     list<Keyish> keyishes{SDLK_PLUS, SDL_SCANCODE_A, make_pair(SDL_SCANCODE_D, SDL_KMOD_CTRL)};
     const ActiveKeys from_keyish{keyishes};
@@ -83,6 +72,34 @@ TEST_F(ActiveKeysTest, Ctors) {
     EXPECT_EQ(2, distance(non_shifted.begin(), non_shifted.end()));
 #else
     EXPECT_EQ(2, distance(non_shifted.cbegin(), non_shifted.cend()));
+#endif
+}
+
+TEST_F(ActiveKeysTest, CtorFromRange) {
+    using std::distance;
+    using std::ranges::iota_view;
+    using std::views::filter;
+    using std::views::transform;
+
+    auto const lowercase_filter = filter([](auto key) { return !key.has_shift(); });
+
+    // initializer list
+    const ActiveKeys from_initializer_list{SDL_SCANCODE_D, SDL_SCANCODE_F};
+    auto non_shifted = from_initializer_list.get_monitored_keys() | lowercase_filter;
+
+#if __cpp_lib_containers_ranges
+    // from range
+    const iota_view key_range{static_cast<size_t>(SDL_SCANCODE_A), static_cast<size_t>(SDL_SCANCODE_D)};
+    const ActiveKeys other_keys{key_range | transform([](auto i) { return static_cast<SDL_Scancode>(i); })};
+    non_shifted = other_keys.get_monitored_keys() | lowercase_filter;
+
+#if !__cpp_lib_ranges_as_const
+    EXPECT_EQ(distance(non_shifted.begin(), non_shifted.end()), key_range.size());
+#else
+    EXPECT_EQ(distance(non_shifted.cbegin(), non_shifted.cend()), key_range.size());
+#endif
+#else
+    GTEST_SKIP() << "initializing containers from range not supported by this STL";
 #endif
 }
 

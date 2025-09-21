@@ -4,15 +4,16 @@
 
 #include <SDL3/SDL.h>
 
-#include <expected>
 #include <cstdint>
+#include <expected>
 #include <initializer_list>
 #include <optional>
 #include <ranges>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <string>
 #include <utility>
+#include <version>
 
 // TODO: refactor to make private
 using Interval = std::pair<uint64_t, std::optional<uint64_t>>;
@@ -33,7 +34,7 @@ class ActiveKeys {
     /**
      * new copy of a key or nullopt
      */
-    [[nodiscard]] std::optional<Key> registered_key_or_empty(const Key& key) const;
+    [[nodiscard]] std::optional<Key> registered_key_or_empty(const Key &key) const;
 
 public:
     ActiveKeys() = default;
@@ -48,6 +49,7 @@ public:
     explicit ActiveKeys(std::initializer_list<std::pair<SDL_Scancode, SDL_Keymod>> scan_codes_with_mods);
     explicit ActiveKeys(std::initializer_list<SDL_Keycode> key_codes);
 
+#if __cpp_lib_containers_ranges
     /**
      * if specifying a key w/o a modifier: it will also monitor the shift version of the key
      * if a key with a modifier is specified, it will only listen to that exact key
@@ -124,6 +126,7 @@ public:
             key_timings.insert({key.copy_shifted(), std::nullopt});
         }
     }
+#endif
 
     /**
      * register a key for listening
