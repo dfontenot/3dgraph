@@ -21,13 +21,13 @@ jobs:
       fail-fast: false
       matrix:
         # TODO: bring back gcc16 currently Conan does not accept that versions
-        version: ["gcc15", "clang20", "clang21"]
+        version: ["gcc14", "clang20", "clang21"]
 
     runs-on: ubuntu-latest
 
     container:
       # TODO: use stable branch when they have gcc15 and clang21
-      image: alpine:edge
+      image: alpine:3
 
     steps:
       - name: Checkout code

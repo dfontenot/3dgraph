@@ -152,6 +152,9 @@ struct KeyMod {
         return KeyMod{val | new_mods};
     }
 
+    /**
+     * new instance with shif modifier active (both sides)
+     */
     [[nodiscard]] constexpr KeyMod with_shifted() const {
         return with_more_mods(SDL_KMOD_SHIFT);
     }
