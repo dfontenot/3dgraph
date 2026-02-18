@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_LoadLibrary(nullptr);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
-    if constexpr (is_opengl_es) {
+    if (is_opengl_es) {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if constexpr (has_opengl_debug) {
+    if (has_opengl_debug) {
         glEnable(GL_DEBUG_OUTPUT);
         init_opengl_debug();
     }
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 
         // TODO: clean this up
         vector<shared_ptr<Shader>> the_shaders;
-        if constexpr (is_opengl_es) {
+        if (is_opengl_es) {
             const path es_shader_base_path = "shaders/es";
             the_shaders.push_back(make_shared<Shader>(es_shader_base_path / "vertex.glsl", GL_VERTEX_SHADER));
             the_shaders.push_back(make_shared<Shader>(es_shader_base_path / "fragment.glsl", GL_FRAGMENT_SHADER));
