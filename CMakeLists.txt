@@ -9,6 +9,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_BUILD_TYPE Debug)
 
+find_package(Git QUIET)
+set(GIT_VERSION, "")
+execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=7 --dirty --always --tags 
+  OUTPUT_VARIABLE GIT_VERSION
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 include(FetchContent)
 
 # workaround for https://github.com/conan-io/conan-center-index/issues/25185
@@ -66,6 +74,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_MESSAGES=GLM_ENABLE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE OPENGL_DEBUG)
 # ref: https://stackoverflow.com/a/72330784
 target_compile_definitions(${PROJECT_NAME} PRIVATE "DEBUG_BUILD=$<IF:$<CONFIG:Debug>,1,0>")
+target_compile_definitions(${PROJECT_NAME} PRIVATE GIT_VERSION="${GIT_VERSION}")
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE cpptrace::cpptrace
@@ -110,6 +119,8 @@ target_compile_definitions(${PROJECT_NAME}_es PRIVATE GLM_MESSAGES=GLM_ENABLE)
 # custom defines for src/
 target_compile_definitions(${PROJECT_NAME}_es PRIVATE OPENGL_DEBUG)
 target_compile_definitions(${PROJECT_NAME}_es PRIVATE OPENGL_ES)
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE "DEBUG_BUILD=$<IF:$<CONFIG:Debug>,1,0>")
+target_compile_definitions(${PROJECT_NAME}_es PRIVATE GIT_VERSION="${GIT_VERSION}")
 
 target_link_libraries(${PROJECT_NAME}_es
   PRIVATE cpptrace::cpptrace

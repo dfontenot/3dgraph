@@ -141,12 +141,17 @@ int main(int argc, char *argv[]) {
     const int sdl_version = SDL_GetVersion();
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
+    // NOLINTNEXTLINE(modernize-avoid-c-style-cast)
     gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+    string git_version = GIT_VERSION;
+    stdout->debug("build: {}", git_version);
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     stdout->info("vendor: {}", reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
     stdout->info("renderer: {}", reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     stdout->info("version: {}", reinterpret_cast<const char *>(glGetString(GL_VERSION)));
     stdout->info("shading language version: {}",
                  reinterpret_cast<const char *>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     stdout->info("SDL version: {0}.{1}.{2} (linked {3}.{4}.{5})", SDL_VERSIONNUM_MAJOR(SDL_VERSION),
                  SDL_VERSIONNUM_MINOR(SDL_VERSION), SDL_VERSIONNUM_MICRO(SDL_VERSION),
                  SDL_VERSIONNUM_MAJOR(sdl_version), SDL_VERSIONNUM_MINOR(sdl_version),
